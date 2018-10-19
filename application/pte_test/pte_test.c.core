@@ -1,0 +1,95 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+
+#include "utility.h"
+#include "syscall.h"
+
+
+//#define MAX_THREADS 440 
+#define MAX_THREADS 2000 
+//#define MAX_THREADS 128 
+
+//	__libc_init_array() {};
+//	__libc_fini_array() { do_exit(0);};
+//_fini(){}
+//_init(){}
+//__atexit_lock(){}
+
+int y=0;
+
+#if 1
+void thread_func(void* arg)
+{
+int loop, i, x, y;
+
+        int id = sys_getpid() - 129;
+        x = (id % 20) * 4;
+        y = (id / 20) % 24;
+
+        /*for(loop = 0; loop < 32767; loop++)*/
+          for( i = 0; i < 1000; i++)
+            print_xy(x, y, "%d", i);
+          print_xy(x, y, "%d ", id);
+}
+#endif
+
+pthread_t threads[MAX_THREADS];
+//pthread_t *threads;
+int param[MAX_THREADS];
+
+int main(int argc, char** argv)
+{
+	//pthread_t threads[MAX_THREADS];
+	pthread_t t;
+	int i, ret;
+	pthread_attr_t attr;
+
+	pthread_init();
+	//__libc_init_array();
+	//atexit(__libc_fini_array);
+
+	//pthread_attr_init(&attr);
+  	//pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+	//threads = (pthread_t *) malloc(MAX_THREADS * sizeof(pthread_t));
+#if 1
+	for(i=0; i<MAX_THREADS; i++) {
+		param[i] = i;
+		ret = pthread_create(&threads[i], NULL, (void *)thread_func, &param[i]);
+		//ret = sys_clone(NULL, thread_func, &param[i]);
+		if (ret) {
+			print_xy(0, y++%14, "Thread creation failed! error =  %d", ret);
+			return ret;
+		} else {
+			;//print_xy(40, y++%14, "Create thread %d        ", i);
+		}
+	}
+        //print_xy(0, 15, "Create thread done %d [%d]", i, MAX_THREADS*sizeof(pthread_t));
+
+#if 0
+	/* wait until all threads have terminated */
+        print_xy(40, 15, "Join thread start");
+	for(i=0; i<MAX_THREADS; i++) {
+		pthread_join(threads[i], NULL);	
+		if (ret) {
+			print_xy(40, y++%14, "Join failed! error =  %d", ret);
+			return ret;
+		} else {
+			print_xy(40, y++%14, "Join   thread %d %d", i, threads[i].x);
+		}
+	}
+#endif
+
+
+	//print_xy(40, 15, "Join thread done %d       ", i);
+
+	//free(threads);
+#endif
+
+//while(1);
+
+	return 0;
+}
+
+
+

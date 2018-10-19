@@ -1,0 +1,50 @@
+ifeq ($(TARGET),)
+TARGET=knl
+endif
+
+
+GCC32=$(CROSS_COMPILE)gcc -ffreestanding -g
+OBJCOPY32 = ${CROSS_COMPILE}objcopy -j .text -j .data -j .rodata -j .bss -S -O binary
+
+LD32=${CROSS_COMPILE}ld -melf_x86_64 -nostdlib -e switch_and_execute_64bit_kernel 
+LDASM32=${CROSS_COMPILE}ld -melf_x86_64 --oformat=binary -nostdlib -Ttext 0x0
+GCC32=$(CROSS_COMPILE)gcc -ffreestanding -g -DVCONSOLE -I../include/$(TARGET) -D_$(TARGET)_ 
+
+ASSEMBLYSOURCEFILES = modeswitch_32.S
+ASSEMBLYOBJECTFILES = $(notdir $(patsubst %.S,%.o,$(ASSEMBLYSOURCEFILES)))
+
+.PHONEY: all ExecuteInernalBuild InternalDependency 
+
+ifeq ($(TARGET),qemu)
+all: kernel_32.bin bootloader/bootloader.bin
+else
+all: kernel_32.bin 
+endif
+
+bootloader/bootloader.bin: bootloader/bootloader.S
+	make -C bootloader
+
+kernel_32.bin: entrypoint_32.bin kernel_32.elf.bin
+	cat $^ > $@
+
+entrypoint_32.o: entrypoint_32.S
+	$(GCC32) -o $@ -c $<
+
+entrypoint_32.bin: entrypoint_32.o
+	$(LDASM32) -o $@ $^
+
+kernel_32.elf.bin: ExecuteInternalBuild
+	$(OBJCOPY32) kernel_32.elf $@
+
+ExecuteInternalBuild: kernel_32.elf
+
+kernel_32.elf: $(ASSEMBLYOBJECTFILES)
+	$(LD32) -o $@ $^
+
+%_32.o:%_32.S
+	$(GCC32) -o $@ -c $<
+
+clean:
+	rm -f *_32.bin *_32.o kernel_32.bin kernel_32.elf
+	make -C bootloader clean
+
