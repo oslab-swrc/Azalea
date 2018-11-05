@@ -6,6 +6,7 @@
 #include "page.h"
 #include "thread.h"
 #include "utility.h"
+#include "shellstorage.h"
 
 unsigned long g_vcon_addr;
 
@@ -75,6 +76,26 @@ int lk_print_xy(int x, int y, const char *parameter, ...)
   va_end(ap);
 
   prints_xy(x, y, buffer);
+
+  return return_value;
+}
+
+/**
+ * print formatted string to log memory
+ */
+int lk_print(const char *parameter, ...)
+{
+  va_list ap;
+  int return_value = 0;
+  char buffer[64];
+
+  lk_memset(buffer, 0, sizeof(char) * 64);
+
+  va_start(ap, parameter);
+  return_value = lk_vsprintf(buffer, parameter, ap);
+  va_end(ap);
+
+  shell_enqueue(buffer);
 
   return return_value;
 }
