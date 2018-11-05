@@ -16,6 +16,8 @@ int console_prints(const char *buff);
 void printk(const char *fmt, ...);
 void prints_xy(int x, int y, char *str);
 int lk_print_xy(int x, int y, const char *parameter, ...);
+int lk_print(const char *parameter, ...);
+
 void lk_clear_screen(void);
 void on_off_status(int phy, char state);
 void int_to_str(int input, char* output);
