@@ -88,6 +88,7 @@ typedef struct core_set_struct {
   QWORD mask[4];
 } core_set_t;
 
+typedef void (*signal_handler_t)(int);
 typedef struct thread_control_block_struct TCB;
 
 struct thread_control_block_struct {
@@ -101,6 +102,8 @@ struct thread_control_block_struct {
   enum thread_state_enum state;
   atomic_u intention;
   QWORD  name;
+  int signal_flag;
+  signal_handler_t signal_handler;
 
   long time_slice;
   long remaining_time_slice;

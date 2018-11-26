@@ -70,6 +70,10 @@ void Main(int boot_mode)
   lk_print_xy(2, yloc++, "MEMORY_START: 0x%q, MEMORY_END: 0x%q", g_memory_start, g_memory_end);
   store_init_stat(INIT_IA32E_START_STAT);
 
+  lk_print_xy(0, yloc, "Shell storage initialize.....................[    ]");
+  shell_storage_area_init();		// Initialize shell storage area
+  lk_print_xy(xloc, yloc++, "Pass");
+
 #if 0
   lk_print_xy(0, yloc, "Memory check.................................[    ]");
   if (check_memory(1*1024) == FALSE)
@@ -82,7 +86,6 @@ void Main(int boot_mode)
   lk_print_xy(xloc, yloc++, "Pass");
   store_init_stat(INIT_PAGETABLE_STAT);
 
-
   lk_print_xy(0, yloc, "Init Free Memory Management .................[    ]");
   free_mem_init();
   lk_print_xy(xloc, yloc++, "Pass");
@@ -93,22 +96,26 @@ void Main(int boot_mode)
   adjust_pagetables(CONFIG_KERNEL_PAGETABLE_ADDRESS);
   lk_print_xy(xloc, yloc++, "Pass");
 
-  lk_print_xy(0, yloc, "Init IDT ....................................[    ]");
-  idt_init();
-  load_idtr(va(IDTR_START_ADDRESS));
-  lk_print_xy(xloc, yloc++, "Pass");
-  store_init_stat(INIT_IDT_STAT);
-
   lk_print_xy(0, yloc, "Init GDT and switch to IA-32e mode...........[    ]");
   gdt_and_tss_init();
   load_gdtr(va(GDTR_START_ADDRESS));
   lk_print_xy(xloc, yloc++, "Pass");
   store_init_stat(INIT_GDT_SWITCH_IA32E_STAT);
 
-  lk_print_xy(0, yloc, "Shell storage initialize.....................[    ]");
-  shell_storage_area_init();		// Initialize shell storage area
+  lk_print_xy(0, yloc, "Load TSS ....................................[    ]");
+//  load_tr(GDT_TSS + (get_apic_id() * sizeof(GDT_ENTRY16)));      // 1 = get_apic_id() ; 
+  load_tr(GDT_TSS);      // 1 = get_apic_id() ; 
   lk_print_xy(xloc, yloc++, "Pass");
+  store_init_stat(INIT_LOAD_TSS_STAT);
 
+  lk_print_xy(0, yloc, "Init IDT ....................................[    ]");
+  idt_init();
+  load_idtr(va(IDTR_START_ADDRESS));
+  lk_print_xy(xloc, yloc++, "Pass");
+  store_init_stat(INIT_IDT_STAT);
+
+  lk_print("xloc: %q, %q\n", xloc, &xloc);
+  lk_print("yloc: %q, %q\n", yloc, &yloc);
   lk_print_xy(0, yloc, "Init System Calls ...........................[    ]");
   systemcall_init();
   lk_print_xy(xloc, yloc++, "Pass");
@@ -147,17 +154,16 @@ void Main(int boot_mode)
   lk_print_xy(xloc, yloc++, "Pass");
   store_init_stat(INIT_APS_STAT);
 
-  lk_print_xy(0, yloc, "Load TSS ....................................[    ]");
-  load_tr(GDT_TSS + (get_apic_id() * sizeof(GDT_ENTRY16)));      // 1 = get_apic_id() ; 
-  lk_print_xy(xloc, yloc++, "Pass");
-  store_init_stat(INIT_LOAD_TSS_STAT);
-
-  lk_print_xy(0, yloc, "Enable Local APIC............................[    ]");
+ lk_print_xy(0, yloc, "Enable Local APIC............................[    ]");
   enable_software_local_apic();
   set_task_priority(0);
   local_vector_table_init();
   lk_print_xy(xloc, yloc++, "Pass");
   store_init_stat(INIT_LAPIC_STAT);
+
+  lk_print_xy(0, yloc, "Initialize Signal............................[    ]");
+  signal_init();
+  lk_print_xy(xloc, yloc++, "Pass");
 
   // Start idle thread
   store_init_stat(INIT_IDLE_THREAD_STAT);

@@ -245,8 +245,9 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
 #endif
     break;
   case SYSCALL_sys_signal:
+    ret_code = sys_signal((signal_handler_t) param1);
 #ifdef DDBUG
-    lk_print_xy(0, yyloc++%YOFFSET, "signal system call **");
+    lk_print_xy(0, yyloc++%YOFFSET, "signal system call, p1: %q **", param1);
 #endif
     break;
   case SYSCALL_do_exit:

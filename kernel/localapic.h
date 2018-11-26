@@ -77,7 +77,7 @@ void lapic_stop_timer(void);
 void lapic_consumed_time_slice(long *time_slice, long *time_tick);
 QWORD lapic_get_ticks_in_1ms(void);
 int lapic_timer_interrupt_pending(void);
-int lapic_send_ipi(BYTE dest_shorthand, BYTE dest);
+int lapic_send_ipi(BYTE dest_shorthand, BYTE dest, BYTE irq);
 #endif
 
 #endif  /* __LOCALAPIC_H__ */

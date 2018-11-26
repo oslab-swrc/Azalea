@@ -40,6 +40,7 @@
 
 #define mode_t  int
 #define off_t   unsigned long
+#define tid_t	int
 
 #define TRUE	1
 #define FALSE	0

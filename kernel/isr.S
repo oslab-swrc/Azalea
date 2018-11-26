@@ -4,7 +4,7 @@
 .code64
 
 .extern lk_common_exception_handler, lk_common_interrupt_handler
-.extern timer_handler, pagefault_handler, ipi_handler
+.extern timer_handler, pagefault_handler, ipi_handler, signal_handler
 
 .global isr_divide_error, isr_debug, isr_nmi, isr_break_point, isr_overflow
 .global isr_bound_range_exceeded, isr_invalid_opcode, isr_device_not_available, isr_double_fault
@@ -15,7 +15,7 @@
 .global isr_timer, isr_slave_pic, isr_serial2, isr_serial1, isr_parallel2
 .global isr_floppy, isr_parallel1, isr_rtc, isr_reserved, isr_not_used1, isr_not_used2
 .global isr_mouse, isr_coprocessor, isr_hdd1, isr_hdd2, isr_lapic_timer, isr_etc_interrupt
-.global isr_ipi
+.global isr_ipi, isr_signal
 
 .global lk_general_protection_handler
 
@@ -353,11 +353,19 @@ isr_ipi:
   LOADCONTEXT
   iretq
 
+//50, Signal
+isr_signal:
+  SAVECONTEXT
+  movq $50,%rdi       // param1:vector number
+  movq 8(%rbp),%rsi   // param2:signum
+  call signal_handler
+  LOADCONTEXT
+  iretq
 
-//50, Others
+//51, Others
 isr_etc_interrupt: 
   SAVECONTEXT
-  movq $50,%rdi
+  movq $51,%rdi
   call lk_common_exception_handler
   LOADCONTEXT
   iretq

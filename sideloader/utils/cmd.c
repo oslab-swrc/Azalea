@@ -18,8 +18,7 @@ static char *thread_state_str_f[] = { "NOTALLOC", "CREATED", "RUNNING", "READY",
 void display_tcb_info(TCB * tcb)
 {
   printf("\nid=%ld, stack=0x%lx, user_stack=0x%lx", tcb->id, tcb->stack, tcb->user_stack);
-  printf("\nstack_base=0x%lx, qwFalgs=0x%lx, running_core=%d",
-         tcb->stack_base, tcb->flags, tcb->running_core);
+  printf("\nstack_base=0x%lx, flags=0x%lx, running_core=%d", tcb->stack_base, tcb->flags, tcb->running_core);
   printf("\ncore_mask=0x%lx%lx%lx%lx%lx%lx%lx%lx", tcb->core_mask.mask[7],
           tcb->core_mask.mask[6], tcb->core_mask.mask[5],
           tcb->core_mask.mask[4], tcb->core_mask.mask[3],
@@ -27,11 +26,9 @@ void display_tcb_info(TCB * tcb)
           tcb->core_mask.mask[0]);
   printf("\nstate=%s, acc_ltc=0x%lx", thread_state_str_f[tcb->state], tcb->acc_ltc);
   printf("\nname=%ld, as=0x%x", tcb->name, 0);
-  printf("\ntime_slice=0x%lx, remaining_time_slice=0x%lx", tcb->time_slice,
-         tcb->remaining_time_slice);
+  printf("\ntime_slice=0x%lx, remaining_time_slice=0x%lx", tcb->time_slice, tcb->remaining_time_slice);
   printf("\nintention=0x%x, ref_cnt=0x%x", (tcb->intention).c, (tcb->refc).c);
-  printf("\ntime_quantum=0x%lx, remaining_time_quantum=0x%lx",
-         tcb->time_quantum, tcb->remaining_time_quantum);
+  printf("\ntime_quantum=0x%lx, remaining_time_quantum=0x%lx", tcb->time_quantum, tcb->remaining_time_quantum);
 }
 
 void display_thread_usage()

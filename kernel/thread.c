@@ -16,6 +16,7 @@
 #include "utility.h"
 #include "elf_load.h"
 #include "memory.h"
+#include "signal.h"
 //#include <stddef.h>
 
 extern void HALT() ;
@@ -109,6 +110,8 @@ void thread_init(void)
     tcb->running_core = -1;
     INIT_CORE_MASK(&tcb->core_mask);
     tcb->name = THREAD_INIT_NAME;
+    tcb->signal_flag = 0;
+    tcb->signal_handler = 0;
 
     tcb->acc_ltc = 0;
 
@@ -142,6 +145,9 @@ void thread_init(void)
     g_idle_thread_list[i]->running_core = i;
     INIT_CORE_MASK(&g_idle_thread_list[i]->core_mask);
     g_idle_thread_list[i]->name = 0;
+
+    g_idle_thread_list[i]->signal_flag = 0;
+    g_idle_thread_list[i]->signal_handler = 0;
 
     g_idle_thread_list[i]->acc_ltc = 0;
 
@@ -581,6 +587,7 @@ int create_thread(QWORD ip, QWORD argv, int core_mask)
   tcb_lock(thr);
 
   stack_address = alloc(PAGE_SIZE_4K);
+  lk_print("Thread created: %d, stack: %q\n", thr->id, stack_address);
 
   init_tcb(thr, (QWORD) stack_address);
   
@@ -1106,6 +1113,15 @@ BOOL schedule(QWORD intention)
 
   post_context_switch(prev);
 
+  // signal handling
+  if (curr->signal_flag != 0) {
+    do_signal(curr->signal_handler, curr->id);
+
+    // initialize signal handler
+    curr->signal_flag = 0;
+    curr->signal_handler = 0;
+  }
+
   return FALSE;
 }
 
@@ -1144,12 +1160,10 @@ void setup_idle_thread()
 void start_idle_thread(int thread_type)
 {
   int cid = get_apic_id();
-  int ccloc = 0;
   int cnt = 0;
   int wait_cnt = 0;
 
   setup_idle_thread();
-  ccloc = g_ap_count-1;
 
   if (thread_type == THREAD_TYPE_BSP) {
     while (g_ap_count != g_cpu_size)
@@ -1161,7 +1175,7 @@ void start_idle_thread(int thread_type)
 
   while (!shutdown_kernel) {
     // CPU IDLE
-    lk_print_xy((ccloc%5) * 15, (ccloc/5) + 21, "%d, %x", cid, cnt++);
+    lk_print_xy(30, 23, "%d, %x", cid, cnt++);
   }
 
   disable_interrupt() ;
@@ -1243,10 +1257,4 @@ int sys_clone(tid_t *id, void *ep, void *argv)
 void sys_yield(void)
 {
   // To be implemented
-}
-
-int sys_kill(tid_t dest, int signum)
-{
-  // To be implemented
-  return 0;
 }

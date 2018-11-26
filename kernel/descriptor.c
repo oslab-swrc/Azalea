@@ -93,6 +93,8 @@ void initialize_tss(TSS * tss)
 {
   int i = 0;
 
+  lk_memset((void *) 0xFFFF8000C0A00000, 0, IST_SIZE);
+
   for (i = 0; i < MAX_PROCESSOR_COUNT; i++) {
     // Initialize to 0
     lk_memset(tss, 0, sizeof(TSS));
@@ -272,11 +274,12 @@ void idt_init(void)
                IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
   set_idt_entry(&entry[48], isr_lapic_timer, 0x08, IDT_FLAGS_IST0,
                IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
-
   set_idt_entry(&entry[49], isr_ipi, 0x08, IDT_FLAGS_IST0,
                IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
+  set_idt_entry(&entry[50], isr_signal, 0x08, IDT_FLAGS_IST0,
+               IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
 
-  for (i = 50; i < IDT_MAX_ENTRY_COUNT; i++) {
+  for (i = 51; i < IDT_MAX_ENTRY_COUNT; i++) {
     set_idt_entry(&entry[i], isr_etc_interrupt, 0x08, IDT_FLAGS_IST1,
                  IDT_FLAGS_KERNEL, IDT_TYPE_INTERRUPT);
   }
