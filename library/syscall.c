@@ -43,6 +43,9 @@ _syscall1(int, numtest, double, x);
 _syscall1(void*, sys_alloc, size_t, size);
 _syscall1(BOOL, sys_free, void*, address);
 
+_syscall0(size_t, get_start_tsc);
+_syscall0(size_t, get_freq);
+
 _syscall1(int, print_log, char*, msg);
 
 //EOF

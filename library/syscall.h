@@ -151,6 +151,9 @@ int numtest(double x);
 void* sys_alloc(size_t size);
 BOOL sys_free(void* address);
 
+size_t get_start_tsc(void);
+size_t get_freq(void);
+
 int print_log(char *msg);
 
 #endif  /* __SYSCALL_H__ */

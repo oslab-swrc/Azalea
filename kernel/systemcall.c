@@ -16,6 +16,7 @@
 #include "memory.h"
 #include "sync.h"
 #include "shellstorage.h"
+#include "timer.h"
 
 static spinlock_t a_lock;
 /**
@@ -289,6 +290,12 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
     break;
   case SYSCALL_sys_free:
     ret_code = free((void *) param1);
+    break;
+  case SYSCALL_get_start_tsc:
+    ret_code = get_start_tsc();
+    break;
+  case SYSCALL_get_freq:
+    ret_code = get_freq();
     break;
   default:
     printk("Invalid system calls");
