@@ -45,5 +45,8 @@
 #define SYSCALL_sys_alloc               555
 #define SYSCALL_sys_free                556
 
+#define SYSCALL_get_start_tsc           601
+#define SYSCALL_get_freq                602
+
 #define SYSCALL_print_log	  854
 #endif // __SYSTEMCALLLIST_H__

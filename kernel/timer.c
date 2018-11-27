@@ -2,8 +2,25 @@
 #include "thread.h"
 #include "localapic.h"
 #include "shellstorage.h"
+#include "delay.h"
 
 static QWORD g_tick_count[MAX_PROCESSOR_COUNT] = {0, }; 
+static unsigned long long start_tsc;
+static unsigned long long freq;
+
+/**
+ * detect the frequency of the CPU
+ */
+unsigned long long detect_cpu_frequency()
+{
+  unsigned long long ts1, ts2;
+
+  ts1 = rdtsc();
+  az_mdelay(50);
+  ts2 = rdtsc();
+
+  return ((ts2-ts1) * 20);
+}
 
 /*
  * initialize timer
@@ -14,6 +31,10 @@ void timer_init(void)
 
   for (i = 0; i < MAX_PROCESSOR_COUNT; i++)
     g_tick_count[i] = 0;
+
+  // initialize tick counter
+  freq = detect_cpu_frequency();
+  start_tsc = rdtsc();
 }
 
 /**
@@ -73,4 +94,20 @@ size_t sys_get_ticks(void)
 void sys_msleep(unsigned int ms)
 {
   // To be implemented
+}
+
+/**
+ * return the start tsc
+ */
+unsigned long long get_start_tsc()
+{
+  return start_tsc;
+}
+
+/**
+ * return the cpu frequency
+ */
+unsigned long long get_freq()
+{
+  return freq;
 }

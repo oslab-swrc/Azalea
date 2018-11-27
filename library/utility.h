@@ -41,6 +41,25 @@
          "cpuid":\
          "=r"(end): : "rax", "rbx", "rdx", "rcx")
 
+struct az_timeval {
+  long    tv_sec;         /* seconds */
+  long    tv_usec;        /* microseconds */
+};
+
+struct az_timezone {
+  int     tz_minuteswest; /* minutes west of Greenwich */
+  int     tz_dsttime;     /* type of dst correction */
+};
+
+inline static unsigned long long rdtsc(void)
+{
+  unsigned int lo, hi;
+
+  asm volatile ("rdtsc" : "=a"(lo), "=d"(hi) :: "memory");
+
+  return ((unsigned long long)hi << 32ULL | (unsigned long long)lo);
+}
+
 /* Functions */
 int a_memcpy(void *destination, const void *source, int size);
 int a_strlen(const char *buffer);
@@ -55,6 +74,8 @@ int vsprintf(char *buffer, const char *format_string, va_list ap);
 int print_xy(int x, int y, const char *buffer, ...);
 int kprintf(const char *fmt, ...);
 int print( const char *buffer, ...);
+
+int az_gettimeofday(struct az_timeval *tv, struct az_timezone *tz);
 
 void srand(unsigned int seed);
 int rand();

@@ -317,6 +317,26 @@ int kprintf(const char *fmp, ...)
   return 0;
 }
 
+static size_t start_tsc;
+static size_t freq;
+
+int az_gettimeofday(struct az_timeval *tv, struct az_timezone *tz) 
+{
+  if (start_tsc == 0)
+    start_tsc = get_start_tsc();
+
+  if (freq == 0)
+    freq = get_freq();
+
+  if(tv) {
+    size_t diff = rdtsc() - start_tsc;
+    tv->tv_sec = diff/freq;
+    tv->tv_usec = ((diff - tv->tv_sec * freq) * 1000000ULL) / freq;
+  }
+
+  return 0;
+}
+
 #if 0
 /**
  * Random
