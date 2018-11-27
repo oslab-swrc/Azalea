@@ -8,8 +8,8 @@
 #include "sync.h"
 #include "types.h"
 #include "utility.h"
+#include "signal.h"
 
-typedef int tid_t;
 #define NO_TCB_LOCK
 
 #define THREAD_INT_STACK_REG_COUNT  (5)
@@ -150,6 +150,8 @@ typedef struct thread_control_block_struct {
   enum thread_state_enum state;
   atomic_t intention;
   QWORD name;
+  int signal_flag;
+  signal_handler_t signal_handler;
 
   long time_slice;
   long remaining_time_slice;
@@ -239,6 +241,5 @@ int sys_setprio(tid_t *id, int prio);
 void sys_exit(int arg);
 int sys_clone(tid_t *id, void *ep, void *argv);
 void sys_yield(void);
-int sys_kill(tid_t dest, int signum);
 
 #endif  /* __THREAD_H__ */

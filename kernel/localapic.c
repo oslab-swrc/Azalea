@@ -4,12 +4,15 @@
 #include "page.h"
 #include "console.h"
 #include "pit.h"
+#include "irq.h"
+#include "console.h"
 
 static QWORD local_apic_base_address = 0;
 static QWORD ticks_in_10ms = 0;
 static QWORD ticks_in_1ms = 0;
 
 extern QWORD g_memory_start;
+extern QWORD g_cpu_start;
 
 #define get_local_apic_base_address() ({ \
   if (unlikely(local_apic_base_address == 0)) { \
@@ -207,13 +210,15 @@ int lapic_timer_interrupt_pending(void)
 /*
  * send IPI of local APIC
  */
-int lapic_send_ipi(BYTE dest_shorthand, BYTE dest)
+int lapic_send_ipi(BYTE dest_shorthand, BYTE dest, BYTE irq)
 {
   QWORD lapic_base = 0;
   DWORD tmp_dest = 0;
   DWORD tmp_dest_shorthand = 0;
 
-  tmp_dest = (DWORD) dest;
+  BYTE flags = irq_nested_disable();
+
+  tmp_dest = (DWORD) dest + g_cpu_start;
   tmp_dest_shorthand = (DWORD) dest_shorthand;
 
   lapic_base = get_local_apic_base_address();
@@ -224,7 +229,9 @@ int lapic_send_ipi(BYTE dest_shorthand, BYTE dest)
   *(DWORD *) (lapic_base + APIC_REGISTER_ICR_LOWER) =
       tmp_dest_shorthand << 18 | APIC_TRIGGER_MODE_EDGE |
       APIC_LEVEL_ASSERT | APIC_DESTINATION_MODE_PHYSICAL |
-      APIC_DELIVERY_MODE_FIXED | 49;
+      APIC_DELIVERY_MODE_FIXED | irq;
+
+  irq_nested_enable(flags);
 
   return 0;
 }

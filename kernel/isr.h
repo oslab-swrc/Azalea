@@ -41,6 +41,7 @@ void isr_hdd1(void);
 void isr_hdd2(void);
 void isr_lapic_timer(void);
 void isr_ipi(void);
+void isr_signal(void);
 void isr_etc_interrupt(void);
 
 #endif // __ISR_H__
