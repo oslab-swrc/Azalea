@@ -8,29 +8,34 @@
 
 DECLARE_PERCPU(struct signal_list, local_sig_list);
 
-static void signal_list_init(struct signal_list *l)
-{
-  spinlock_init(&l->lock);
-
-  l->count = 0;
-  dl_list_init(&l->sig_list);
-}
-
+/**
+ * Initialize signal structure
+ */
 void signal_init(void)
 {
   int i;
 
   for (i=0; i< MAX_PROCESSOR_COUNT; i++) {
-    signal_list_init(&per_cpu_byid(local_sig_list, i));
+    struct signal_list *l;
+    l = &per_cpu_byid(local_sig_list, i);
+
+    spinlock_init(&l->lock);
+    l->count = 0;
+    dl_list_init(&l->sig_list);
   }
-  
 }
 
+/**
+ *
+ */
 void signal_handler(int vector, QWORD rip)
 {
 
 }
 
+/**
+ * sys_signal register the signal hander in current thread
+ */
 int sys_signal(signal_handler_t handler)
 {
   TCB *curr = get_current();
@@ -39,6 +44,9 @@ int sys_signal(signal_handler_t handler)
   return 0;
 }
 
+/**
+ * sys_kill add signum to the tcb of destination thread's
+ */
 int sys_kill(tid_t dest, int signum)
 {
   int dest_core;
@@ -76,6 +84,9 @@ int sys_kill(tid_t dest, int signum)
   return 0;
 }
 
+/**
+ * do_signal call the handler registered in the tcb
+ */
 void do_signal(signal_handler_t handler, tid_t tid)
 {
   signal_t *signal = NULL, *tmp_ptr = NULL;
