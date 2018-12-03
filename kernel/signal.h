@@ -1,8 +1,6 @@
 #ifndef __SIGNAL_H__
 #define __SIGNAL_H__
 
-//#include <hermit/stddef.h>
-//#include <hermit/semaphore_types.h>
 #include "types.h"
 #include "list.h"
 #include "sync.h"
@@ -25,13 +23,10 @@ struct signal_list {
   struct dl_list sig_list;
 };
 
-
 // Functions
-
 void signal_init(void);
 int sys_kill(tid_t dest, int signum);
 int sys_signal(signal_handler_t handler);
 void do_signal(signal_handler_t handler, tid_t tid);
 
 #endif /* __SIGNAL_H__ */
-
