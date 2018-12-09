@@ -5,7 +5,7 @@ endif
 CFLAG=-m64 -mno-red-zone -nostdlib -ffreestanding -Wall -mcmodel=large -g
 
 TEXT_BASE64=0xFFFF8000C0300000
-CFLAG+=-fomit-frame-pointer -fno-exceptions -fno-asynchronous-unwind-tables -fno-unwind-tables -DVCONSOLE -O0 -I. -I../include/$(TARGET) -mno-sse -mno-mmx -mno-sse2 -mno-3dnow -mno-avx -D_$(TARGET)_
+CFLAG+=-fomit-frame-pointer -fno-exceptions -fno-asynchronous-unwind-tables -fno-unwind-tables -DVCONSOLE -O0 -I. -I../include/$(TARGET) -mno-mmx -mno-3dnow -mno-avx -D_$(TARGET)_
 LDFLAG=-melf_x86_64 -T elf_x86_64.x
 
 GCC64=gcc $(CFLAG)   

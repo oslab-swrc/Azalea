@@ -6,6 +6,7 @@
 .text
 switch_and_execute_64bit_kernel: 
 // Set PAE bit to 1 in CR4
+// Enable double
   movl $0x40620, %eax
   movl %eax, %cr4
 
