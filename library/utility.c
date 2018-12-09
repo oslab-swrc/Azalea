@@ -174,14 +174,13 @@ void reversestring(char *buffer)
  */
 int vsprintf(char *buffer, const char *parameter, va_list ap)
 {
-//  QWORD i = 0, k = 0;
-  int i;
+  QWORD i = 0, k = 0;
   int buffer_index = 0;
   int format_length = 0, copy_length = 0;
   char *copy_string = NULL;
   QWORD q_value = 0;
   int i_value = 0;
-//  double d_value = 0;
+  double d_value = 0;
 
   format_length = a_strlen(parameter);
   for (i=0; i<format_length; i++) {
@@ -227,9 +226,7 @@ int vsprintf(char *buffer, const char *parameter, va_list ap)
 
       // Floating
       case 'f':
-// (double) make SSE instruction        
-/*
-	d_value = (double) (va_arg(ap, double));
+	    d_value = (double) (va_arg(ap, double));
         d_value += 0.005;
         buffer[buffer_index] = '0' + (QWORD) (d_value * 100) % 10;
         buffer[buffer_index + 1] = '0' + (QWORD) (d_value * 10) % 10;
@@ -244,7 +241,6 @@ int vsprintf(char *buffer, const char *parameter, va_list ap)
         buffer[buffer_index + 3 + k] = '\0';
         reversestring(buffer + buffer_index);
         buffer_index += 3 + k;
-*/
 	break;
 
       default:

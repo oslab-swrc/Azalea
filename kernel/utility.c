@@ -295,8 +295,7 @@ int lk_vsprintf(char *buffer, const char *parameter, va_list ap)
 
       // Floating
       case 'f':
-		// TODO
-//        d_value = (double) (va_arg(ap, double));
+        d_value = (double) (va_arg(ap, double));
         d_value += 0.005;
         buffer[buffer_index] = '0' + (QWORD) (d_value * 100) % 10;
         buffer[buffer_index + 1] = '0' + (QWORD) (d_value * 10) % 10;
