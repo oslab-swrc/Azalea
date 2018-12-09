@@ -25,13 +25,8 @@ void free_mem_init(void)
   BYTE* cur_bitmap = NULL;
   int block_count = 0, bitmap = 0;
 
-#if 0 
-  QWORD free_mem_start = va(CONFIG_FREE_MEM_START);
-  QWORD free_mem_end = va(CONFIG_FREE_MEM_END); 
-#else
-  QWORD free_mem_start = va(g_memory_start + CONFIG_KERNEL_SIZE);
-  QWORD free_mem_end = va(g_memory_end); 
-#endif
+  QWORD free_mem_start = va(g_memory_start + CONFIG_KERNEL_SIZE);  // free memory start addr
+  QWORD free_mem_end = va(g_memory_end);  // free memory end addr 
   QWORD free_mem_size = free_mem_end - free_mem_start;	// free memory size
 
   bitmap = bitmap_size(free_mem_size);	// bitmap size (block list index + bitmap address + bitmap)
