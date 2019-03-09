@@ -15,6 +15,9 @@ int g_cpu_size;
 
 extern QWORD g_memory_start;
 
+static int list_apic_id[288] = {0, };
+static int curr_cpu = 0;
+
 #define IA32_APIC_BASE_MSR		0x0000001B
 #define MSR_APIC_BASE			0x00000800
 #define MSR_LOCAL_APIC_ID		0x00000002
@@ -66,16 +69,21 @@ void disable_x2apic()
   wrmsr_my(IA32_APIC_BASE_MSR, msr & ~(MSR_X2APIC_ENABLE)) ;
 }
 
-#if 0
-QWORD  get_apic_id(void)
-{
-  return rdmsr_apic(MSR_APIC_BASE+MSR_LOCAL_APIC_ID) ;
-}
-#else
-/*
- * get APIC id
+/**
+ * Set physical APIC ID to the list with sequential number,
+ * then return the logical CPU ID. 
  */
-BYTE get_apic_id(void)
+BYTE set_apic_id(BYTE apicid)
+{
+  list_apic_id[apicid] = curr_cpu++;
+
+  return curr_cpu;
+}
+
+/*
+ * get physical APIC ID
+ */
+BYTE get_papic_id(void)
 {
   MP_CONFIGURATION_TABLE_HEADER *mp_header = NULL;
   QWORD local_apic_base_address = 0;
@@ -86,11 +94,20 @@ BYTE get_apic_id(void)
     mp_header = (MP_CONFIGURATION_TABLE_HEADER *)va((unsigned long)get_mp_config_manager()->mp_configuration_table_header);
     local_apic_base_address = mp_header->memory_map_io_address_of_local_apic;
     g_apic_id_address = local_apic_base_address + APIC_REGISTER_APIC_ID;
+  }
+
+  return (*((DWORD *) va_apic(g_apic_id_address)) >> 24);
 }
 
-  return (*((DWORD *) va_apic(g_apic_id_address)) >> 24) - g_cpu_start;
+/*
+ * get logical APIC ID
+ */
+BYTE get_apic_id(void)
+{
+  BYTE papic_id = get_papic_id();
+
+  return list_apic_id[papic_id];
 }
-#endif
 
 /*
  * start AP
@@ -108,12 +125,4 @@ BOOL startup_ap(void)
   lapic_cal_ticks_in_10ms();
 
   return TRUE;
-}
-
-/**
- * Return total number of cores
- */
-int get_core_num(void)
-{
-  return g_cpu_end - g_cpu_start + 1;
 }
