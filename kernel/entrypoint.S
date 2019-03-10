@@ -10,7 +10,7 @@
 .extern apic_id_address, g_ap_count
 .extern process_systemcall
 .extern release_thread_spl 
-.extern disable_x2apic
+.extern disable_x2apic, normalize_apic_id
 .global systemcall_entrypoint, context_switch, return_from_setup_thread
 
 start:
@@ -58,8 +58,9 @@ COPYEND:
   mov APIC_REGISTER_APIC_ID(%eax), %eax
   shr $24, %rax
 
-  // Substract the number of start core for to make the start core '0'
-  sub (CONFIG_CPU_START), %eax
+  // Register APIC ID and get sequential logical number of CORE
+  movq %rax, %rdi
+  call set_apic_id
 
   // Set the size of stack to 0x1000 (4KB)
   add $1, %rax

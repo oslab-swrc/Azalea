@@ -53,7 +53,9 @@ void Main(int boot_mode)
   g_vcon_addr = ((*((QWORD*) CONFIG_VCON_ADDR)) + CONFIG_PAGE_OFFSET);
   g_cpu_start = (*((QWORD*) CONFIG_CPU_START));
   g_cpu_end = (*((QWORD*) CONFIG_CPU_END));
-  g_cpu_size = g_cpu_end - g_cpu_start + 1;
+  // TODO: For now, APIC cannot wake more 256 CPU numbers, kernel starts with 2 core shortened 
+  // TODO: It should be removed when X2APIC will be applied.
+  g_cpu_size = g_cpu_end - g_cpu_start - 2;
   g_memory_start = (*(QWORD*) (CONFIG_MEM_START + CONFIG_PAGE_OFFSET))*1024*1024*1024;
   g_memory_end = (*(QWORD*) (CONFIG_MEM_END + CONFIG_PAGE_OFFSET)) << 30;
 

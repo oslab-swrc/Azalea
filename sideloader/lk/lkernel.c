@@ -143,7 +143,7 @@ static int wakeup_secondary_cpu_via_init(int phys_apicid, unsigned long start_ei
   unsigned long flags = 0;
 
   spin_lock_irqsave(&rtc_lock, flags);
-  CMOS_WRITE(0xF, 0xA);
+//  CMOS_WRITE(0xF, 0xA);
 //  CMOS_WRITE(0xa, 0xf);
   spin_unlock_irqrestore(&rtc_lock, flags);
   local_flush_tlb();
@@ -209,10 +209,10 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     // Set cpu and memory information based on index
     start_index = g_param[0];
     if (start_index != 0) {
-      core_start = (start_index*5+15);		// core_start
-      core_end = (start_index*5+19);		// core_end
-      memory_start = (start_index*10-5);	// memory_start
-      memory_end = (start_index*10+5);		// memory_end
+      core_start = (start_index * CPUS_PER_NODE);        // core_start
+      core_end = ((start_index+1) * CPUS_PER_NODE);      // core_end
+      memory_start = (start_index * MEMORYS_PER_NODE);   // memory_start
+      memory_end = ((start_index+1) * MEMORYS_PER_NODE);  // memory_end
     } else {
       core_start = g_param[1];
       core_end = g_param[2];

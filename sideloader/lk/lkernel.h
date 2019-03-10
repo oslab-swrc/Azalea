@@ -8,12 +8,15 @@
 #define LK_IMG_SIZE			0
 #define LK_LOADING			1
 #define LK_PARAM			4
-#define CPU_ON				100
 
+#define CPU_ON				100
 #define CPU_OFF				110
 #define IO_REMAP			300
 
 #define TOTAL_COUNT_OFFSET	0x83
+
+#define CPUS_PER_NODE       18
+#define MEMORYS_PER_NODE    48   // unit:GB
 
 #define REMOTE_PAGE_MEMORY_SIZE     64
 

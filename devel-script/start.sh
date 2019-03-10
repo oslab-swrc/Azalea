@@ -39,19 +39,28 @@ then
 	fi
 	BEGIN=$cpu
 	END=$(($cpu + 5))
+elif [ $index -eq 1 ]
+then
+	BEGIN=(8 12 40 44 72 76 104 108 136 140 168 172 200 204 232 236)
+elif [ $index -eq 2 ]
+then
+	BEGIN=(16 20 48 52 80 84 112 116 144 148 176 180 208 212 240 244)
+elif [ $index -eq 3 ]
+then
+	BEGIN=(24 28 56 60 88 92 120 124 152 156 184 188 216 220 248 252)
 else
-	BEGIN=$(($index * 5 + 15))
-	END=$(($BEGIN + 5))
+	echo "Wrong index"
+	exit 0
 fi
 
 insmod ../sideloader/lk/lk.ko
 $UTIL_DIR/lkload ../disk.img $index $cpu 0 $memory 0
 
-for ((I = ${BEGIN}; I < ${END}; I++))
+for ((I = 0; I < ${#BEGIN[*]}; I++))
 do 
-	CORE=${I}
+	CORE=${BEGIN[($I)]}
 	$UTIL_DIR/wake $CORE
-	if [ ${CORE} -eq ${BEGIN} ]
+	if [ ${CORE} -eq ${BEGIN[0]} ]
 	then 
 		sleep 1 
 	fi
