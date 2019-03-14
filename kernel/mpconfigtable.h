@@ -1,7 +1,7 @@
 #ifndef __MPCONFIGTABLE_H__
 #define __MPCONFIGTABLE_H__
 
-#include "types.h"
+#include "az_types.h"
 
 // Feature Byte of MP Floating Pointer
 #define MP_FLOATING_POINTER_FEATURE_BYTE1_USE_MP_TABLE	0x00

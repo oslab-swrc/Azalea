@@ -4,37 +4,16 @@
 #include "assemblyutility.h"
 #include "memory_config.h"
 #include "multiprocessor.h"
-#include "types.h"
+#include "az_types.h"
 #include "errno.h"
 #include "atomic.h"
 #include "macros.h"
 #include "irq.h"
 
-// __old and __new is for 64bit register assignement
-#define cmpxchg(ptr, old, new) ({ \
-  __typeof__(*(ptr)) __ret; \
-  __typeof__(*(ptr)) __old = old; \
-  __typeof__(*(ptr)) __new = new; \
-  volatile unsigned char *__ptr; \
-  __ptr = (volatile unsigned char *)(ptr); \
-  asm volatile("lock; cmpxchgq %2,%1\n\t" \
-    : "=a" (__ret), "+m" (*__ptr) \
-    : "r" (__new), "0" (__old) \
-    : "memory"); \
-  __ret; \
-})
-
-#define rfence() {}
-#define sfence() {}
-//#define mfence() { asm volatile ("mfence" ::: "memory"); }
-#define mfence() {}
+#define mfence() { asm volatile ("mfence" ::: "memory"); }
 
 // Irqsave spinlock initialization
 #define SPINLOCK_IRQSAVE_INIT { ATOMIC_INIT(0), ATOMIC_INIT(1), (DWORD)-1, 0, 0}
-
-typedef struct spinlock_struct {
-  volatile unsigned long lock;
-} spinlock_t __attribute__ ((aligned (8)));
 
 typedef struct spinlock_irqsave {
   atomic64_t queue;	// Internal queue
@@ -45,31 +24,6 @@ typedef struct spinlock_irqsave {
 } spinlock_irqsave_t __attribute__ ((aligned (8)));
 
 // Functions
-
-static inline void spinlock_init(spinlock_t *lock)
-{
-  lock->lock = FALSE;
-}
-
-static inline BOOL spinlock_trylock(spinlock_t *lock)
-{
-  if (cmpxchg(&(lock->lock), 0, 1) != FALSE)
-    return FALSE;
-  return TRUE;
-}
-
-static inline void spinlock_lock(spinlock_t *lock)
-{
-  do {
-    while (lock->lock == TRUE)
-      pause();
-  } while (cmpxchg(&(lock->lock), 0, 1) != FALSE);
-}
-
-static inline void spinlock_unlock(spinlock_t *lock)
-{
-  lock->lock = FALSE;
-}
 
 /**
  * Initialization of a irqsave spinlock

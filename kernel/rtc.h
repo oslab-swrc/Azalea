@@ -1,7 +1,7 @@
 #ifndef __RTC_H__
 #define __RTC_H__
 
-#include "types.h"
+#include "az_types.h"
 
 // Macros
 // I/O PORT

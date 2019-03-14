@@ -12,7 +12,7 @@ APP_DIR = ..
 CSOURCEFILES = $(wildcard *.c) 
 COBJECTFILES = $(notdir $(patsubst %.c,%.o,$(CSOURCEFILES)))
 
-INCS = -I$(LIB_DIR) -I$(KERNEL_DIR) -I$(ARCH_DIR)/$(TARGET)
+INCS = -I$(LIB_DIR) -I$(KERNEL_DIR) -I$(ARCH_DIR)/$(TARGET) -I../../include/api
 
 CC=gcc
 LD=ld

@@ -1,7 +1,7 @@
 #ifndef __SYSTEMCALL_H__
 #define __SYSTEMCALL_H__
 
-#include "types.h"
+#include "az_types.h"
 #include "assemblyutility.h"
 
 static inline void set_kernel_gs_base(QWORD kernel_pointer)

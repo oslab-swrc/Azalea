@@ -36,6 +36,7 @@
 #define SYSCALL_sys_yield               525
 #define SYSCALL_sys_kill                526
 #define SYSCALL_sys_signal              527
+#define SYSCALL_sys_gettimeofday        528
 
 #define SYSCALL_do_exit                 550
 #define SYSCALL_block_current_task      551

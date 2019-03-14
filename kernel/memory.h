@@ -1,9 +1,10 @@
 #ifndef __MEMORY_MANAGEMENT_H__
 #define __MEMORY_MANAGEMENT_H__
 
+#include <sys/types.h>
 #include "memory_config.h"
 #include "sync.h"
-#include "types.h"
+#include "az_types.h"
 
 #define MM_TRUE		0x01
 #define MM_FALSE	0x00

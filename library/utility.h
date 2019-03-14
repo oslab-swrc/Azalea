@@ -2,9 +2,10 @@
 #define __UTILITY_H__
 
 #include <stdarg.h>
+#include <sys/types.h>
 
 #include "atomic.h"
-#include "types.h"
+#include "az_types.h"
 
 /* Macro */
 #define MIN(x, y)     (((x) < (y)) ? (x) : (y))
@@ -51,7 +52,7 @@ struct az_timezone {
   int     tz_dsttime;     /* type of dst correction */
 };
 
-inline static unsigned long long rdtsc(void)
+inline static size_t rdtsc(void)
 {
   unsigned int lo, hi;
 

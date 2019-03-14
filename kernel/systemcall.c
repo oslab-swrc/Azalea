@@ -1,3 +1,4 @@
+#include <sys/lock.h>
 #include "systemcall.h"
 #include "console.h"
 #include "debug.h"
@@ -9,7 +10,7 @@
 #include "page.h"
 #include "systemcalllist.h"
 #include "thread.h"
-#include "types.h"
+#include "az_types.h"
 #include "utility.h"
 #include "semaphore.h"
 #include "delay.h"
@@ -297,6 +298,9 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
     break;
   case SYSCALL_get_freq:
     ret_code = get_freq();
+    break;
+  case SYSCALL_sys_gettimeofday:
+    ret_code = sys_gettimeofday((struct timeval *)param1, (void *)param2);
     break;
   default:
     printk("Invalid system calls");

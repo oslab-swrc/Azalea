@@ -1,17 +1,8 @@
 #ifndef __TIMER_H__
 #define __TIMER_H__
 
-#include "types.h"
-
-struct timeval {
-  long tv_sec;         /* seconds */
-  long tv_usec;        /* microseconds */
-};
-
-struct timezone {
-  int tz_minuteswest; /* minutes west of Greenwich */
-  int tz_dsttime;     /* type of dst correction */
-};      
+#include <sys/types.h>
+#include "az_types.h"
 
 inline static unsigned long long rdtsc(void)
 {
@@ -29,7 +20,8 @@ void timer_handler(int irq_no, QWORD rip);
 size_t sys_get_ticks(void);
 void sys_msleep(unsigned int ms);
 
-int sys_gettimeofday(struct timeval *tv, struct timezone *tz) ;
+//int sys_gettimeofday(struct timeval *tv, struct timezone *tz) ;
+int sys_gettimeofday(struct timeval *tv, void *tz);
 void gettimeofday_init(void) ;
 
 size_t get_start_tsc(void);

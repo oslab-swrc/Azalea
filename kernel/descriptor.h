@@ -3,7 +3,7 @@
 
 #include "memory_config.h"
 #include "multiprocessor.h"
-#include "types.h"
+#include "az_types.h"
 
 /* #define MAX_PROCESSOR_COUNT	1 */
 

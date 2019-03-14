@@ -1,3 +1,4 @@
+#include <sys/lock.h>
 #include "semaphore.h"
 #include "memory.h"
 

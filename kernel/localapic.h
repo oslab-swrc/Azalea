@@ -1,7 +1,7 @@
 #ifndef __LOCALAPIC_H__
 #define __LOCALAPIC_H__
 
-#include "types.h"
+#include "az_types.h"
 
 #define APIC_REGISTER_EOI				  0x0000B0
 #define APIC_REGISTER_SVR				  0x0000F0

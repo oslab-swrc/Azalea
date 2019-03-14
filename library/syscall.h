@@ -2,7 +2,7 @@
 #define __SYSCALL_H__
 
 #include "systemcalllist.h"
-#include "types.h"
+#include "az_types.h"
 #include "common.h"
 
 // source: linux kernel 2.6.0 source tree/includeasm-x86-64/unistd.h
@@ -153,6 +153,7 @@ BOOL sys_free(void* address);
 
 size_t get_start_tsc(void);
 size_t get_freq(void);
+int sys_gettimeofday(struct timeval *tv, void *tz);
 
 int print_log(char *msg);
 

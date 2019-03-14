@@ -1,7 +1,7 @@
 #ifndef __SIGNAL_H__
 #define __SIGNAL_H__
 
-#include "types.h"
+#include "az_types.h"
 #include "list.h"
 #include "sync.h"
 

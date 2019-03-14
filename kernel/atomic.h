@@ -1,7 +1,7 @@
 #ifndef __ATOMIC_H__
 #define __ATOMIC_H__
 
-#include "types.h"
+#include "az_types.h"
 
 #define ATOMIC_INIT(i)  { (i) }
 

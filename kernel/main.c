@@ -1,3 +1,4 @@
+#include <sys/lock.h>
 #include "assemblyutility.h"
 #include "console.h"
 #include "debug.h"
@@ -12,7 +13,7 @@
 #include "sync.h"
 #include "systemcall.h"
 #include "thread.h"
-#include "types.h"
+#include "az_types.h"
 #include "utility.h"
 #include "memory.h"
 #include "timer.h"

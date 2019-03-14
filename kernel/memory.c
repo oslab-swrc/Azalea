@@ -2,7 +2,7 @@
 #include "memory_config.h"
 #include "console.h"
 #include "page.h"
-#include "types.h"
+#include "az_types.h"
 #include "utility.h"
 
 static MM g_free_memory;

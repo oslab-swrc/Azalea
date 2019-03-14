@@ -1,3 +1,4 @@
+#include <sys/lock.h>
 #include "thread.h"
 #include "assemblyutility.h"
 #include "atomic.h"

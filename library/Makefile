@@ -11,7 +11,7 @@ NEWLIB_DIR = /opt/hermit/x86_64-hermit
 CSOURCEFILES = $(wildcard *.c)
 COBJECTFILES = $(notdir $(patsubst %.c,%.o,$(CSOURCEFILES)))
 
-INCS = -I$(KERNEL_DIR) -I$(ARCH_DIR)/$(TARGET)
+INCS = -I$(KERNEL_DIR) -I$(ARCH_DIR)/$(TARGET) -I../include/api
 
 CC=gcc
 
