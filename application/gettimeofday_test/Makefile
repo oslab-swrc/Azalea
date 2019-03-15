@@ -7,6 +7,7 @@ endif
 KERNEL_DIR = ../../kernel
 LIB_DIR = ../../library
 ARCH_DIR = ../../include
+NEWLIB_DIR = /opt/hermit/x86_64-hermit
 APP_DIR = ..
 
 CSOURCEFILES = $(wildcard *.c) 
@@ -24,7 +25,8 @@ all: ${COBJECTFILES} COPY
 %.o: %.c
 	${CC} ${CFLAGS} ${INCS} -o $*.o $<
 #	${LD} -o uapp.elf $*.o  /usr/lib64/libc.a -static ${LIB_DIR}/utility.o 
-	${LD} -o uapp.elf -e main $*.o ${LIB_DIR}/*.o 
+	${LD} -o uapp.elf -e main $*.o ${LIB_DIR}/*.o $(NEWLIB_DIR)/lib/libc.a -static -nostdlib
+
 
 COPY:
 	cp *.elf ${APP_DIR}/
