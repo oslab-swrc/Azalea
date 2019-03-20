@@ -1,6 +1,8 @@
 #ifndef __SYSCALL_H__
 #define __SYSCALL_H__
 
+#include <sys/types.h>
+
 #include "systemcalllist.h"
 #include "az_types.h"
 #include "common.h"
@@ -125,6 +127,7 @@ ssize_t sys_read(int fd, char* buf, size_t len);
 ssize_t sys_write(int fd, const char* buf, size_t len);
 ssize_t sys_sbrk(ssize_t incr);
 int sys_open(const char* name, int flags, int mode);
+int sys_creat(const char *pathname, int mode);
 int sys_close(int fd);
 void sys_msleep(unsigned int ms);
 int sys_sem_init(sem_t** sem, unsigned int value);

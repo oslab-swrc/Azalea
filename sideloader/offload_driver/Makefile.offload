@@ -1,0 +1,43 @@
+ifeq ($(TARGET),)
+        TARGET=knl
+endif
+
+obj-m := offload.o
+offload-y += offload_driver.o
+PWD     := $(shell pwd)
+CC      := ${CROSS_COMPILE}gcc
+AS      := ${CROSS_COMPILE}as
+
+ccflags-y := 
+
+#KDIR    := /home/dandelion/git/pcie-cloud/build/phi-kernel
+
+#SYSMAP  := $(KDIR)/System.map
+
+EXTRA_CFLAGS  += -g -DDEBUG -D__DEBUG__ -I$(UKDIR)/include/$(TARGET)
+EXTRA_CFLAGS += -DMIC -DTESTBED -DVCONSOLE
+EXTRA_CFLAGS += -I../../include
+
+default: prepare modules
+modules:
+	make -C $(KDIR) M=$(PWD) modules
+clean:
+	make -C $(KDIR) M=$(PWD) clean 
+	#rm -rf ../include/__kern_func_table.h 2>/dev/null || true
+	rm -rf ../include/__boot_param.h 2>/dev/null || true
+
+# Compile ../../kernel/entrypoint_32.S
+GCC32=gcc -ffreestanding -g
+CFLAG += -I../../include -DMIC -DTESTBED -DVCONSOLE -I$(UKDIR)/include/$(TARGET)
+prepare:
+	$(GCC32) $(CFLAG) -o entrypoint_32.o -c ../../kernel/entrypoint_32.S
+	../tools/gen_boot_param.sh ./entrypoint_32.o > ../include/__boot_param.h
+	rm ./entrypoint_32.o
+	#../tools/gen_kern_func_table.sh ${SYSMAP} > ../include/__kern_func_table.h
+modules_install:
+	rm -f $(MODULE_DIR)offload.k
+	mkdir -p $(MODULE_DIR)
+	cp offload.ko $(MODULE_DIR)
+	depmod -a
+
+

@@ -1,0 +1,145 @@
+#include <asm/apic.h>
+#include <asm/tlbflush.h>
+#include <asm/uaccess.h>
+#include <asm/page.h>
+#include <linux/delay.h>
+#include <linux/device.h>
+#include <linux/errno.h>
+#include <linux/fs.h>
+#include <linux/init.h>
+#include <linux/kernel.h>
+#include <linux/mc146818rtc.h>
+#include <linux/memblock.h>
+#include <linux/module.h>
+#include <linux/sched.h>
+#include <linux/timer.h>
+#include <linux/types.h>
+#include <linux/mm.h>
+#include <linux/highmem.h>
+
+#include "arch.h"
+#include "page_32.h"
+
+#include "../include/__boot_param.h"
+#include "../include/localapic.h"
+//#include "../ripc/ripc.h"
+
+#define P9OFF_DEVICE_NAME "9poff"
+
+#define PAGE_4K		(0x1000)
+
+
+static int p9off_major = 0;
+static struct class *p9off_class;
+
+static int p9off_open(struct inode *inode, struct file *filp);
+static int p9off_release(struct inode *inode, struct file *filep);
+//static long p9off_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
+static unsigned long p9off_mmap(struct file *filp, struct vm_area_struct *vma);
+
+static const struct file_operations p9off_fops = {
+  .open = p9off_open,
+  .release = p9off_release,
+  .mmap = p9off_mmap,
+};
+
+/*
+ * open p9off 
+ */
+static int p9off_open(struct inode *inode, struct file *filp)
+{
+  return 0;
+}
+
+/*
+ * relase p9off 
+ */
+static int p9off_release(struct inode *inode, struct file *filep)
+{
+  return 0;
+}
+
+/*
+ * mmap p9off 
+ */
+static unsigned long p9off_mmap(struct file *filp, struct vm_area_struct *vma)
+{
+  unsigned long vma_size = vma->vm_end - vma->vm_start;
+  unsigned long long offset = vma->vm_pgoff << PAGE_SHIFT;
+
+  vma->vm_flags |= VM_IO;  
+  vma->vm_flags |= (VM_DONTEXPAND | VM_DONTDUMP);
+  //vma->vm_flags |= VM_RESERVED;
+  //vma->vm_flags |= VM_PFNMAP;
+
+  //vma->vm_flags |= VM_RESERVED|VM_DONTEXPAND;
+  //vma->vm_flags |= VM_DONTCOPY;
+  //vma->vm_private_data = map;
+
+
+  //vma->vm_flags |= MAP_NORESERVE;
+  //vma->vm_flags |= VM_LOCKED;
+
+  //printk("1. 9poff remap start : %llx, pg offset: %llx\n", (u64) vma->vm_start, (u64) vma->vm_pgoff);
+
+  vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot); 
+  //printk(KERN_INFO "pg offset=%llx\n", vma->vm_pgoff); 
+
+  if(remap_pfn_range(vma, vma->vm_start, offset >> PAGE_SHIFT, vma_size, vma->vm_page_prot) < 0) {
+  //if(remap_pfn_range(vma, vma->vm_start, vma->vm_pgoff, vma_size, vma->vm_page_prot) < 0) {
+    printk("9poff remap failed\n");
+    return -EAGAIN;
+  }
+  //printk("2. 9poff remap start : %llx, pg offset: %llx\n", (u64) vma->vm_start, (u64) vma->vm_pgoff);
+
+  return 0;
+}
+
+/*
+ * mmap p9off 
+static unsigned long p9off_munmap(void *addr, size_t len)
+{
+  if (munmap (addr, len) == −1)
+    printk("9poff munmap failed\n");
+}
+ */
+
+/*
+ * initialize p9off
+ */
+static int __init p9off_init(void)
+{
+  struct device *err_dev = NULL;
+
+  p9off_major = register_chrdev(0, P9OFF_DEVICE_NAME, &p9off_fops);
+  if (p9off_major < 0) {
+    printk(KERN_ERR "unable to register 9poff : %d\n", p9off_major);
+    return -1;
+  }
+
+  p9off_class = class_create(THIS_MODULE, P9OFF_DEVICE_NAME);
+  err_dev = device_create(p9off_class, NULL, MKDEV(p9off_major, 0), NULL,
+                          P9OFF_DEVICE_NAME);
+
+  printk(KERN_INFO "9poff: register device at major %d\n", p9off_major);
+
+  return 0;
+}
+
+/*
+ * exitp9off 
+ */
+void p9off_exit(void)
+{
+  device_destroy(p9off_class, MKDEV(p9off_major, 0));
+  class_unregister(p9off_class);
+  class_destroy(p9off_class);
+  unregister_chrdev(p9off_major, P9OFF_DEVICE_NAME);
+
+  printk(KERN_INFO "9poff: removing device at major %d\n", p9off_major);
+}
+
+module_init(p9off_init)
+module_exit(p9off_exit)
+
+MODULE_LICENSE("GPL");

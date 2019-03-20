@@ -10,6 +10,13 @@
 extern "C" {
 #endif
 
+#if !defined(iovec)
+struct iovec {
+  void  *iov_base;
+  size_t iov_len;
+};
+#endif
+
 
 #ifdef __cplusplus
 }

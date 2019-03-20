@@ -3,13 +3,15 @@
 all:
 #       make -C pte_test
 #       make -C newlib_test
-	make -C gettimeofday_test
+#	make -C gettimeofday_test
 #       make -C semaphore_test
 #       make -C helloworld
+	make -C fio_test
 clean:
 #       make -C pte_test clean
 #       make -C newlib_test clean
-	make -C gettimeofday_test clean
+#	make -C gettimeofday_test clean
 #       make -C semaphore_test clean
 #       make -C helloworld clean
+	make -C fio_test clean
 
