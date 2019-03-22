@@ -5,7 +5,7 @@ endif
 CFLAG=-m64 -mno-red-zone -nostdlib -ffreestanding -Wall -mcmodel=large -g
 
 TEXT_BASE64=0xFFFF8000C0300000
-CFLAG+=-fomit-frame-pointer -fno-exceptions -fno-asynchronous-unwind-tables -fno-unwind-tables -DVCONSOLE -O0 -I. -Isystemcall -I../include/$(TARGET) -I../include/api -mno-mmx -mno-3dnow -mno-avx -D_$(TARGET)_
+CFLAG+=-fomit-frame-pointer -fno-exceptions -fno-asynchronous-unwind-tables -fno-unwind-tables -DVCONSOLE -O0 -I. -Ioffload -Isystemcall -I../include/$(TARGET) -I../include/api -mno-mmx -mno-3dnow -mno-avx -D_$(TARGET)_
 LDFLAG=-melf_x86_64 -T elf_x86_64.x
 
 GCC64=gcc $(CFLAG)   
@@ -17,7 +17,7 @@ AFLAG=-D__ASSEMBLY__
 ENTRYPOINTSOURCEFILE=entrypoint.S
 ENTRYPOINTOBJECTFILE=entrypoint.o
 
-CSOURCEFILES=$(patsubst %_32.c, ,$(wildcard *.c) $(wildcard ./systemcall/*.c))
+CSOURCEFILES=$(patsubst %_32.c, ,$(wildcard *.c) $(wildcard ./offload/*.c) $(wildcard ./systemcall/*.c))
 ASSEMBLYSOURCEFILES=$(patsubst %_32.S, ,$(wildcard *.S))
 COBJECTFILES=$(notdir $(patsubst %.c,%.o,$(CSOURCEFILES)))
 ASSEMBLYOBJECTFILES=$(notdir $(patsubst %.S,%.o,$(ASSEMBLYSOURCEFILES)))
@@ -51,11 +51,13 @@ $(ENTRYPOINTOBJECTFILE): $(ENTRYPOINTSOURCEFILE)
 	$(GCC64) $(AFLAG) -c $<
 
 prepare:
+	make -C offload
 	make -C systemcall
 
 clean:
 	rm -f *.bin *.o *.elf tags Dependency.dep
 	make -f Makefile_32 clean
+	make -C offload clean
 	make -C systemcall clean
 
 ifeq (Dependency.dep, $(wildcard Dependency.dep))

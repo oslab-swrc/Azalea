@@ -37,7 +37,7 @@ typedef struct channel_struct {
   //spinlock_t lock;
 } channel_t;
 
-void init_offload_channel();
+BOOL init_offload_channel();
 channel_t *get_offload_channel(int n_requested_channel);
 
 #endif

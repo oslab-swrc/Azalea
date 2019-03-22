@@ -18,7 +18,6 @@
 #include "elf_load.h"
 #include "memory.h"
 #include "signal.h"
-#include "offload_channel.h"
 
 extern void HALT() ;
 unsigned int shutdown_kernel = 0 ;
@@ -1134,7 +1133,7 @@ void release_thread_spl(TCB * prev)
 /**
  * Initially setup for idle thread
  */
-void setup_idle_thread(int thread_type)
+void setup_idle_thread()
 {
   TCB *thread_idle = NULL;
   int cid = get_apic_id();
@@ -1152,9 +1151,6 @@ void setup_idle_thread(int thread_type)
 
   lapic_start_timer_oneshot(thread_idle->remaining_time_slice);
 
-  if (thread_type == THREAD_TYPE_BSP)
-    init_offload_channel();
-
   enable_interrupt();
 }
 
@@ -1167,7 +1163,7 @@ void start_idle_thread(int thread_type)
   int cnt = 0;
   int wait_cnt = 0;
 
-  setup_idle_thread(thread_type);
+  setup_idle_thread();
 
   if (thread_type == THREAD_TYPE_BSP) {
     while (g_ap_count != g_cpu_size)

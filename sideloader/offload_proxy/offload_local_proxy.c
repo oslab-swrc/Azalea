@@ -15,7 +15,7 @@
 #define PAGE_SIZE (1 << PAGE_SHIFT)
 
 //mmapped unikernels' start memory address, unikernels's start physical address = 48G
-extern unsigned long mmap_unikernels_mem_base_va;
+extern unsigned long g_mmap_unikernels_mem_base_va;
 
 struct thread_channel_information {
    channel_t *ch;	
@@ -30,7 +30,7 @@ int g_n_threads;
 /*
  * offload thread
  */
-void *offload_proxy(void *arg)
+void *offload_local_proxy(void *arg)
 {
   struct thread_channel_information *thread_channels = (struct thread_channel_information *)arg;
 
@@ -110,7 +110,7 @@ void cmd(channel_t *cs)
       }
       break;
 
-    // stop offload_proxy which manages the channels on scif region
+    // stop offload_local_proxy which manages the channels on scif region
     case 'x':
       g_offload_sytemcall_runnable = 0;
 	  loop = 0;
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
   pthread_t *offload_threads;
 
   if (argc != 9) {
-    printf("usage: ./offload_proxy -o <no elements> -i <no elements> -c"
+    printf("usage: ./offload_local_proxy -o <no elements> -i <no elements> -c"
 	   " <no channels> -t <no threads>\n");
     exit(1);
   }
@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
       next_ch = curr_ch + (quotient_channel + 1);
       rest_channel--;
     }
-    pthread_create(offload_threads + i, NULL, offload_proxy, &thread_channels[i]);
+    pthread_create(offload_threads + i, NULL, offload_local_proxy, &thread_channels[i]);
 
     curr_ch = next_ch;
   }
@@ -244,8 +244,8 @@ __free_offload_threads:
   else
     printf("======== Program Failed ========\n");
 
-  if(mmap_unikernels_mem_base_va != 0)
-    munmap((void *) mmap_unikernels_mem_base_va, UNIKERNELS_MEM_SIZE); 
+  if(g_mmap_unikernels_mem_base_va != 0)
+    munmap((void *) g_mmap_unikernels_mem_base_va, UNIKERNELS_MEM_SIZE); 
 
 __exit:
 

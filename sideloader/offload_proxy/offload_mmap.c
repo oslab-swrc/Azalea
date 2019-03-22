@@ -8,7 +8,7 @@
 #include "offload_memory_config.h"
 
 // all unikernels memory start address
-unsigned long mmap_unikernels_mem_base_va = 0;
+unsigned long g_mmap_unikernels_mem_base_va = 0;
 
 // offload channel info address
 unsigned long g_offload_channels_info_va = 0;
@@ -124,8 +124,6 @@ int mmap_channels(channel_t *offload_channels, int n_offload_channels, int opage
 		cq_init(offload_channels[offload_channels_offset].in_cq, (ipages - 1) / CQ_ELE_PAGE_NUM);
 	}
 
-	//printf("%d channels mmap: htm(%d) mth(%d)\n", n_offload_channels, (opages - 1) / CQ_ELE_PAGE_NUM, (ipages - 1) / CQ_ELE_PAGE_NUM) ;
-
 	//set OFFLOAD_MAGIC
 	offload_channels_info = (unsigned long *) offload_channels_info_va;
 	*(offload_channels_info) = (unsigned long) OFFLOAD_MAGIC;
@@ -153,20 +151,18 @@ int mmap_unikernels_memory()
 		return (1);
 	}
 
-	//kernels_mem_base_pa = (unsigned long) 48 * 1024 * 1024 * 1024; // 48G
-	//kernels_mem_base_pa_len = (unsigned long) 48 * 3 * 1024 * 1024 * 1024;
 	kernels_mem_base_pa = UNIKERNELS_MEM_BASE_PA; // 48G
 	kernels_mem_base_pa_len = UNIKERNELS_MEM_SIZE; // 48G * 3
 
-	mmap_unikernels_mem_base_va = (unsigned long) mmap(NULL, kernels_mem_base_pa_len, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, kernels_mem_base_pa);
+	g_mmap_unikernels_mem_base_va = (unsigned long) mmap(NULL, kernels_mem_base_pa_len, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, kernels_mem_base_pa);
 
-	if(mmap_unikernels_mem_base_va == (unsigned long) MAP_FAILED)
+	if(g_mmap_unikernels_mem_base_va == (unsigned long) MAP_FAILED)
 	{
 		printf("mmap failed.\n") ;
 		close(offload_fd) ;
 		return (1);
 	}
-	printf("mmap = virtual address: 0x%lx physical address begin: 0x%lx end: 0x%lx\n", mmap_unikernels_mem_base_va, kernels_mem_base_pa, kernels_mem_base_pa + kernels_mem_base_pa_len) ;
+	printf("mmap = virtual address: 0x%lx physical address begin: 0x%lx end: 0x%lx\n", g_mmap_unikernels_mem_base_va, kernels_mem_base_pa, kernels_mem_base_pa + kernels_mem_base_pa_len) ;
 
 	close(offload_fd) ;
 
@@ -188,21 +184,19 @@ unsigned long get_va(unsigned long pa)
 
         offset = (unsigned long) pa - UNIKERNELS_MEM_BASE_PA;
 
-        return (mmap_unikernels_mem_base_va + offset);
+        return (g_mmap_unikernels_mem_base_va + offset);
 }
 
 
 
-int get_pa_base(unsigned long *pa_base) 
+unsigned long get_pa_base() 
 {
-	*pa_base = UNIKERNELS_MEM_BASE_PA;
-	return (0);
+	return(UNIKERNELS_MEM_BASE_PA);
 }
 
-int get_va_base(unsigned long *va_base) 
+unsigned long get_va_base() 
 {
-	*va_base = mmap_unikernels_mem_base_va;
-	return (0);
+	return (g_mmap_unikernels_mem_base_va);
 }
 
 

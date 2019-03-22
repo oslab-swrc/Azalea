@@ -4,14 +4,12 @@ ifeq ($(TARGET),)
   TARGET = knl
 endif
 
-KERNEL_DIR = ../kernel
-ARCH_DIR = ../include
 NEWLIB_DIR = /opt/hermit/x86_64-hermit
-
+UKDIR = ../
 CSOURCEFILES = $(wildcard *.c)
 COBJECTFILES = $(notdir $(patsubst %.c,%.o,$(CSOURCEFILES)))
 
-INCS = -I. -I$(KERNEL_DIR) -I$(ARCH_DIR)/$(TARGET) -I$(NEWLIB_DIR)/include
+INCS = -I. -I$(UKDIR)/include -I$(UKDIR)/include/$(TARGET) -I$(NEWLIB_DIR)/include
 
 CC=gcc
 
