@@ -100,6 +100,9 @@ extern "C" {
  * _SVID_SOURCE (deprecated by _DEFAULT_SOURCE)
  * _DEFAULT_SOURCE (or none of the above)
  * 	POSIX-1.2008 with BSD and SVr4 extensions
+ *
+ * _FORTIFY_SOURCE = 1 or 2
+ * 	Object Size Checking function wrappers
  */
 
 #ifdef _GNU_SOURCE
@@ -233,9 +236,11 @@ extern "C" {
  * __GNU_VISIBLE
  * 	GNU extensions; enabled with _GNU_SOURCE.
  *
+ * __SSP_FORTIFY_LEVEL
+ * 	Object Size Checking; defined to 0 (off), 1, or 2.
+ *
  * In all cases above, "enabled by default" means either by defining
  * _DEFAULT_SOURCE, or by not defining any of the public feature test macros.
- * Defining _GNU_SOURCE makes all of the above avaliable.
  */
 
 #ifdef _ATFILE_SOURCE
@@ -314,6 +319,17 @@ extern "C" {
 #define	__XSI_VISIBLE		0
 #endif
 
+#if _FORTIFY_SOURCE > 0 && !defined(__cplusplus) && !defined(__lint__) && \
+   (__OPTIMIZE__ > 0 || defined(__clang__)) && __GNUC_PREREQ__(4, 1)
+#  if _FORTIFY_SOURCE > 1
+#    define __SSP_FORTIFY_LEVEL 2
+#  else
+#    define __SSP_FORTIFY_LEVEL 1
+#  endif
+#else
+#  define __SSP_FORTIFY_LEVEL 0
+#endif
+
 /* RTEMS adheres to POSIX -- 1003.1b with some features from annexes.  */
 
 #ifdef __rtems__
@@ -328,11 +344,12 @@ extern "C" {
 #define _POSIX_MEMORY_PROTECTION	1
 #define _POSIX_MESSAGE_PASSING		1
 #define _POSIX_MONOTONIC_CLOCK		200112L
+#define _POSIX_CLOCK_SELECTION		200112L
 #define _POSIX_PRIORITIZED_IO		1
 #define _POSIX_PRIORITY_SCHEDULING	1
 #define _POSIX_REALTIME_SIGNALS		1
 #define _POSIX_SEMAPHORES		1
-/* #define _POSIX_SHARED_MEMORY_OBJECTS	1 */
+#define _POSIX_SHARED_MEMORY_OBJECTS	1
 #define _POSIX_SYNCHRONIZED_IO		1
 #define _POSIX_TIMERS			1
 #define _POSIX_BARRIERS                 200112L
@@ -365,6 +382,9 @@ extern "C" {
 /* UNIX98 added some new pthread mutex attributes */
 #define _UNIX98_THREAD_MUTEX_ATTRIBUTES         1
 
+/* POSIX 1003.26-2003 defined device control method */
+#define _POSIX_26_VERSION			200312L
+
 #endif
 
 /* XMK loosely adheres to POSIX -- 1003.1 */
@@ -382,13 +402,30 @@ extern "C" {
 
 #ifdef __CYGWIN__
 
-#if !defined(__STRICT_ANSI__) || defined(__cplusplus) || __STDC_VERSION__ >= 199901L
+#if __POSIX_VISIBLE >= 200809
 #define _POSIX_VERSION				200809L
 #define _POSIX2_VERSION				200809L
-#define _XOPEN_VERSION				   600
+#elif __POSIX_VISIBLE >= 200112
+#define _POSIX_VERSION				200112L
+#define _POSIX2_VERSION				200112L
+#elif __POSIX_VISIBLE >= 199506
+#define _POSIX_VERSION				199506L
+#define _POSIX2_VERSION				199506L
+#elif __POSIX_VISIBLE >= 199309
+#define _POSIX_VERSION				199309L
+#define _POSIX2_VERSION				199209L
+#elif __POSIX_VISIBLE >= 199209
+#define _POSIX_VERSION				199009L
+#define _POSIX2_VERSION				199209L
+#elif __POSIX_VISIBLE
+#define _POSIX_VERSION				199009L
+#endif
+#if __XSI_VISIBLE >= 4
+#define _XOPEN_VERSION				__XSI_VISIBLE
+#endif
 
 #define _POSIX_ADVISORY_INFO			200809L
-/* #define _POSIX_ASYNCHRONOUS_IO		    -1 */
+#define _POSIX_ASYNCHRONOUS_IO			200809L
 #define _POSIX_BARRIERS				200809L
 #define _POSIX_CHOWN_RESTRICTED			     1
 #define _POSIX_CLOCK_SELECTION			200809L
@@ -427,17 +464,20 @@ extern "C" {
 #define _POSIX_THREAD_SAFE_FUNCTIONS		200809L
 /* #define _POSIX_THREAD_SPORADIC_SERVER	    -1 */
 #define _POSIX_THREADS				200809L
-/* #define _POSIX_TIMEOUTS			    -1 */
-#define _POSIX_TIMERS				     1
+#define _POSIX_TIMEOUTS				200809L
+#define _POSIX_TIMERS				200809L
 /* #define _POSIX_TRACE				    -1 */
 /* #define _POSIX_TRACE_EVENT_FILTER		    -1 */
 /* #define _POSIX_TRACE_INHERIT			    -1 */
 /* #define _POSIX_TRACE_LOG			    -1 */
 /* #define _POSIX_TYPED_MEMORY_OBJECTS		    -1 */
 #define _POSIX_VDISABLE				   '\0'
-#define _POSIX2_C_BIND				200809L
-#define _POSIX2_C_DEV				200809L
-#define _POSIX2_CHAR_TERM			200809L
+
+#if __POSIX_VISIBLE >= 2
+#define _POSIX2_C_VERSION			_POSIX2_VERSION
+#define _POSIX2_C_BIND				_POSIX2_VERSION
+#define _POSIX2_C_DEV				_POSIX2_VERSION
+#define _POSIX2_CHAR_TERM			_POSIX2_VERSION
 /* #define _POSIX2_FORT_DEV			    -1 */
 /* #define _POSIX2_FORT_RUN			    -1 */
 /* #define _POSIX2_LOCALEDEF			    -1 */
@@ -447,8 +487,10 @@ extern "C" {
 /* #define _POSIX2_PBS_LOCATE			    -1 */
 /* #define _POSIX2_PBS_MESSAGE			    -1 */
 /* #define _POSIX2_PBS_TRACK			    -1 */
-#define _POSIX2_SW_DEV				200809L
-#define _POSIX2_UPE				200809L
+#define _POSIX2_SW_DEV				_POSIX2_VERSION
+#define _POSIX2_UPE				_POSIX2_VERSION
+#endif /* __POSIX_VISIBLE >= 2 */
+
 #define _POSIX_V6_ILP32_OFF32			    -1
 #ifdef __LP64__
 #define _POSIX_V6_ILP32_OFFBIG			    -1
@@ -459,10 +501,16 @@ extern "C" {
 #define _POSIX_V6_LP64_OFF64			    -1
 #define _POSIX_V6_LPBIG_OFFBIG			    -1
 #endif
+#define _POSIX_V7_ILP32_OFF32			_POSIX_V6_ILP32_OFF32
+#define _POSIX_V7_ILP32_OFFBIG			_POSIX_V6_ILP32_OFFBIG
+#define _POSIX_V7_LP64_OFF64			_POSIX_V6_LP64_OFF64
+#define _POSIX_V7_LPBIG_OFFBIG			_POSIX_V6_LPBIG_OFFBIG
 #define _XBS5_ILP32_OFF32			_POSIX_V6_ILP32_OFF32
 #define _XBS5_ILP32_OFFBIG			_POSIX_V6_ILP32_OFFBIG
 #define _XBS5_LP64_OFF64			_POSIX_V6_LP64_OFF64
 #define _XBS5_LPBIG_OFFBIG			_POSIX_V6_LPBIG_OFFBIG
+
+#if __XSI_VISIBLE
 #define _XOPEN_CRYPT				     1
 #define _XOPEN_ENH_I18N				     1
 /* #define _XOPEN_LEGACY			    -1 */
@@ -471,13 +519,11 @@ extern "C" {
 #define _XOPEN_SHM				     1
 /* #define _XOPEN_STREAMS			    -1 */
 /* #define _XOPEN_UNIX				    -1 */
+#endif /* __XSI_VISIBLE */
 
-#endif /* !__STRICT_ANSI__ || __cplusplus || __STDC_VERSION__ >= 199901L */
-
-/* The value corresponds to UNICODE version 4.0, which is the version
-   supported by XP.  Newlib supports 5.2 (2011) but so far Cygwin needs
-   the MS conversions for double-byte charsets. */
-#define __STDC_ISO_10646__ 200305L
+/* The value corresponds to UNICODE version 5.2, which is the current
+   state of newlib's wide char conversion functions. */
+#define __STDC_ISO_10646__ 200910L
 
 #endif /* __CYGWIN__ */
 

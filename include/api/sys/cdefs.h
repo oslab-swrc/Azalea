@@ -3,6 +3,8 @@
 /* Written 2000 by Werner Almesberger */
 
 /*-
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
  * Copyright (c) 1991, 1993
  *	The Regents of the University of California.  All rights reserved.
  *
@@ -17,7 +19,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 4. Neither the name of the University nor the names of its contributors
+ * 3. Neither the name of the University nor the names of its contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
  *
@@ -225,17 +227,6 @@
  * for a given compiler, let the compile fail if it is told to use
  * a feature that we cannot live without.
  */
-#ifdef lint
-#define	__dead2
-#define	__pure2
-#define	__unused
-#define	__packed
-#define	__aligned(x)
-#define	__alloc_align(x)
-#define	__alloc_size(x)
-#define	__section(x)
-#define	__weak_symbol
-#else
 #define	__weak_symbol	__attribute__((__weak__))
 #if !__GNUC_PREREQ__(2, 5) && !defined(__INTEL_COMPILER)
 #define	__dead2
@@ -259,15 +250,16 @@
 #endif
 #if __GNUC_PREREQ__(4, 3) || __has_attribute(__alloc_size__)
 #define	__alloc_size(x)	__attribute__((__alloc_size__(x)))
+#define	__alloc_size2(n, x)	__attribute__((__alloc_size__(n, x)))
 #else
 #define	__alloc_size(x)
+#define	__alloc_size2(n, x)
 #endif
 #if __GNUC_PREREQ__(4, 9) || __has_attribute(__alloc_align__)
 #define	__alloc_align(x)	__attribute__((__alloc_align__(x)))
 #else
 #define	__alloc_align(x)
 #endif
-#endif /* lint */
 
 #if !__GNUC_PREREQ__(2, 95)
 #define	__alignof(x)	__offsetof(struct { char __a; x __b; }, __b)
@@ -277,7 +269,7 @@
  * Keywords added in C11.
  */
 
-#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L || defined(lint)
+#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
 
 #if !__has_extension(c_alignas)
 #if (defined(__cplusplus) && __cplusplus >= 201103L) || \
@@ -295,7 +287,8 @@
 #define	_Alignof(x)		__alignof(x)
 #endif
 
-#if !__has_extension(c_atomic) && !__has_extension(cxx_atomic)
+#if !defined(__cplusplus) && !__has_extension(c_atomic) && \
+    !__has_extension(cxx_atomic)
 /*
  * No native support for _Atomic(). Place object in structure to prevent
  * most forms of direct non-atomic access.
@@ -313,7 +306,7 @@
 #if (defined(__cplusplus) && __cplusplus >= 201103L) || \
     __has_extension(cxx_static_assert)
 #define	_Static_assert(x, y)	static_assert(x, y)
-#elif __GNUC_PREREQ__(4,6)
+#elif __GNUC_PREREQ__(4,6) && !defined(__cplusplus)
 /* Nothing, gcc 4.6 and higher has _Static_assert built-in */
 #elif defined(__COUNTER__)
 #define	_Static_assert(x, y)	__Static_assert(x, __COUNTER__)
@@ -360,6 +353,21 @@
 	    __builtin_types_compatible_p(__typeof(expr), t), yes, no)
 #endif
 
+/*
+ * C99 Static array indices in function parameter declarations.  Syntax such as:
+ * void bar(int myArray[static 10]);
+ * is allowed in C99 but not in C++.  Define __min_size appropriately so
+ * headers using it can be compiled in either language.  Use like this:
+ * void bar(int myArray[__min_size(10)]);
+ */
+#if !defined(__cplusplus) && \
+    (defined(__clang__) || __GNUC_PREREQ__(4, 6)) && \
+    (!defined(__STDC_VERSION__) || (__STDC_VERSION__ >= 199901))
+#define __min_size(x)	static (x)
+#else
+#define __min_size(x)	(x)
+#endif
+
 #if __GNUC_PREREQ__(2, 96)
 #define	__malloc_like	__attribute__((__malloc__))
 #define	__pure		__attribute__((__pure__))
@@ -369,7 +377,7 @@
 #endif
 
 #if __GNUC_PREREQ__(3, 1) || (defined(__INTEL_COMPILER) && __INTEL_COMPILER >= 800)
-#define	__always_inline	__attribute__((__always_inline__))
+#define	__always_inline	__inline__ __attribute__((__always_inline__))
 #else
 #define	__always_inline
 #endif
@@ -381,7 +389,7 @@
 #endif
 
 #if __GNUC_PREREQ__(3, 3)
-#define	__nonnull(x)	__attribute__((__nonnull__(x)))
+#define	__nonnull(x)	__attribute__((__nonnull__ x))
 #define	__nonnull_all	__attribute__((__nonnull__))
 #else
 #define	__nonnull(x)
@@ -420,7 +428,7 @@
  * software that is unaware of C99 keywords.
  */
 #if !(__GNUC__ == 2 && __GNUC_MINOR__ == 95)
-#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901 || defined(lint)
+#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901
 #define	__restrict
 #else
 #define	__restrict	restrict
@@ -464,11 +472,16 @@
 #endif
 
 #if __GNUC_PREREQ__(4, 0)
-#define	__sentinel	__attribute__((__sentinel__))
+#define	__null_sentinel	__attribute__((__sentinel__))
 #define	__exported	__attribute__((__visibility__("default")))
+/* Only default visibility is supported on PE/COFF targets. */
+#ifndef __CYGWIN__
 #define	__hidden	__attribute__((__visibility__("hidden")))
 #else
-#define	__sentinel
+#define	__hidden
+#endif
+#else
+#define	__null_sentinel
 #define	__exported
 #define	__hidden
 #endif
@@ -515,22 +528,6 @@
 	    __attribute__((__format__ (__strfmon__, fmtarg, firstvararg)))
 #define	__strftimelike(fmtarg, firstvararg) \
 	    __attribute__((__format__ (__strftime__, fmtarg, firstvararg)))
-#endif
-
-/*
- * FORTIFY_SOURCE, and perhaps other compiler-specific features, require
- * the use of non-standard inlining.  In general we should try to avoid
- * using these but GCC-compatible compilers tend to support the extensions
- * well enough to use them in limited cases.
- */ 
-#if defined(__GNUC_GNU_INLINE__) || defined(__GNUC_STDC_INLINE__)
-#if __GNUC_PREREQ__(4, 3) || __has_attribute(__artificial__)
-#define	__gnu_inline	__attribute__((__gnu_inline__, __artificial__))
-#else
-#define	__gnu_inline	__attribute__((__gnu_inline__))
-#endif /* artificial */
-#else
-#define	__gnu_inline
 #endif
 
 /* Compiler-dependent macros that rely on FreeBSD-specific extensions. */
@@ -625,6 +622,21 @@
 #endif
 
 /*
+ * Nullability qualifiers: currently only supported by Clang.
+ */
+#if !(defined(__clang__) && __has_feature(nullability))
+#define	_Nonnull
+#define	_Nullable
+#define	_Null_unspecified
+#define	__NULLABILITY_PRAGMA_PUSH
+#define	__NULLABILITY_PRAGMA_POP
+#else
+#define	__NULLABILITY_PRAGMA_PUSH _Pragma("clang diagnostic push")	\
+	_Pragma("clang diagnostic ignored \"-Wnullability-completeness\"")
+#define	__NULLABILITY_PRAGMA_POP _Pragma("clang diagnostic pop")
+#endif
+
+/*
  * Type Safety Checking
  *
  * Clang provides additional attributes to enable checking type safety
@@ -632,7 +644,7 @@
  */
 
 #if __has_attribute(__argument_with_type_tag__) && \
-    __has_attribute(__type_tag_for_datatype__) && !defined(lint)
+    __has_attribute(__type_tag_for_datatype__)
 #define	__arg_type_tag(arg_kind, arg_idx, type_tag_idx) \
 	    __attribute__((__argument_with_type_tag__(arg_kind, arg_idx, type_tag_idx)))
 #define	__datatype_type_tag(kind, type) \
@@ -661,6 +673,8 @@
 #endif
 
 /* Structure implements a lock. */
+/* FIXME: Use __lockable__, etc. to avoid colliding with user namespace macros,
+ * once clang is fixed: https://bugs.llvm.org/show_bug.cgi?id=34319 */
 #define	__lockable		__lock_annotate(lockable)
 
 /* Function acquires an exclusive or shared lock. */

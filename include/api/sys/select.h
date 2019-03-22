@@ -1,14 +1,3 @@
-/* select.h
-   Copyright 1998, 1999, 2000, 2001, 2005, 2009 Red Hat, Inc.
-
-   Written by Geoffrey Noer <noer@cygnus.com>
-
-This file is part of Cygwin.
-
-This software is a copyrighted work licensed under the terms of the
-Cygwin license.  Please consult the file "CYGWIN_LICENSE" for
-details. */
-
 #ifndef _SYS_SELECT_H
 #define _SYS_SELECT_H
 
@@ -19,7 +8,7 @@ details. */
    includes the W32api winsock[2].h header must know what it is doing;
    it must not call the Cygwin select function.
 */
-# if !(defined (_WINSOCK_H) || defined(__hermit__) || defined (_WINSOCKAPI_) || defined (__USE_W32_SOCKETS))
+# if !(defined (_WINSOCK_H) || defined (_WINSOCKAPI_) || defined (__USE_W32_SOCKETS))
 
 #include <sys/cdefs.h>
 #include <sys/_sigset.h>
