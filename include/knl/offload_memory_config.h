@@ -1,11 +1,11 @@
 #ifndef __OFFLOAD_MEMORY_CONFIG_H__
 #define __OFFLOAD_MEMORY_CONFIG_H__
 
-#define UNIKERNELS_MEM_BASE_PA  ((unsigned long) 48 * 1024 * 1024 * 1024)       // 48G 
-#define UNIKERNELS_MEM_SIZE     ((unsigned long) 48 * 3 *1024 * 1024 * 1024)    // 48G * 3
+#define UNIKERNELS_MEM_BASE_PA  (0xC00000000)		// 48G 
+#define UNIKERNELS_MEM_SIZE     (0xC00000000 * 3)	// 48G * 3
 
 // reference this value from "memory_config.h" in unikernel
-#define CONFIG_SHARED_MEMORY        (0xA80000000)                               // 42GB
+#define CONFIG_SHARED_MEMORY	(0xA80000000)		// 42GB
 
 #define CONFIG_SHARED_MEMORY_PA	(CONFIG_SHARED_MEMORY)
 

@@ -1,10 +1,15 @@
 #include "offload_channel.h"
 #include "offload_message.h"
 
-/* 
- * send_sys_message
+/**
+ * @brief send offload message
+ * @param out_cq circular queue
+ * @param in_cq circular queue
+ * @param offload_function_type system call type
+ * @param ret the result of systgem call
+ * return none
  */
-void send_sys_message(struct circular_queue *out_cq, int tid, int offload_function_type, unsigned long  ret) 
+void send_offload_message(struct circular_queue *out_cq, int tid, int offload_function_type, unsigned long  ret) 
 {
 cq_element *ce = NULL;
 io_packet_t *out_pkt = NULL;

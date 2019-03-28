@@ -23,23 +23,23 @@ struct thread_channel_information {
 }; 
 
 
-int g_offload_sytemcall_runnable;
+int g_offload_channel_runnable;
 int g_n_channels;
 int g_n_threads;
 
-/*
- * offload thread
+/**
+ * @brief offload local proxy thread
+ * @param arg contains channels and channel number for this thread 
+ * @return (NULL)
  */
 void *offload_local_proxy(void *arg)
 {
   struct thread_channel_information *thread_channels = (struct thread_channel_information *)arg;
 
-  //struct channel_struct *offload_channels = (struct channel_struct *)arg;
   int n_channels_of_thread = 0;
   struct channel_struct *offload_channels = NULL;
   struct channel_struct *curr_channel = NULL;
   struct circular_queue *in_cq = NULL;
-  struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
 
   int i = 0;
@@ -47,33 +47,38 @@ void *offload_local_proxy(void *arg)
   offload_channels = thread_channels->ch;
   n_channels_of_thread = thread_channels->n_ch;
 
-  while (g_offload_sytemcall_runnable) {
+  while (g_offload_channel_runnable) {
 
-    for(i = 0; i < n_channels_of_thread && g_offload_sytemcall_runnable; i++) {
+    for(i = 0; i < n_channels_of_thread && g_offload_channel_runnable; i++) {
 
       curr_channel = (offload_channels + i);
       in_cq = curr_channel->in_cq;
 
       if(cq_avail_data(in_cq)) {
 
-        out_cq = curr_channel->out_cq;
         in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
         
         switch(in_pkt->io_function_type) {
           case SYSCALL_sys_read :
-             sys_off_read(in_pkt, in_cq, out_cq);
+             sys_off_read(curr_channel);
              break;
           case SYSCALL_sys_write :
-             sys_off_write(in_pkt, in_cq, out_cq);
+             sys_off_write(curr_channel);
+             break;
+          case SYSCALL_sys_lseek :
+             sys_off_lseek(curr_channel);
              break;
           case SYSCALL_sys_open :
-             sys_off_open(in_pkt, in_cq, out_cq);
+             sys_off_open(curr_channel);
              break;
           case SYSCALL_sys_creat :
-             sys_off_creat(in_pkt, in_cq, out_cq);
+             sys_off_creat(curr_channel);
              break;
           case SYSCALL_sys_close :
-             sys_off_close(in_pkt, in_cq, out_cq);
+             sys_off_close(curr_channel);
+             break;
+          case SYSCALL_sys_unlink :
+             sys_off_unlink(curr_channel);
              break;
           default :
 	     printf("function type: unknown\n");
@@ -84,10 +89,15 @@ void *offload_local_proxy(void *arg)
   }
 
   pthread_exit((void *)0);
-  return NULL;
+  return (NULL);
 }
 
 
+/**
+ * @brief wait command and do command
+ * @param  channel
+ * @return none
+ */
 void cmd(channel_t *cs)
 {
   struct circular_queue *ocq;
@@ -112,7 +122,7 @@ void cmd(channel_t *cs)
 
     // stop offload_local_proxy which manages the channels on scif region
     case 'x':
-      g_offload_sytemcall_runnable = 0;
+      g_offload_channel_runnable = 0;
 	  loop = 0;
       break;
 
@@ -128,6 +138,13 @@ void cmd(channel_t *cs)
 }
 
 
+/**
+ * @brief offload local proxy main
+ * @param argc
+ * @param argv  "-o <no elements> -i <no elements> -c"
+ *              " <no channels> -t <no threads>
+ * @return  success 0, fail > 0
+ */
 int main(int argc, char *argv[])
 {
   channel_t *offload_channels;
@@ -186,7 +203,7 @@ int main(int argc, char *argv[])
   if (err)
     goto __end;
 
-  g_offload_sytemcall_runnable = 1;
+  g_offload_channel_runnable = 1;
 
   int quotient_channel = g_n_channels / g_n_threads;
   int rest_channel = g_n_channels % g_n_threads;

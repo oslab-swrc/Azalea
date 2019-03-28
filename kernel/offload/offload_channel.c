@@ -7,6 +7,12 @@ static int g_offload_initialization_flag;
 static channel_t *g_offload_channels;
 static int g_n_offload_channels;
 
+/**
+ * @brief initialize circular queue
+ * @param cq pointer to circular queue
+ * @param size the size of circular queue
+ * @return none
+ */
 void cq_init(struct circular_queue *cq, unsigned long size)
 {
   cq->head = 0;
@@ -14,27 +20,53 @@ void cq_init(struct circular_queue *cq, unsigned long size)
   cq->size = size;
 }
 
+/**
+ * @brief return the aviilable size of circular queue
+ * @param cq pointer to circular queue
+ * @return available data size
+ */
 int cq_avail_data(struct circular_queue *cq)
 {
   return (cq->head - cq->tail) & (cq->size - 1);
 }
 
+/**
+ * @brief return the free space size of circular queue
+ * @param cq pointer to circular queue
+ * @return free space size
+ */
 int cq_free_space(struct circular_queue *cq)
 {
   return (cq->size - 1 - cq_avail_data(cq));
 }
 
+/**
+ * @brief return circular queue is full or not
+ * @param cq pointer to circular queue
+ * @return  if full 1 else 0
+ */
 int cq_is_full(struct circular_queue *cq)
 {
   return ((cq->tail + 1) % cq->size == cq->head);
 }
 
+/**
+ * @brief return circular queue is empty or not
+ * @param cq pointer to circular queue
+ * @return  if empty 1 else 0
+ */
 int cq_is_empty(struct circular_queue *cq)
 {
   return (cq->head == cq->tail);
 }
 
-// Call this function after confirming enough room is available
+/**
+ * @brief add data to circular cueue
+ * Call this function after confirming enough room is available
+ * @param cq pointer to circular queue
+ * @param data data to add
+ * @return (1)
+ */
 int cq_add_data(struct circular_queue *cq, char data)
 {
   while (cq_free_space(cq) == 0);
@@ -45,7 +77,13 @@ int cq_add_data(struct circular_queue *cq, char data)
   return 1;
 }
 
-// Call this function after confirming requested size of data is available
+/**
+ * @brief remove data from circular queue
+ * Call this function after confirming requested size of data is available
+ * @param cq pointer to circular queue
+ * @param data data to remove
+ * @return (1)
+ */
 int cq_remove_data(struct circular_queue *cq, char *data)
 {
   while (cq_avail_data(cq) == 0);
@@ -56,8 +94,9 @@ int cq_remove_data(struct circular_queue *cq, char *data)
   return 1;
 }
 
-/*
- * initialize io offload
+/**
+ * @brief initialize io offload
+ * @return success (TRUE), fail (FALSE)
  */
 BOOL init_offload_channel()
 {
@@ -109,9 +148,11 @@ BOOL init_offload_channel()
 	return(TRUE);
 }
 
-/*
- * get offload channel
+/**
+ * @brief get offload channel
  * channel: 0 ~ (OFFLOAD_MAX_CHANNEL-1)
+ * @param n_requested_channel channel number to use
+ * @return success (pointer to channel), fail (NULL)
  */
 channel_t *get_offload_channel(int n_requested_channel)
 {

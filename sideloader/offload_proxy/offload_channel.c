@@ -3,8 +3,11 @@
 
 #include "offload_channel.h"
 
-/*
- * cq_init()
+/**
+ * @brief initialze circular queue
+ * @param cq circular queue
+ * @param size circular queue size
+ * @return none
  */
 void cq_init(struct circular_queue *cq, unsigned long size)
 {
@@ -13,8 +16,10 @@ void cq_init(struct circular_queue *cq, unsigned long size)
   cq->size = size;
 }
 
-/*
- * cq_avail_data()
+/**
+ * @brief cq_avail_data()
+ * @param cq cicular queue
+ * @return (availalbe data size)
  */
 int cq_avail_data(struct circular_queue *cq)
 {
@@ -22,16 +27,21 @@ int cq_avail_data(struct circular_queue *cq)
 }
 
 /*
- * cq_free_space()
+ * @brief cq_free_space()
+ * @param cq circular queue
+ * @return (free space size)
  */
 int cq_free_space(struct circular_queue *cq)
 {
   return (cq->size - 1 - cq_avail_data(cq));
 }
 
-/*
- * cq_add_data()
+/**
+ * @brief cq_add_data()
  * Call this function after confirming enough room is available
+ * @param cq circular queue
+ * @param data to add
+ * @return (1)
  */
 int cq_add_data(struct circular_queue *cq, char data)
 {
@@ -43,9 +53,12 @@ int cq_add_data(struct circular_queue *cq, char data)
   return 1;
 }
 
-/*
- * cq_remove_data()
+/**
+ * @brief cq_remove_data()
  * Call this function after confirming requested size of data is available
+ * @param cq circular queue
+ * @param data to add
+ * @return (1)
  */
 int cq_remove_data(struct circular_queue *cq, char *data)
 {
@@ -57,8 +70,10 @@ int cq_remove_data(struct circular_queue *cq, char *data)
   return 1;
 }
 
-/*
- * init_channel()
+/**
+ * @brief initialize channel
+ * @param ioc channel
+ * @return none
  */
 void init_channel(channel_t *ioc)
 {

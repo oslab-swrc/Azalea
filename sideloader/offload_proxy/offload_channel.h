@@ -4,8 +4,8 @@
 #define	PAGE_SIZE_4K	(0x1000)
 #define	PAGE_SIZE_2M	(0x200000)
 
-#define CQ_ELE_PAGE_NUM (130)		// 
-#define CQ_ELE_SIZE (130 * 4096)	// 8K + 512K
+#define CQ_ELE_PAGE_NUM (130)		// 2 + 128 
+#define CQ_ELE_SIZE	(130 * 4096)	// 8K + 512K
 
 // Circular queue struct
 typedef struct cq_element_struct {
@@ -19,6 +19,7 @@ struct circular_queue {
   cq_element data[0] __attribute__((aligned(4096)));
 };
 
+// Circular queue function
 void cq_init(struct circular_queue *cq, unsigned long size);
 int cq_avail_data(struct circular_queue *cq);
 int cq_free_space(struct circular_queue *cq);
@@ -35,6 +36,7 @@ typedef struct channel_struct {
   unsigned long in_cq_len;
 } channel_t;
 
+// Channel function
 void init_channel(channel_t *ioc);
 
 #endif

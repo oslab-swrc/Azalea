@@ -42,6 +42,6 @@ typedef struct io_packet_struct {
   io_buffer_t buffer;
 } io_packet_t;
 
-void send_sys_message(struct circular_queue *out_cq, int tid, int offload_function_type, unsigned long  ret);
+void send_offload_message(struct circular_queue *out_cq, int tid, int offload_function_type, unsigned long  ret);
 
 #endif

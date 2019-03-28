@@ -4,8 +4,20 @@
 //#define   LOCK_ENABLED
 
 
-
-void send_sys_message(struct circular_queue *ocq, int tid, int offload_function_type, QWORD param1, QWORD param2, QWORD param3, QWORD param4, QWORD param5, QWORD param6) 
+/**
+ * @brief send offload message
+ * @param ocq circular queue
+ * @param tid thread id
+ * @param offload_function_type system call type
+ * @param param1 1st parameter
+ * @param param2 2nd parameter
+ * @param param3 3rd parameter
+ * @param param4 4th parameter
+ * @param param5 5th parameter
+ * @param param6 6th parameter
+ * return none
+ */
+void send_offload_message(struct circular_queue *ocq, int tid, int offload_function_type, QWORD param1, QWORD param2, QWORD param3, QWORD param4, QWORD param5, QWORD param6) 
 {
 cq_element *ce = NULL;
 io_packet_t *opkt = NULL;
@@ -16,8 +28,6 @@ io_packet_t *opkt = NULL;
 #else
 	while (cq_free_space(ocq) == 0);
 #endif
-        //lk_print_xy(0, 1, "send msg : pa1:%Q, pa2:%Q, pa3:%Q", param1, param2, param3);
-        //lk_print_xy(0, 2, "send msg : pa1:%d, pa2:%d, pa3:%d", param1, param2, param3);
 	// make packet header
 	ce = (ocq->data + ocq->head);
 	opkt = (io_packet_t *) ce;
@@ -32,7 +42,6 @@ io_packet_t *opkt = NULL;
 	opkt->param5 = param5;
 	opkt->param6 = param6;
 
-        //lk_print_xy(0, 3, "send msg : ocq->head:%d, ocq->tail:%d, size:%d", ocq->head, ocq->tail, ocq->size);
 	ocq->head = (ocq->head + 1) % ocq->size;
 
 #ifdef LOCK_ENABLED
@@ -40,8 +49,14 @@ io_packet_t *opkt = NULL;
 #endif
 }
 
-
-QWORD receive_sys_message(struct circular_queue *icq, int tid, int offload_function_type)
+/**
+ *@brief receive offload message
+ *@param icq circular queue
+ *@param tid thread id
+ *@param offload_function_type system call type
+ *@return ret result of system call
+ */
+QWORD receive_offload_message(struct circular_queue *icq, int tid, int offload_function_type)
 {
 cq_element *ce = NULL;
 io_packet_t *ipkt = NULL;

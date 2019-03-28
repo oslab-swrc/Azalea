@@ -10,20 +10,31 @@
 #include "offload_message.h"
 #include "offload_mmap.h"
 
+//#define _DEBUG
 
-/* 
- * open
+/**
+ * @brief execute open system call
+ * @param channel 
+ * @return none
  */
-void sys_off_open(io_packet_t *in_pkt, struct circular_queue *in_cq, struct circular_queue *out_cq)
+void sys_off_open(struct channel_struct *ch)
 {
+  struct circular_queue *in_cq = NULL;
+  struct circular_queue *out_cq = NULL;
+  io_packet_t *in_pkt = NULL;
+
   int  iret = -1;
 
-  char *path = NULL;;
+  char *path = NULL;
   int  oflag = 0;
   mode_t mode = 0;
 
   int  tid = 0;
   int  offload_function_type = 0;
+
+  in_cq = ch->in_cq;
+  out_cq = ch->out_cq;
+  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -31,6 +42,10 @@ void sys_off_open(io_packet_t *in_pkt, struct circular_queue *in_cq, struct circ
   path = (char *) get_va(in_pkt->param1);
   oflag = (int) in_pkt->param2;
   mode = (mode_t) in_pkt->param3;
+
+#ifdef _DEBUG
+  printf("\nopen system call: path=%s, flags=%d, mode=%d", path, oflag, mode);
+#endif
 
   // empty in_cq
   in_cq->tail = (in_cq->tail + 1) % in_cq->size;
@@ -47,14 +62,20 @@ void sys_off_open(io_packet_t *in_pkt, struct circular_queue *in_cq, struct circ
 	fprintf(stdout, "%s\n", strerror(errno));
 
   // retrun ret
-  send_sys_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+  send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
 }
 
-/* 
- * creat
+/**
+ * @brief execute creat system call
+ * @param channel 
+ * @return none
  */
-void sys_off_creat(io_packet_t *in_pkt, struct circular_queue *in_cq, struct circular_queue *out_cq)
+void sys_off_creat(struct channel_struct *ch)
 {
+  struct circular_queue *in_cq = NULL;
+  struct circular_queue *out_cq = NULL;
+  io_packet_t *in_pkt = NULL;
+
   int  iret = -1;
 
   char *path = NULL;
@@ -63,11 +84,19 @@ void sys_off_creat(io_packet_t *in_pkt, struct circular_queue *in_cq, struct cir
   int  tid = 0;
   int  offload_function_type = 0;
 
+  in_cq = ch->in_cq;
+  out_cq = ch->out_cq;
+  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
 
   path = (char *) get_va(in_pkt->param1);
   mode = (mode_t) in_pkt->param2;
+
+#ifdef _DEBUG
+  printf("\ncreat system call: path=%s, mode=%d", path, mode);
+#endif
 
   // empty in_cq
   in_cq->tail = (in_cq->tail + 1) % in_cq->size;
@@ -79,11 +108,16 @@ void sys_off_creat(io_packet_t *in_pkt, struct circular_queue *in_cq, struct cir
 	fprintf(stdout, "%s\n", strerror(errno));
 
   // retrun ret
-  send_sys_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+  send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
 }
 
-/*
- * do_sys_off_read_v
+/**
+ * @brief execute read system call
+ * do read according to struct iovec data 
+ * @param fd file descriptor
+ * @param iov_pa iovec data
+ * @param iovcntr iovec count 
+ * @return success (read bytes), fail (-1)
  */
 ssize_t do_sys_off_read_v(int fd, unsigned long iov_pa, int iovcnt)
 {
@@ -113,15 +147,19 @@ ssize_t do_sys_off_read_v(int fd, unsigned long iov_pa, int iovcnt)
 	  readbytes += count;
 	}
 
-	//fprintf(stdout, "\nread : fd=%d read bytes=%d", fd, readbytes);
 	return readbytes;
 }
 
-/*
- * read 
+/**
+ * @brief execute write system call
+ * @param channel 
+ * @return none
  */
-void sys_off_read(io_packet_t *in_pkt, struct circular_queue *in_cq, struct circular_queue *out_cq)
+void sys_off_read(struct channel_struct *ch)
 {
+  struct circular_queue *in_cq = NULL;
+  struct circular_queue *out_cq = NULL;
+  io_packet_t *in_pkt = NULL;
 
   ssize_t sret = 0;
 
@@ -131,6 +169,10 @@ void sys_off_read(io_packet_t *in_pkt, struct circular_queue *in_cq, struct circ
 
   int tid = 0;
   int  offload_function_type = 0;
+
+  in_cq = ch->in_cq;
+  out_cq = ch->out_cq;
+  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -150,11 +192,16 @@ void sys_off_read(io_packet_t *in_pkt, struct circular_queue *in_cq, struct circ
 	fprintf(stdout, "%s\n", strerror(errno));
 
   // retrun ret
-  send_sys_message(out_cq, tid, offload_function_type, (unsigned long) sret);
+  send_offload_message(out_cq, tid, offload_function_type, (unsigned long) sret);
 }
 
-/*
- * do_sys_off_write_v
+/**
+ * @brief execute write system call
+ * do write according to struct iovec data 
+ * @param fd file descriptor 
+ * @param iov_pa iovec data 
+ * @param iovcnt iovec count 
+ * @return success (written bytes), fail (-1)
  */
 ssize_t do_sys_off_write_v(int fd, unsigned long iov_pa, int iovcnt)
 {
@@ -188,11 +235,18 @@ ssize_t do_sys_off_write_v(int fd, unsigned long iov_pa, int iovcnt)
 	return writebytes;
 }
 
-/*
- * write 
+/**
+ * @brief execute write system call
+ * write()  writes  up  to  count bytes from the buffer pointed buf 
+ * to the file referred to by the file descriptor fd.
+ * @param channel 
+ * @return none
  */
-void sys_off_write(io_packet_t *in_pkt, struct circular_queue *in_cq, struct circular_queue *out_cq)
+void sys_off_write(struct channel_struct *ch)
 {
+  struct circular_queue *in_cq = NULL;
+  struct circular_queue *out_cq = NULL;
+  io_packet_t *in_pkt = NULL;
 
   ssize_t sret = -1;
 
@@ -202,6 +256,10 @@ void sys_off_write(io_packet_t *in_pkt, struct circular_queue *in_cq, struct cir
 
   int tid = 0;
   int  offload_function_type = 0;
+
+  in_cq = ch->in_cq;
+  out_cq = ch->out_cq;
+  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -220,20 +278,31 @@ void sys_off_write(io_packet_t *in_pkt, struct circular_queue *in_cq, struct cir
   if(sret == -1)
 	fprintf(stdout, "%s\n", strerror(errno));
 
-  send_sys_message(out_cq, tid, offload_function_type, (unsigned long) sret);
+  send_offload_message(out_cq, tid, offload_function_type, (unsigned long) sret);
 }
 
-/*
- * close
+/**
+ * @brief execute close system call
+ * close()  closes  a  file descriptor.
+ * @param channel 
+ * @return none
  */
-void sys_off_close(io_packet_t *in_pkt, struct circular_queue *in_cq, struct circular_queue *out_cq)
+void sys_off_close(struct channel_struct *ch)
 {
+  struct circular_queue *in_cq = NULL;
+  struct circular_queue *out_cq = NULL;
+  io_packet_t *in_pkt = NULL;
+
   int  iret = -1;
 
   int  fd = 0;
 
   int tid = 0;
   int  offload_function_type = 0;
+
+  in_cq = ch->in_cq;
+  out_cq = ch->out_cq;
+  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -251,6 +320,96 @@ void sys_off_close(io_packet_t *in_pkt, struct circular_queue *in_cq, struct cir
 	fprintf(stdout, "%s\n", strerror(errno));
 
   // retrun ret
-  send_sys_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+  send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+}
+
+
+/**
+ * @brief execute lseek system call
+ * lseek() function repositions the offset of the open file.
+ * @param channel 
+ * @return none
+ */
+void sys_off_lseek(struct channel_struct *ch)
+{
+  struct circular_queue *in_cq = NULL;
+  struct circular_queue *out_cq = NULL;
+  io_packet_t *in_pkt = NULL;
+
+  off_t  oret = -1;
+
+  int  fd = 0;
+  off_t offset = 0;
+  int whence = 0;
+
+  int tid = 0;
+  int  offload_function_type = 0;
+
+  in_cq = ch->in_cq;
+  out_cq = ch->out_cq;
+  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+
+  tid = (int) in_pkt->tid;
+  offload_function_type = (int) in_pkt->io_function_type;
+
+  fd = (int) in_pkt->param1;
+  offset = (off_t) in_pkt->param2;
+  whence = (int) in_pkt->param3;
+
+  // empty in_cq
+  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
+
+  // execute lseek
+  oret = lseek(fd, offset, whence);
+
+  // check error
+  if(oret == -1)
+        fprintf(stdout, "%s\n", strerror(errno));
+
+  // retrun ret
+  send_offload_message(out_cq, tid, offload_function_type, (unsigned long) oret);
+}
+
+
+/**
+ * @brief execute unlink system call
+ * unlink()  deletes a name from the file system.
+ * @param channel 
+ * @return none
+ */
+void sys_off_unlink(struct channel_struct *ch)
+{
+  struct circular_queue *in_cq = NULL;
+  struct circular_queue *out_cq = NULL;
+  io_packet_t *in_pkt = NULL;
+
+  int  iret = -1;
+
+  char *path = NULL;;
+
+  int tid = 0;
+  int  offload_function_type = 0;
+
+  in_cq = ch->in_cq;
+  out_cq = ch->out_cq;
+  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+
+  tid = (int) in_pkt->tid;
+  offload_function_type = (int) in_pkt->io_function_type;
+
+  path = (char *) get_va(in_pkt->param1);
+
+  // empty in_cq
+  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
+
+  // execute unlink
+  iret = unlink(path);
+
+  // check error
+  if(iret == -1)
+    fprintf(stdout, "%s\n", strerror(errno));
+
+  // retrun ret
+  send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
 }
 

@@ -37,6 +37,7 @@ _syscall0(void, sys_yield);
 _syscall2(int, sys_kill, tid_t, dest, int, signum);
 _syscall1(int, sys_signal, signal_handler_t, handler);
 _syscall2(int, sys_gettimeofday, struct timeval*, tv, void*, tz);
+_syscall1(int, sys_unlink, const char *, path);
 
 _syscall1(void, do_exit, int, arg);
 _syscall0(int, block_current_task);

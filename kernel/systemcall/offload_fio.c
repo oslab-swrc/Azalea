@@ -1,11 +1,10 @@
 #include <sys/lock.h>
 #include <sys/uio.h>
 
-//#include "map.h"
 #include "console.h"
 #include "az_types.h"
-//#include "memory.h"
 #include "offload_channel.h"
+#include "offload_mmap.h"
 #include "offload_message.h"
 #include "offload_fio.h"
 #include "page.h"
@@ -15,9 +14,15 @@
 
 extern QWORD g_memory_start;
 
-/*
- * get_iovec for buf(with count)
- * iov->iov_base has physical address
+
+/**
+ * @brief get_iovec for buf(with count)
+ * iov->iov_base contain physical address
+ * @param buf pointer to buf
+ * @param count buf size
+ * @param iov pointer to struct iovec which contains iov_base and iov_len
+ * @param iovcnt count of iov
+ * return success (0), fail (-1)
  */
 int get_iovec(void *buf, size_t count, struct iovec *iov, int *iovcnt)
 {
@@ -55,7 +60,7 @@ int i = 0;
   scan_buf_len = count;
 
   // set initial page address
-  page_addr = pa(buf) - offset_in_page;
+  page_addr = get_pa((QWORD) buf) - offset_in_page;
   prev_page_addr = page_addr - PAGE_SIZE_4K;
   read_page_addr = page_addr + offset_in_page;
   read_page_len = 0;
@@ -66,7 +71,7 @@ int i = 0;
   for (i = 0; i < nr_pages; ++i) {
 	/* get physcical addresses */
 	offset_in_page = scan_buf & PAGE_OFFSET_MASK;
-	page_addr = pa(scan_buf) - offset_in_page;
+	page_addr = get_pa(scan_buf) - offset_in_page;
 
 	/* emmit iov for a physically non-contiguous region */
 	if ((unsigned long) page_addr != (unsigned long) (prev_page_addr + PAGE_SIZE_4K)) {
@@ -77,7 +82,7 @@ int i = 0;
 
 	  /* reset region info. */
 	  read_page_len = 0;
-	  read_page_addr = pa(scan_buf);
+	  read_page_addr = get_pa(scan_buf);
 	}
 
 	/* expand this region */
@@ -98,8 +103,12 @@ int i = 0;
   return 0;
 }
 
-/* 
- * open
+/** 
+ * @brief file open system call
+ * @param path for a file
+ * @param oflag open flag
+ * @param mode open mode
+ * @return success (file descriptor), fail (-1)
  */
 int sys_off_open(const char *path, int oflag, mode_t mode)
 {
@@ -128,15 +137,18 @@ int mytid = -1;
   current = get_current();
   mytid = current->id;
 
-  send_sys_message(ocq, mytid, SYSCALL_sys_open, pa(path), oflag, mode, 0, 0, 0);
-  fd = (int) receive_sys_message(icq, mytid, SYSCALL_sys_open);
+  send_offload_message(ocq, mytid, SYSCALL_sys_open, get_pa((QWORD) path), oflag, mode, 0, 0, 0);
+  fd = (int) receive_offload_message(icq, mytid, SYSCALL_sys_open);
 
   return fd;
 }
 
 
-/*
- * creat
+/**
+ * @brief file create system call
+ * @param path for a file
+ * @param mode create mode
+ * @return success (file descriptor), fail (-1)
  */
 int sys_off_creat(const char *path, mode_t mode)
 {
@@ -164,15 +176,19 @@ QWORD mytid = -1;
   current = get_current(); 
   mytid = current->id;
 
-  send_sys_message(ocq, mytid, SYSCALL_sys_creat, pa(path), mode, 0, 0, 0, 0);
-  fd = (int) receive_sys_message(icq, mytid, SYSCALL_sys_creat);
+  send_offload_message(ocq, mytid, SYSCALL_sys_creat, get_pa((QWORD) path), mode, 0, 0, 0, 0);
+  fd = (int) receive_offload_message(icq, mytid, SYSCALL_sys_creat);
 
   return fd;
 }
 
 
-/*
- * read
+/**
+ * @brief read system call
+ * @param fd file descriptor
+ * @param buf buffer
+ * @param count count bytes to read
+ * @return success (the number of bytes read), fail (-1)
  */
 ssize_t sys_off_read(int fd, void *buf, size_t count)
 {
@@ -200,15 +216,19 @@ int iovcnt = 0;
   mytid = current->id;
   
   get_iovec(buf, count, iov, &iovcnt);
-  send_sys_message(ocq, mytid, SYSCALL_sys_read, fd, pa(iov), iovcnt, 0, 0, 0); 
-  ret_count = receive_sys_message(icq, mytid, SYSCALL_sys_read);
+  send_offload_message(ocq, mytid, SYSCALL_sys_read, fd, get_pa((QWORD) iov), iovcnt, 0, 0, 0); 
+  ret_count = receive_offload_message(icq, mytid, SYSCALL_sys_read);
 
   return (ret_count);
 }
 
 
-/*
- * write
+/**
+ * @brief write system call
+ * @param fd file descriptor
+ * @param buf buffer
+ * @param count count bytes to write
+ * @return success (the number of bytes written), fail (-1)
  */
 ssize_t sys_off_write(int fd, void *buf, size_t count)
 {
@@ -236,14 +256,16 @@ int iovcnt = 0;
   mytid = current->id;
 
   get_iovec(buf, count, iov, &iovcnt);
-  send_sys_message(ocq, mytid, SYSCALL_sys_write, fd, pa(iov), iovcnt, 0, 0, 0);
-  ret_count = receive_sys_message(icq, mytid, SYSCALL_sys_write);
+  send_offload_message(ocq, mytid, SYSCALL_sys_write, fd, get_pa((QWORD) iov), iovcnt, 0, 0, 0);
+  ret_count = receive_offload_message(icq, mytid, SYSCALL_sys_write);
 
   return (ret_count);
 }
 
-/*
- * close
+/**
+ * @brief file close system call
+ * @param fd file descriptor
+ * @return success (0), fail (-1)
  */
 int sys_off_close(int fd)
 {
@@ -267,9 +289,77 @@ QWORD mytid = -1;
   current = get_current();
   mytid = current->id;
 
-  send_sys_message(ocq, mytid, SYSCALL_sys_close, fd, 0, 0, 0, 0, 0);
-  iret = (int) receive_sys_message(icq, mytid, SYSCALL_sys_close);
+  send_offload_message(ocq, mytid, SYSCALL_sys_close, fd, 0, 0, 0, 0, 0);
+  iret = (int) receive_offload_message(icq, mytid, SYSCALL_sys_close);
 
   return iret;
 }
 
+
+/**
+ * @brief file lseek system call
+ * @param fd file descriptor
+ * @param offset offset bytes to reposition
+ * @param whence the directive
+ * @return success (0), fail (-1)
+ */
+off_t sys_off_lseek(int fd, off_t offset, int whence)
+{
+off_t oret = 0;
+
+channel_t *ch = NULL;
+struct circular_queue *icq = NULL;
+struct circular_queue *ocq = NULL;
+
+TCB *current = NULL;
+QWORD mytid = -1;
+
+  ch = get_offload_channel(-1);
+  if(ch == NULL) {
+          return -1;
+  }
+
+  icq = ch->in;
+  ocq = ch->out;
+
+  current = get_current();
+  mytid = current->id;
+
+  send_offload_message(ocq, mytid, SYSCALL_sys_lseek, fd, offset, whence, 0, 0, 0);
+  oret = (off_t) receive_offload_message(icq, mytid, SYSCALL_sys_lseek);
+
+  return oret;
+}
+
+/**
+ * @brief file unlink system call
+ * @param path for a file
+ * @return success (0), fail (-1)
+ */
+int sys_off_unlink(const char *path)
+{
+int iret = 0;
+
+channel_t *ch = NULL;
+struct circular_queue *icq = NULL;
+struct circular_queue *ocq = NULL;
+
+TCB *current = NULL;
+QWORD mytid = -1;
+
+  ch = get_offload_channel(-1);
+  if(ch == NULL) {
+          return -1;
+  }
+
+  icq = ch->in;
+  ocq = ch->out;
+
+  current = get_current(); 
+  mytid = current->id;
+
+  send_offload_message(ocq, mytid, SYSCALL_sys_unlink, get_pa((QWORD) path), 0, 0, 0, 0, 0);
+  iret = (int) receive_offload_message(icq, mytid, SYSCALL_sys_unlink);
+
+  return iret;
+}

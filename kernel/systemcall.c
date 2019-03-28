@@ -119,16 +119,16 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
 #endif
     break;
   case SYSCALL_sys_read:
+    ret_code = sys_off_read((int) param1, (void *) param2, (size_t) param3);
 #ifdef DDBUG
    lk_print_xy(0, yyloc++%YOFFSET, "read system call **");
 #endif
-    ret_code = sys_off_read((int) param1, (void *) param2, (size_t) param3);
     break;
   case SYSCALL_sys_write:
+    ret_code = sys_off_write((int) param1, (void *) param2, (size_t) param3);
 #ifdef DDBUG
     lk_print_xy(0, yyloc++%YOFFSET, "write system call **");
 #endif
-    ret_code = sys_off_write((int) param1, (void *) param2, (size_t) param3);
     break;
   case SYSCALL_sys_sbrk:
     ret_code = sys_sbrk((ssize_t) param1);
@@ -138,6 +138,7 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
 #endif
     break;
   case SYSCALL_sys_open:
+    ret_code = sys_off_open((const char *) param1, (int) param2, (mode_t) param3);
 #ifdef DDBUG
     if (param3 == NULL)
       lk_print_xy(0, yyloc%YOFFSET, "open (%d)(%q) **, p1: %q, p2: %q         **", tid, yyloc, param1, param2);
@@ -145,13 +146,12 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
       lk_print_xy(0, yyloc%YOFFSET, "open (%d)(%q) **, p1: %q, p2: %q, p3: %q         **", tid, yyloc, param1, param2, param3);
     yyloc++;
 #endif
-    ret_code = sys_off_open((const char *) param1, (int) param2, (mode_t) param3);
     break;
   case SYSCALL_sys_creat:
+    ret_code = sys_off_creat((const char *) param1, (mode_t) param2);
 #ifdef DDBUG
     lk_print_xy(0, yyloc++%YOFFSET, "creat system call **");
 #endif
-    ret_code = sys_off_creat((const char *) param1, (mode_t) param2);
     break;
   case SYSCALL_sys_close:
     ret_code = sys_off_close((int) param1);
@@ -220,8 +220,9 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
     yyloc++;
     break;
   case SYSCALL_sys_lseek:
+    ret_code = sys_off_lseek((int) param1, (off_t) param2, (int) param3);
 #ifdef DDBUG
-    lk_print_xy(0, yyloc++%YOFFSET, "get_lseek system call **");
+    lk_print_xy(0, yyloc++%YOFFSET, "lseek system call **");
 #endif
     break;
   case SYSCALL_sys_get_ticks:
@@ -312,6 +313,12 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
     break;
   case SYSCALL_sys_gettimeofday:
     ret_code = sys_gettimeofday((struct timeval *)param1, (void *)param2);
+    break;
+  case SYSCALL_sys_unlink:
+    ret_code = sys_off_unlink((char *) param1);
+#ifdef DDBUG
+    lk_print_xy(0, yyloc++%YOFFSET, "unlink system call **");
+#endif
     break;
   default:
     printk("Invalid system calls");

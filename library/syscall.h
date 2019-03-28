@@ -157,6 +157,7 @@ BOOL sys_free(void* address);
 size_t get_start_tsc(void);
 size_t get_freq(void);
 int sys_gettimeofday(struct timeval *tv, void *tz);
+int sys_off_unlink(const char *path);
 
 int print_log(char *msg);
 

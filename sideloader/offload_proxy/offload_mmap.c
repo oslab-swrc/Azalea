@@ -13,8 +13,11 @@ unsigned long g_mmap_unikernels_mem_base_va = 0;
 // offload channel info address
 unsigned long g_offload_channels_info_va = 0;
 
-/*
- * munmap_channels()
+/**
+ * @brief munmap_channels()
+ * @param offload_channels channel
+ * @param n_offload_channels channel number
+ * @return success (0), fail (-1)
  */
 int munmap_channels(channel_t *offload_channels, int n_offload_channels)
 {
@@ -47,8 +50,13 @@ int munmap_channels(channel_t *offload_channels, int n_offload_channels)
 	return 0;
 }
 
-/*
- * mmap_channels()
+/**
+ * @brief mmap channels
+ * @param offload_channels offload channels
+ * @param n_offload_channels the number of channels
+ * @param opages  whole page number of out channels
+ * @param ipages  whole page number of in channels
+ * @return success (1), fail (0)
  */
 int mmap_channels(channel_t *offload_channels, int n_offload_channels, int opages, int ipages)
 {
@@ -134,8 +142,9 @@ int mmap_channels(channel_t *offload_channels, int n_offload_channels, int opage
 }
 
 
-/*
- * mmap_unikernels_memory()
+/**
+ * @brief mmap unikernels' memory
+ * @return success (0), fail (1)
  */
 int mmap_unikernels_memory()
 {
@@ -170,9 +179,10 @@ int mmap_unikernels_memory()
 
 }
 
-/*
- * get_va()
- * get mmapped virtual address that matches physical address of unikernel
+/**
+ * @brief mmapped virtual address that matches physical address of unikernel
+ * @param pa physical address of unikernel
+ * @return (virual address)
  */
 unsigned long get_va(unsigned long pa)
 {
@@ -188,12 +198,19 @@ unsigned long get_va(unsigned long pa)
 }
 
 
-
+/**
+ * @brief get unikernels' start physical address
+ * @return (start physical address)
+ */
 unsigned long get_pa_base() 
 {
 	return(UNIKERNELS_MEM_BASE_PA);
 }
 
+/**
+ * @brief get driver's start virutal address that matches start physical address of unikernel
+ * @return (start virtual address)
+ */
 unsigned long get_va_base() 
 {
 	return (g_mmap_unikernels_mem_base_va);

@@ -3,8 +3,8 @@
 
 #include "offload_channel.h"
 
-#define IO_PATH_MAX                     (4096)
-#define MAGIC                           (0x4D3C2B1A)
+#define IO_PATH_MAX        (4096)
+#define MAGIC              (0x4D3C2B1A)
 #define MAX_IOV_SIZE       (512*0x1000) / sizeof(struct iovec)
 #define MAX_IOV_NUM        (512)
 
@@ -43,7 +43,7 @@ typedef struct io_packet_struct {
   io_buffer_t buffer;
 } io_packet_t;
 
-void send_sys_message(struct circular_queue *ocq, int tid, int offload_function_type, QWORD param1, QWORD param2, QWORD param3, QWORD param4, QWORD param5, QWORD param6);
-QWORD receive_sys_message(struct circular_queue *icq, int tid, int offload_function_type);
+void send_offload_message(struct circular_queue *ocq, int tid, int offload_function_type, QWORD param1, QWORD param2, QWORD param3, QWORD param4, QWORD param5, QWORD param6);
+QWORD receive_offload_message(struct circular_queue *icq, int tid, int offload_function_type);
 
 #endif
