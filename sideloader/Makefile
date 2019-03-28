@@ -7,7 +7,7 @@ all:
 	make -C utils 
 #	make -C cmds 
 	make -C offload_driver UKDIR=$(UKDIR)
-	make -C offload_proxy UKDIR=$(UKDIR)
+	make -C offload_proxy
 clean: 
 	make -C lk clean
 	make -C utils clean

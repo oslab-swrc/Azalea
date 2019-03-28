@@ -1,21 +1,26 @@
+.PHONY: all clean
+
 ifeq ($(TARGET),)
         TARGET=knl
 endif
 
-CFLAG=-m64 -mno-red-zone -nostdlib -ffreestanding -Wall -mcmodel=large -g -fomit-frame-pointer -fno-exceptions -fno-asynchronous-unwind-tables -fno-unwind-tables -DVCONSOLE -O3 -I. -I.. -I../../include/api -I../../include/$(TARGET)
+UKDIR=../..
 
-GCC64=gcc $(CFLAG)
+INCS=-I. -I.. -I$(UKDIR)/include/api -I$(UKDIR)/include/$(TARGET)
+CFLAGS=-m64 -mno-red-zone -nostdlib -ffreestanding -Wall -mcmodel=large -g 
+CFLAGS+=-mno-mmx -mno-3dnow -mno-avx
+CFLAGS+=-fno-common -fomit-frame-pointer -fno-exceptions -fno-asynchronous-unwind-tables -fno-unwind-tables -DVCONSOLE -O3 -D_$(TARGET)_
+
+GCC64=gcc
 
 CSOURCEFILES=$(wildcard *.c)
 COBJECTFILES=$(notdir $(patsubst %.c,%.o,$(CSOURCEFILES)))
-
-.PHONEY: all 
 
 all: $(COBJECTFILES)
 	cp *.o ..
 
 %.o: %.c
-	$(GCC64) -c $<
+	$(GCC64) $(CFLAGS) $(INCS) -c $<
 
 clean:
 	rm -f *.o

@@ -2,13 +2,14 @@ ifeq ($(TARGET),)
         TARGET=knl
 endif
 
-CFLAG=-m64 -mno-red-zone -nostdlib -ffreestanding -Wall -mcmodel=large -g
-
 TEXT_BASE64=0xFFFF8000C0300000
-CFLAG+=-fomit-frame-pointer -fno-exceptions -fno-asynchronous-unwind-tables -fno-unwind-tables -DVCONSOLE -O0 -I. -Ioffload -Isystemcall -I../include/$(TARGET) -I../include/api -mno-mmx -mno-3dnow -mno-avx -D_$(TARGET)_
+INCLUDES=-I. -Ioffload -Isystemcall -I../include/$(TARGET) -I../include/api 
+CFLAG=-m64 -mno-red-zone -nostdlib -ffreestanding -Wall -mcmodel=large -g
+CFLAG+=-mno-mmx -mno-3dnow -mno-avx
+CFLAG+=-fomit-frame-pointer -fno-exceptions -fno-asynchronous-unwind-tables -fno-unwind-tables -DVCONSOLE -O0 -D_$(TARGET)_
 LDFLAG=-melf_x86_64 -T elf_x86_64.x
 
-GCC64=gcc $(CFLAG)   
+GCC64=gcc $(CFLAG) $(INCLUDES)
 LD64=ld $(LDFLAG) -nostdlib -e Main -Ttext $(TEXT_BASE64)
 OBJCOPY64=objcopy -j .text -j .data -j .rodata -j .bss --set-section-flags .bss=alloc,load,contents -S -O binary
 

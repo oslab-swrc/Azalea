@@ -10,8 +10,6 @@
 #include "offload_message.h"
 #include "offload_mmap.h"
 
-//#define _DEBUG
-
 /**
  * @brief execute open system call
  * @param channel 
@@ -43,7 +41,7 @@ void sys_off_open(struct channel_struct *ch)
   oflag = (int) in_pkt->param2;
   mode = (mode_t) in_pkt->param3;
 
-#ifdef _DEBUG
+#ifdef DEBUG
   printf("\nopen system call: path=%s, flags=%d, mode=%d", path, oflag, mode);
 #endif
 
@@ -94,7 +92,7 @@ void sys_off_creat(struct channel_struct *ch)
   path = (char *) get_va(in_pkt->param1);
   mode = (mode_t) in_pkt->param2;
 
-#ifdef _DEBUG
+#ifdef DEBUG
   printf("\ncreat system call: path=%s, mode=%d", path, mode);
 #endif
 

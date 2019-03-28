@@ -25,7 +25,7 @@ unsigned long get_pa(QWORD virtual_address)
 
   // identical mapping in high half memory
   if(virtual_address > CONFIG_HIGH_HALF_LIMIT) {
-#if 0
+#ifdef DEBUG
   lk_print_xy(25, 1, "get_pa(ID) va:%Q pa:%Q", virtual_address, pa(virtual_address));
 #endif
     return (pa(virtual_address)); 
@@ -85,7 +85,7 @@ unsigned long get_pa(QWORD virtual_address)
     // PAGE_SIZE_2M is used
     if ((pd_entry[index].entry & PAGE_FLAGS_PS) == PAGE_FLAGS_PS) {
       spinlock_unlock(&map_lock);
-#if 0
+#ifdef DEBUG
       lk_print_xy(25, 2, "get_pa(2M) va:%Q pa:%Q", virtual_address, (pd_entry[index].entry & (~PAGE_ATTR_MASK)) + (virtual_address & PAGE_PTE_OFFSET_MASK));
 #endif
       return ((pd_entry[index].entry & (~PAGE_ATTR_MASK)) + (virtual_address & PAGE_PTE_OFFSET_MASK));
@@ -110,7 +110,7 @@ unsigned long get_pa(QWORD virtual_address)
 
   spinlock_unlock(&map_lock);
 
-#if 0
+#ifdef DEBUG
   lk_print_xy(25, 3, "get_pa(4K) va:%Q pa:%Q", virtual_address, (pt_entry[index].entry & (~PAGE_ATTR_MASK)) + (virtual_address & PAGE_OFFSET_MASK));
 #endif
   return ((pt_entry[index].entry & (~PAGE_ATTR_MASK)) + (virtual_address & PAGE_OFFSET_MASK));
