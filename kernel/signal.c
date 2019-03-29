@@ -1,3 +1,5 @@
+#include <sys/lock.h>
+#include <sys/types.h>
 #include "signal.h"
 #include "thread.h"
 #include "dequeue.h"

@@ -1,3 +1,4 @@
+#include <sys/lock.h>
 #include "shellstorage.h"
 #include "console.h"
 #include "arch.h"

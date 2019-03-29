@@ -1,3 +1,4 @@
+#include <sys/lock.h>
 #include "map.h"
 #include "console.h"
 #include "memory.h"

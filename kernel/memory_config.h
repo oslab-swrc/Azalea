@@ -22,6 +22,8 @@
 
 #define CONFIG_APP_ADDRESS          ((200<<20)+g_memory_start)		// 200MB (unit: B)
 
+#define CONFIG_SHARED_MEMORY        (0xA80000000)       // 42GB
+
 #define CONFIG_SHELL_STORAGE_AREA   ((CONFIG_SHELL_STORAGE<<20)+g_memory_start)
 
 #define HEAP_START                  (0x40000000)        // 1GB (unit: B)

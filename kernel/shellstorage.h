@@ -4,7 +4,7 @@
 #include "memory_config.h"
 #include "page.h"
 #include "thread.h"
-#include "types.h"
+#include "az_types.h"
 
 #define	MAX_PAGEFAULT_SIZE	      1024
 

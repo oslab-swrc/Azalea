@@ -1,4 +1,5 @@
 #include <stdarg.h>
+#include <sys/lock.h>
 
 #include "console.h"
 #include "assemblyutility.h"

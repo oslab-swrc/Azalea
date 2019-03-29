@@ -2,7 +2,7 @@
 #define __PAGE_H__
 
 #include "memory_config.h"
-#include "types.h"
+#include "az_types.h"
 
 #define PAGE_FLAGS_P		0x00000001	// Present
 #define PAGE_FLAGS_RW		0x00000002	// R/W

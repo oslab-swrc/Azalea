@@ -1,3 +1,4 @@
+#include <sys/lock.h>
 #include "interrupthandler.h"
 #include "console.h"
 #include "debug.h"

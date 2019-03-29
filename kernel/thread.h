@@ -6,7 +6,7 @@
 #include "localapic.h"
 #include "multiprocessor.h"
 #include "sync.h"
-#include "types.h"
+#include "az_types.h"
 #include "utility.h"
 #include "signal.h"
 

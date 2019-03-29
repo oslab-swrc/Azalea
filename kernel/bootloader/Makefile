@@ -2,8 +2,8 @@ ifeq ($(TARGET),)
         TARGET=knl
 endif
 
-LDASM32=${CROSS_COMPILE}ld -melf_x86_64 --oformat=binary -nostdlib -Ttext 0x7c00 
-GCC32=$(CROSS_COMPILE)gcc -ffreestanding -g -I../../include/$(TARGET) -D_$(TARGET)_
+LDASM32=ld -melf_x86_64 --oformat=binary -nostdlib -Ttext 0x7c00 
+GCC32=gcc -ffreestanding -g -I../../include/$(TARGET) -D_$(TARGET)_
 
 all: bootloader.bin pagetable page.bin
 

@@ -1,7 +1,7 @@
 #ifndef __IRQ_H__
 #define __IRQ_H__
 
-#include "types.h"
+#include "az_types.h"
 
 /** 
  * Determines, if the interrupt flags (IF) is set

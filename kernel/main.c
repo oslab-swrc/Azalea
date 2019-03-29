@@ -1,3 +1,4 @@
+#include <sys/lock.h>
 #include "assemblyutility.h"
 #include "console.h"
 #include "debug.h"
@@ -7,12 +8,13 @@
 #include "map.h"
 #include "memory_config.h"
 #include "multiprocessor.h"
+#include "offload_channel.h"
 #include "page.h"
 #include "shellstorage.h"
 #include "sync.h"
 #include "systemcall.h"
 #include "thread.h"
-#include "types.h"
+#include "az_types.h"
 #include "utility.h"
 #include "memory.h"
 #include "timer.h"
@@ -170,6 +172,15 @@ void Main(int boot_mode)
   // Start idle thread
   store_init_stat(INIT_IDLE_THREAD_STAT);
   remove_low_identical_mapping(CONFIG_KERNEL_PAGETABLE_ADDRESS);
+
+  // init offload channel
+  lk_print_xy(0, yloc, "Initialize Offload...........................[    ]");
+  if(init_offload_channel() == FALSE) {
+    lk_print_xy(xloc, yloc++, "Fail");
+  }
+  else {
+    lk_print_xy(xloc, yloc++, "Pass");
+  }
 
   start_idle_thread(THREAD_TYPE_BSP);
 }

@@ -1,3 +1,4 @@
+#include <sys/types.h>
 #include "timer.h"
 #include "thread.h"
 #include "localapic.h"
@@ -99,7 +100,7 @@ void sys_msleep(unsigned int ms)
 /**
  * return the start tsc
  */
-unsigned long long get_start_tsc()
+size_t get_start_tsc()
 {
   return start_tsc;
 }
@@ -107,7 +108,25 @@ unsigned long long get_start_tsc()
 /**
  * return the cpu frequency
  */
-unsigned long long get_freq()
+size_t get_freq()
 {
   return freq;
 }
+ 
+int sys_gettimeofday(struct timeval *tv, void *tz)
+{
+  if (start_tsc == 0)
+    start_tsc = get_start_tsc();
+
+  if (freq == 0)
+    freq = get_freq();
+
+  if(tv) {
+    size_t diff = rdtsc() - start_tsc;
+    tv->tv_sec = diff/freq;
+    tv->tv_usec = ((diff - tv->tv_sec * freq) * 1000000ULL) / freq;
+  }
+
+  return 0;
+}
+

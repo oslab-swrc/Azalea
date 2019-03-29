@@ -1,7 +1,7 @@
 #ifndef __INTERRUPTHANDLER_H__
 #define __INTERRUPTHANDLER_H__
 
-#include "types.h"
+#include "az_types.h"
 
 void intr_handler_thread_init(void);
 void lk_common_exception_handler(int vector_number, QWORD error_code, QWORD v);

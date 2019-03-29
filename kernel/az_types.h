@@ -26,36 +26,18 @@
 #define __BOOL_defined
 #endif
 
-#ifndef __ssize_t_defined
-//typedef long int ssize_t;
-#define ssize_t long long
-#define __ssize_t_defined
-#endif
-
-#ifndef __size_t_defined
-//typedef unsigned long size_t;
-#define size_t unsigned long long
-#define __size_t_defined
-#endif
-
-#define mode_t  int
-#define off_t   unsigned long
 #define tid_t	int
 
-#define TRUE	1
-#define FALSE	0
-#ifndef NULL
-#define NULL	0
+#ifndef TRUE
+#define TRUE    1
 #endif
 
-#ifndef __ASSEMBLY__
-#pragma pack(push, 1)
-typedef struct video_char_struct {
-  BYTE ch;
-  BYTE attr;
-} VCHAR;
-#pragma pack(pop)
+#ifndef FALSE
+#define FALSE   0
+#endif
 
+#ifndef NULL
+#define NULL	0
 #endif
 
 #endif  /* __TYPES_H__ */

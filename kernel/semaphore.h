@@ -1,7 +1,7 @@
 #ifndef __SEMAPHORE_H__
 #define __SEMAPHORE_H__
 
-#include "types.h"
+#include "az_types.h"
 #include "thread.h"
 #include "sync.h"
 #include "utility.h"

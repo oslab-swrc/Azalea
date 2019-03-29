@@ -1,7 +1,7 @@
 #ifndef __MULTIPROCESSOR_H__
 #define __MULTIPROCESSOR_H__
 
-#include "types.h"
+#include "az_types.h"
 
 #define MAX_PROCESSOR_COUNT		288	
 

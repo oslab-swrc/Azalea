@@ -1,3 +1,4 @@
+#include <sys/lock.h>
 #include "thread.h"
 #include "assemblyutility.h"
 #include "atomic.h"
@@ -17,7 +18,6 @@
 #include "elf_load.h"
 #include "memory.h"
 #include "signal.h"
-//#include <stddef.h>
 
 extern void HALT() ;
 unsigned int shutdown_kernel = 0 ;

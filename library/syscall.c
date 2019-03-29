@@ -1,3 +1,4 @@
+#include <sys/types.h>
 #include "syscall.h"
 
 _syscall3(int, create_thread, QWORD, ip, QWORD, argv, int, core_mask);
@@ -17,6 +18,7 @@ _syscall3(ssize_t, sys_read, int, fd, char*, buf, size_t, len);
 _syscall3(ssize_t, sys_write, int, fd, const char*, buf, size_t, len);
 _syscall1(ssize_t, sys_sbrk, ssize_t, incr);
 _syscall3(int, sys_open, const char*, name, int, flags, int, mode);
+_syscall2(int, sys_creat, const char *, pathname, int, mode);
 _syscall1(int, sys_close, int, fd);
 _syscall1(void, sys_msleep, unsigned int, ms);
 _syscall2(int, sys_sem_init, sem_t**, sem, unsigned int, value);
@@ -34,6 +36,8 @@ _syscall1(int, sys_rcce_fini, int, session_id);
 _syscall0(void, sys_yield);
 _syscall2(int, sys_kill, tid_t, dest, int, signum);
 _syscall1(int, sys_signal, signal_handler_t, handler);
+_syscall2(int, sys_gettimeofday, struct timeval*, tv, void*, tz);
+_syscall1(int, sys_unlink, const char *, path);
 
 _syscall1(void, do_exit, int, arg);
 _syscall0(int, block_current_task);

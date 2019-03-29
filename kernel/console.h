@@ -1,7 +1,7 @@
 #ifndef __CONSOLE_H__
 #define __CONSOLE_H__
 
-#include "types.h"
+#include "az_types.h"
 
 #define CONSOLE_WIDTH			80
 #define CONSOLE_HEIGHT			25

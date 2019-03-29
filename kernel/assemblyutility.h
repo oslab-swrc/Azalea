@@ -1,6 +1,6 @@
 #ifndef __ASSEMBLYUTILITY_H__
 #define __ASSEMBLYUTILITY_H__
-#include "types.h"
+#include "az_types.h"
 
 #define ENTRY(name) \
   .global name; \

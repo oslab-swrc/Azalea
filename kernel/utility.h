@@ -1,7 +1,7 @@
 #ifndef __UTILITY_H__
 #define __UTILITY_H__
 
-#include "types.h"
+#include "az_types.h"
 #include <stdarg.h>
 
 // Macro

@@ -1,7 +1,7 @@
 #ifndef __PIT_H__
 #define __PIT_H__
 
-#include "types.h"
+#include "az_types.h"
 #include "assemblyutility.h"
 
 // macros

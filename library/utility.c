@@ -1,8 +1,10 @@
+#include <sys/types.h>
 #include <stdarg.h>
 
 #include "atomic.h"
 #include "syscall.h"
 #include "utility.h"
+#include "az_types.h"
 
 static QWORD vcon_addr;
 
@@ -284,7 +286,7 @@ int print_xy(int x, int y, const char *buffer, ...)
   char *vscreen;
   int i = 0;
   
-  if (vcon_addr == NULL)
+  if ((QWORD *)vcon_addr == NULL)
     vcon_addr = get_vcon_addr();
 
 #ifdef _qemu_
