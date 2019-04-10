@@ -743,6 +743,10 @@ retry:
     if (refilled)
       goto retry;
 
+    // Prevent switching to idle thread when there is only one thread in the runnable list
+    if (per_cpu(runnable_list).count == 1)
+      return (get_current());
+
     refill_time_slice(g_idle_thread_list[cid]);
     return g_idle_thread_list[cid];
   }
