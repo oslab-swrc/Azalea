@@ -31,7 +31,7 @@ static inline int az_sem_init(sem_t* s, DWORD v)
   if (likelyval(!s, 0))
     return -EINVAL;
 
-  s->queue = (DWORD *) alloc(MAX_SEM_QUEUE_SIZE * sizeof(DWORD));
+  s->queue = (DWORD *) az_alloc(MAX_SEM_QUEUE_SIZE * sizeof(DWORD));
   s->value = v;
   s->rpos = s->wpos = 0;
   for(i=0; i<MAX_SEM_QUEUE_SIZE; i++)
@@ -52,7 +52,7 @@ static inline int az_sem_destroy(sem_t* s)
     return -EINVAL;
 
   spinlock_irqsave_destroy(&s->lock);
-  free(s->queue);
+  az_free(s->queue);
 
   return 0;
 }

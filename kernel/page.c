@@ -95,7 +95,7 @@ void adjust_pagetables(QWORD address)
   
   pml4t_entry = (PML4T_ENTRY*)va(address);
 
-  new_pdpt_entry = (PDPT_ENTRY*) alloc(PAGE_SIZE_4K); 
+  new_pdpt_entry = (PDPT_ENTRY*) az_alloc(PAGE_SIZE_4K); 
   
   if (new_pdpt_entry == NULL )
 	{
@@ -103,7 +103,7 @@ void adjust_pagetables(QWORD address)
 	}
 
   for (i=0; i<PAGE_MAX_ENTRY_COUNT; i++) {
-    PD_ENTRY *new_pd_page = (PD_ENTRY *) alloc(PAGE_SIZE_4K);
+    PD_ENTRY *new_pd_page = (PD_ENTRY *) az_alloc(PAGE_SIZE_4K);
     QWORD *m_addr = (QWORD *) (va((address+0x2000) + (PAGE_SIZE_4K*i)));
 
     lk_memcpy(new_pd_page, m_addr, PAGE_SIZE_4K);
