@@ -37,7 +37,7 @@ BOOL lk_map(QWORD virtual_address, QWORD physical_address, int page_size, QWORD 
   index = (virtual_address & PAGE_PML4_MASK) >> PAGE_PML4_SHIFT;
 
   if (pml4t_entry[index].entry == 0) {
-    new_pt_page = (QWORD) alloc(PAGE_SIZE_4K);
+    new_pt_page = (QWORD) az_alloc(PAGE_SIZE_4K);
 
     if (new_pt_page == (QWORD) NULL) {
       spinlock_unlock(&map_lock);
@@ -52,7 +52,7 @@ BOOL lk_map(QWORD virtual_address, QWORD physical_address, int page_size, QWORD 
 
   index = (virtual_address & PAGE_PDPT_MASK) >> PAGE_PDPT_SHIFT;
   if (pdpt_entry[index].entry == 0) {
-    new_pt_page = (QWORD) alloc(PAGE_SIZE_4K);
+    new_pt_page = (QWORD) az_alloc(PAGE_SIZE_4K);
 
     if (new_pt_page == (QWORD) NULL) {
       spinlock_unlock(&map_lock);
@@ -67,7 +67,7 @@ BOOL lk_map(QWORD virtual_address, QWORD physical_address, int page_size, QWORD 
 
   index = (virtual_address & PAGE_PDE_MASK) >> PAGE_PDE_SHIFT;
   if (pd_entry[index].entry == 0) {
-    new_pt_page = (QWORD) alloc(PAGE_SIZE_4K);
+    new_pt_page = (QWORD) az_alloc(PAGE_SIZE_4K);
 
     if (new_pt_page == (QWORD) NULL) {
       spinlock_unlock(&map_lock);
@@ -166,7 +166,7 @@ int free_page_table(PT_ENTRY * p)
     if (p[i].entry != 0)
       return FALSE;
 
-  free((void *) va(p));
+  az_free((void *) va(p));
 
   return TRUE;
 }

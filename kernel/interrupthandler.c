@@ -96,7 +96,7 @@ void pagefault_handler(QWORD fault_address, QWORD error_code, QWORD rip)
   store_pagefault_info(current->id, fault_address, error_code, rip);
   
   // alloc new page
-  new_page = (char *) alloc(PAGE_SIZE_4K);
+  new_page = (char *) az_alloc(PAGE_SIZE_4K);
 
   if( new_page == (char *) NULL)
     debug_halt((char *) __func__, __LINE__);

@@ -93,7 +93,7 @@ void free_mem_init(void)
 /**
  *  Allocate the input size memory
  */
-void* alloc(QWORD size)
+void* az_alloc(QWORD size)
 {
   QWORD aligned_size = 0;
   QWORD rel_address = 0;
@@ -147,7 +147,7 @@ void* alloc(QWORD size)
  * free the input address' memory
  *   - input: virtual address
  */
-BOOL free( void* address )
+BOOL az_free( void* address )
 {
   QWORD rel_address = 0;
   int array_offset = -1;
