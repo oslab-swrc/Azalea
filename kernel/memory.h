@@ -40,8 +40,8 @@ typedef struct memory_management
 
 // functions
 void free_mem_init(void);
-void* alloc(QWORD size);
-BOOL free(void* address);
+void* az_alloc(QWORD size);
+BOOL az_free(void* address);
 
 int bitmap_size(QWORD free_mem_size);
 int alloc_buddy_block(QWORD aligned_size);

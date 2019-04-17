@@ -42,7 +42,7 @@ unsigned long get_pa(QWORD virtual_address)
 
 
   if (pml4t_entry[index].entry == 0) {
-    new_pt_page = (QWORD) alloc(PAGE_SIZE_4K);
+    new_pt_page = (QWORD) az_alloc(PAGE_SIZE_4K);
 
     if (new_pt_page == (QWORD) NULL) {
       spinlock_unlock(&map_lock);
@@ -57,7 +57,7 @@ unsigned long get_pa(QWORD virtual_address)
 
   index = (virtual_address & PAGE_PDPT_MASK) >> PAGE_PDPT_SHIFT;
   if (pdpt_entry[index].entry == 0) {
-    new_pt_page = (QWORD) alloc(PAGE_SIZE_4K);
+    new_pt_page = (QWORD) az_alloc(PAGE_SIZE_4K);
 
     if (new_pt_page == (QWORD) NULL) {
       spinlock_unlock(&map_lock);
@@ -72,7 +72,7 @@ unsigned long get_pa(QWORD virtual_address)
 
   index = (virtual_address & PAGE_PDE_MASK) >> PAGE_PDE_SHIFT;
   if (pd_entry[index].entry == 0) {
-    new_pt_page = (QWORD) alloc(PAGE_SIZE_4K);
+    new_pt_page = (QWORD) az_alloc(PAGE_SIZE_4K);
 
     if (new_pt_page == (QWORD) NULL) {
       spinlock_unlock(&map_lock);
@@ -97,7 +97,7 @@ unsigned long get_pa(QWORD virtual_address)
   index = (virtual_address & PAGE_PTE_MASK) >> PAGE_PTE_SHIFT;
 
   if (pt_entry[index].entry == 0) {
-    new_page = (QWORD) alloc(PAGE_SIZE_4K);
+    new_page = (QWORD) az_alloc(PAGE_SIZE_4K);
 
     if (new_page == (QWORD) NULL) {
       spinlock_unlock(&map_lock);

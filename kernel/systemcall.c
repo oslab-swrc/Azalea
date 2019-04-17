@@ -299,11 +299,10 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
     ret_code = 0 ;
     break ;
   case SYSCALL_sys_alloc:
-    ret_code = (QWORD) alloc((QWORD) param1);
-    lk_memset((unsigned char *)ret_code, 0, 0x1000);
+    ret_code = (QWORD) az_alloc((QWORD) param1);
     break;
   case SYSCALL_sys_free:
-    ret_code = free((void *) param1);
+    ret_code = az_free((void *) param1);
     break;
   case SYSCALL_get_start_tsc:
     ret_code = get_start_tsc();

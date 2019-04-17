@@ -12,13 +12,13 @@ int sys_sem_init(sem_t** sem, unsigned int value)
   if (likelyval(!sem, 0))
     return -EINVAL;
 
-  *sem = (sem_t*) alloc(sizeof(sem_t));
+  *sem = (sem_t*) az_alloc(sizeof(sem_t));
   if (likelyval(!(*sem), 0))
     return -ENOMEM;
 
   ret = az_sem_init(*sem, value);
   if (ret) {
-    free(*sem);
+    az_free(*sem);
     *sem = NULL;
   }
 
@@ -37,7 +37,7 @@ int sys_sem_destroy(sem_t* sem)
 
   ret = az_sem_destroy(sem);
   if (!ret)
-    free(sem);
+    az_free(sem);
 
   return ret;
 }

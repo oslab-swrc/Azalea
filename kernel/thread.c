@@ -92,7 +92,7 @@ void thread_init(void)
 
   // Initialize TCBs
   for (i = 0; i < CONFIG_NUM_THREAD; i++) {
-    tcb = (TCB *) alloc(PAGE_SIZE_4K);
+    tcb = (TCB *) az_alloc(PAGE_SIZE_4K);
     if(tcb == NULL)
       debug_halt((char *) __func__, __LINE__);
 
@@ -273,7 +273,7 @@ void init_tcb(TCB * tcb, QWORD stack)
 void init_tcb_destroy(TCB * tcb)
 {
   // free the allocated stack memory
-  free((void *) (tcb->stack_base - CONFIG_TCB_SIZE));
+  az_free((void *) (tcb->stack_base - CONFIG_TCB_SIZE));
 
   init_tcb(tcb, 0);
   tcb->state = THREAD_STATE_NOTALLOC;  // XXX:
@@ -586,7 +586,7 @@ int create_thread(QWORD ip, QWORD argv, int core_mask)
 
   tcb_lock(thr);
 
-  stack_address = alloc(PAGE_SIZE_4K);
+  stack_address = az_alloc(PAGE_SIZE_4K);
   lk_print("Thread created: %d, stack: %q\n", thr->id, stack_address);
 
   init_tcb(thr, (QWORD) stack_address);

@@ -68,7 +68,7 @@ int sys_kill(tid_t dest, int signum)
   }
 
   // Add signal to task's signal list
-  signal_t *signal = (signal_t *) alloc(sizeof(signal_t));
+  signal_t *signal = (signal_t *) az_alloc(sizeof(signal_t));
   signal->dest = dest;
   signal->signum = signum;
 
@@ -101,7 +101,7 @@ void do_signal(signal_handler_t handler, tid_t tid)
     
       dl_list_del(&signal->sig_link);
       per_cpu(local_sig_list).count--;
-      free(signal);
+      az_free(signal);
     }
   }
   spinlock_unlock(&per_cpu(local_sig_list).lock);
