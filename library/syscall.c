@@ -50,6 +50,16 @@ _syscall1(BOOL, sys_free, void*, address);
 _syscall0(size_t, get_start_tsc);
 _syscall0(size_t, get_freq);
 
+// Network offloading related systemcalls
+_syscall2(int, sys_gethostname, char *, name, size_t, len);
+_syscall1(struct hostent *, sys_gethostbyname, char *, name);
+_syscall3(int, sys_getsockname, int, sockfd, struct sockaddr *, addr, socklen_t *, addrlen);
+_syscall3(int, sys_socket, int, domain, int, type, int, protocol);
+_syscall3(int, sys_bind, int, sockfd, const struct sockaddr *, addr, socklen_t, addrlen);
+_syscall2(int, sys_listen, int, sockfd, int, backlog);
+_syscall3(int, sys_connect, int, sockfd, struct sockaddr *, addr, socklen_t, addrlen);
+_syscall3(int, sys_accept, int, sockfd, struct sockaddr *, addr, socklen_t *, addrlen);
+
 _syscall1(int, print_log, char*, msg);
 
 //EOF

@@ -19,6 +19,7 @@
 #include "shellstorage.h"
 #include "timer.h"
 #include "offload_fio.h"
+#include "offload_network.h"
 
 static spinlock_t a_lock;
 /**
@@ -318,6 +319,31 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
 #ifdef DDBUG
     lk_print_xy(0, yyloc++%YOFFSET, "unlink system call **");
 #endif
+    break;
+  // Network related systemcalls
+  case SYSCALL_sys_gethostname:
+    ret_code = sys_off_gethostname((char *)param1, (size_t)param2);
+    break;
+  case SYSCALL_sys_gethostbyname:
+    ret_code = (QWORD) sys_off_gethostbyname((char *)param1);
+    break;
+  case SYSCALL_sys_getsockname:
+    ret_code = sys_off_getsockname((int)param1, (struct sockaddr *)param2, (socklen_t *)param3);
+    break;
+  case SYSCALL_sys_socket:
+    ret_code = sys_off_socket((int)param1, (int)param2, (int)param3);
+    break;
+  case SYSCALL_sys_bind:
+    ret_code = sys_off_bind((int)param1, (const struct sockaddr *)param2, (socklen_t)param3);
+    break;
+  case SYSCALL_sys_listen:
+    ret_code = sys_off_listen((int)param1, (int)param2);
+    break;
+  case SYSCALL_sys_connect:
+    ret_code = sys_off_connect((int)param1, (struct sockaddr *)param2, (socklen_t)param3);
+    break;
+  case SYSCALL_sys_accept:
+    ret_code = sys_off_accept((int)param1, (struct sockaddr *)param2, (socklen_t *)param3);
     break;
   default:
     printk("Invalid system calls");

@@ -201,13 +201,6 @@ void decrease_remaining_time_slice(long consumed_time_slice);
 
 void set_core(TCB *tcb, core_set_t *cst, int core);
 
-DECLARE_PERCPU(TCB *, running_thread);
-
-static inline TCB *get_current(void)
-{
-  return (TCB *)running_thread[get_apic_id()];
-}
-
 #ifndef NO_TCB_LOCK
 static inline void tcb_lock_init(TCB *t)
 {
@@ -229,6 +222,8 @@ static inline void tcb_lock_init(TCB *t) {}
 static inline void tcb_lock(TCB *t) {}
 static inline void tcb_unlock(TCB *t) {}
 #endif
+
+TCB *get_current(void);
 
 void do_exit(int arg);
 void block_current_task(void);
