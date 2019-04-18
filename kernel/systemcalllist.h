@@ -38,7 +38,7 @@
 #define SYSCALL_sys_signal              527
 #define SYSCALL_sys_creat               528
 #define SYSCALL_sys_gettimeofday        529
-#define SYSCALL_sys_unlink        	530
+#define SYSCALL_sys_unlink              530
 
 #define SYSCALL_do_exit                 550
 #define SYSCALL_block_current_task      551
@@ -48,8 +48,18 @@
 #define SYSCALL_sys_alloc               555
 #define SYSCALL_sys_free                556
 
-#define SYSCALL_get_start_tsc           601
-#define SYSCALL_get_freq                602
+// Network offloading related systemcalls
+#define SYSCALL_sys_gethostname         601
+#define SYSCALL_sys_gethostbyname       602
+#define SYSCALL_sys_getsockname         603
+#define SYSCALL_sys_socket              604
+#define SYSCALL_sys_bind                605
+#define SYSCALL_sys_listen              606
+#define SYSCALL_sys_connect             607
+#define SYSCALL_sys_accept              608
 
-#define SYSCALL_print_log	  854
+#define SYSCALL_get_start_tsc           901
+#define SYSCALL_get_freq                902
+
+#define SYSCALL_print_log               854
 #endif // __SYSTEMCALLLIST_H__

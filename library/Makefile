@@ -7,7 +7,7 @@ endif
 UKDIR = ..
 NEWLIB_DIR = /opt/hermit/x86_64-hermit
 
-INCS = -I. -I$(UKDIR)/include -I$(UKDIR)/include/$(TARGET) -I$(NEWLIB_DIR)/include
+INCS = -I. -I$(UKDIR)/include -I$(UKDIR)/include/$(TARGET)
 CFLAGS=-ffreestanding -Wall -mcmodel=large -g 
 CFLAGS+=-fno-common -mno-mmx -mno-3dnow -mno-avx 
 CFLAGS+=-fomit-frame-pointer -fno-exceptions -fno-asynchronous-unwind-tables -fno-unwind-tables -DVCONSOLE -O3 -D_$(TARGET)_

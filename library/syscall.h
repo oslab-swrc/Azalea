@@ -2,6 +2,7 @@
 #define __SYSCALL_H__
 
 #include <sys/types.h>
+#include <sys/socket.h>
 
 #include "systemcalllist.h"
 #include "az_types.h"
@@ -158,6 +159,16 @@ size_t get_start_tsc(void);
 size_t get_freq(void);
 int sys_gettimeofday(struct timeval *tv, void *tz);
 int sys_off_unlink(const char *path);
+
+// Network offloading related systemcalls
+int sys_gethostname(char *name, size_t len);
+struct hostent *sys_gethostbyname(char *name);
+int sys_getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+int sys_socket(int domain, int type, int protocol);
+int sys_bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
+int sys_listen(int sockfd, int backlog);
+int sys_connect(int sockfd, struct sockaddr *addr, socklen_t addrlen);
+int sys_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 
 int print_log(char *msg);
 

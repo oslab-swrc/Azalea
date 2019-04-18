@@ -9,6 +9,7 @@
 #include "offload_mmap.h"
 #include "offload_memory_config.h"
 #include "offload_fio.h"
+#include "offload_network.h"
 #include "systemcalllist.h"
 
 #define PAGE_SHIFT (12)
@@ -21,7 +22,6 @@ struct thread_channel_information {
    channel_t *ch;	
    int n_ch;
 }; 
-
 
 int g_offload_channel_runnable;
 int g_n_channels;
@@ -59,29 +59,53 @@ void *offload_local_proxy(void *arg)
         in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
         
         switch(in_pkt->io_function_type) {
-          case SYSCALL_sys_read :
+          case SYSCALL_sys_read:
              sys_off_read(curr_channel);
              break;
-          case SYSCALL_sys_write :
+          case SYSCALL_sys_write:
              sys_off_write(curr_channel);
              break;
-          case SYSCALL_sys_lseek :
+          case SYSCALL_sys_lseek:
              sys_off_lseek(curr_channel);
              break;
-          case SYSCALL_sys_open :
+          case SYSCALL_sys_open:
              sys_off_open(curr_channel);
              break;
-          case SYSCALL_sys_creat :
+          case SYSCALL_sys_creat:
              sys_off_creat(curr_channel);
              break;
-          case SYSCALL_sys_close :
+          case SYSCALL_sys_close:
              sys_off_close(curr_channel);
              break;
-          case SYSCALL_sys_unlink :
+          case SYSCALL_sys_unlink:
              sys_off_unlink(curr_channel);
              break;
+          case SYSCALL_sys_gethostname:
+             sys_off_gethostname(curr_channel);
+             break;
+          case SYSCALL_sys_gethostbyname:
+             sys_off_gethostbyname(curr_channel);
+             break;
+          case SYSCALL_sys_getsockname:
+             sys_off_getsockname(curr_channel);
+             break;
+          case SYSCALL_sys_socket:
+             sys_off_socket(curr_channel);
+             break;
+          case SYSCALL_sys_bind:
+             sys_off_bind(curr_channel);
+             break;
+          case SYSCALL_sys_listen:
+             sys_off_listen(curr_channel);
+             break;
+          case SYSCALL_sys_connect:
+             sys_off_connect(curr_channel);
+             break;
+          case SYSCALL_sys_accept:
+             sys_off_accept(curr_channel);
+             break;
           default :
-	     printf("function type: unknown\n");
+	         printf("function type: unknown\n");
              break;
         }
       }
@@ -268,4 +292,3 @@ __exit:
 
   return err;
 }
-

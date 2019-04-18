@@ -35,6 +35,7 @@ DECLARE_PERCPU(struct thread_list, runnable_list);
 DECLARE_PERCPU(struct thread_list, blocked_list);
 DECLARE_PERCPU(struct thread_list, local_tcb_list);
 //struct thread_list local_tcb_list[MAX_PROCESSOR_COUNT] __attribute__ ((aligned (64)));
+DECLARE_PERCPU(TCB *, running_thread);
 
 struct thread_list g_global_tcb_list;
 struct thread_list g_migrating_list;
@@ -42,6 +43,11 @@ struct thread_list g_migrating_list;
 static inline BOOL core_is_allowed(TCB * t, int cid)
 {
   return ISSET_CORE_MASK(&t->core_mask, cid) ? FALSE : TRUE;
+}
+
+TCB *get_current(void)
+{
+  return (TCB *)running_thread[get_apic_id()];
 }
 
 static int refill_time_slice(TCB * tcb);
