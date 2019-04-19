@@ -5,7 +5,6 @@
 #include "utility.h"
 #include "syscall.h"
 
-
 #define MAX_THREADS 1024*2 
 //#define MAX_THREADS 128 
 //#define MAX_THREADS 320 
@@ -42,7 +41,8 @@ int main(int argc, char** argv)
 	int i, ret;
 	//pthread_attr_t attr;
 
-	pthread_init();
+	// TODO: not defined in newlib header file. (It is in the hermitcore header file)
+//	pthread_init();
 
 	//pthread_attr_init(&attr);
   	//pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
