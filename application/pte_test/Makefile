@@ -18,23 +18,13 @@ INCS = -I$(LIB_DIR) -I$(KERNEL_DIR) -I$(ARCH_DIR)/$(TARGET)
 CC=gcc
 LD=ld
 CFLAGS = -c -m64 -Wall -mcmodel=large -fno-common -g -l$(LIB_DIR) -fno-stack-protector
-CFLAGS += -I $(NEWLIB_DIR)/include -L $(NEWLIB_DIR)/lib
 
 LD = ${CROSS_COMPILE}ld 
 
-all: ${COBJECTFILES} COPY 
+all: ${COBJECTFILES} 
 %.o: %.c
 	${CC} ${CFLAGS} ${INCS} -o $*.o $<
-#	${LD} -o uapp.elf -e main $*.o  /usr/lib64/libc.a -static ${LIB_DIR}/utility.o 
 	${LD} -o uapp.elf -e main $*.o ${LIB_DIR}/*.o $(NEWLIB_DIR)/lib/libpthread.a $(NEWLIB_DIR)/lib/libc.a -static -nostdlib
-
-#	${LD} -o uapp.elf -e libc_start /opt/hermit/x86_64-hermit/lib/*.o $*.o ${LIB_DIR}/*.o $(NEWLIB_DIR)/lib/libpthread.a $(NEWLIB_DIR)/lib/libc.a -static -nostdlib
-#	${LD} -o uapp.elf -e main $*.o ${LIB_DIR}/*.o $(NEWLIB_DIR)/lib/libc.a -static
-
-COPY:
-	cp *.elf ${APP_DIR}/
 
 clean:
 	rm -f *.elf *.o tags
-	rm -f ${APP_DIR}/*.elf
-

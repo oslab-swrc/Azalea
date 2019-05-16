@@ -1,17 +1,22 @@
-.PHONY: all 
+ifeq ("$(APP)", "")
+  TARGET := helloworld
+else
+  TARGET := $(APP)
+endif
+
+SUBDIRS := $(wildcard */)
+
+.PHONY: all clean $(SUBDIRS) $(SUBDIRS_RM)
 
 all:
-#       make -C pte_test
-#	make -C newlib_test
-#	make -C gettimeofday_test
-#       make -C semaphore_test
-#       make -C helloworld
-	make -C fio_test
-clean:
-#       make -C pte_test clean
-#	make -C newlib_test clean
-#	make -C gettimeofday_test clean
-#       make -C semaphore_test clean
-#       make -C helloworld clean
-	make -C fio_test clean
+	@echo "*** Target APP: $(TARGET)"
+	for DIRS in $(SUBDIRS); do \
+		make -C $$DIRS;\
+	done
+	@cp $(TARGET)/uapp.elf .
 
+clean:
+	for DIRS in $(SUBDIRS); do \
+		make -C $$DIRS clean;\
+	done
+	@rm -rf uapp.elf

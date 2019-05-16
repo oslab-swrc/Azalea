@@ -1,5 +1,3 @@
-#KDIR = /media/linux-2.6.38+mpss3.5.2
-#KDIR = /home/dandelion/git/pcie-cloud/phi-kernel
 KDIR = /lib/modules/$(shell uname -r)/build
 UKDIR ?= $(shell pwd)
 ifneq ("$(V)", "1")
@@ -34,7 +32,7 @@ library:
 
 application:
 	@echo "===== Build Application start    ====="
-	make -C application $(VERBOSE)
+	make -C application $(VERBOSE) APP=$(APP)
 	@echo "===== Build Application complete ====="
 	@echo
 

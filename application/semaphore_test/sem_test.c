@@ -19,22 +19,22 @@ int main()
 {
   int state = 0;
 
-  state = sem_init(&bin_sem, 0);  // Semaphore initialize 
+  state = sys_sem_init(&bin_sem, 0);  // Semaphore initialize 
   if(state != 0)
     Error("sem_init Error");
 
-  create_thread((QWORD)print_status, 0);
+  create_thread((QWORD)print_status, 0, 0);
 
-  create_thread((QWORD)sem_rev, 1);
-  create_thread((QWORD)sem_rev, 2);
+  create_thread((QWORD)sem_rev, 0, 1);
+  create_thread((QWORD)sem_rev, 0, 2);
 
-  create_thread((QWORD)sem_snd, 3);
+  create_thread((QWORD)sem_snd, 0, 3);
 
   while(1) 
     if (end_cnt == 3)
       break;
 
-  sem_destroy(bin_sem);
+  sys_sem_destroy(bin_sem);
   print_xy(0, y_loc++%24, "sem destroy");
 
   return 0;
@@ -54,7 +54,7 @@ void sem_snd()
   while (number < 4) {
     delay(10);
     //print_xy(0, y_loc++%24, "%s Running : %d","snd", number);
-    sem_post(bin_sem);
+    sys_sem_post(bin_sem);
   }
 
   print_xy(0, y_loc++%24, "%s Stop : %d","snd", number);
@@ -68,7 +68,7 @@ void sem_rev()
 
   for (i=0; i<2; i++) {
     print_xy(0, y_loc++%24, "%s Ready : %d","rev", number);
-    sem_wait(bin_sem);
+    sys_sem_wait(bin_sem);
     print_xy(0, y_loc++%24, "%s Running : %d","rev", number);
     number++;
   }

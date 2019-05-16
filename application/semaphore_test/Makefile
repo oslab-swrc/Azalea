@@ -20,16 +20,10 @@ CFLAGS=-c -m64 -Wall -mcmodel=large -fno-common -g -l$(LIB_DIR) -fno-stack-prote
 
 LD = ${CROSS_COMPILE}ld 
 
-all: ${COBJECTFILES} COPY 
+all: ${COBJECTFILES} 
 %.o: %.c
 	${CC} ${CFLAGS} ${INCS} -o $*.o $<
-#	${LD} -o uapp.elf $*.o  /usr/lib64/libc.a -static ${LIB_DIR}/utility.o 
 	${LD} -o uapp.elf -e main $*.o ${LIB_DIR}/*.o 
-
-COPY:
-	cp *.elf ${APP_DIR}/
 
 clean:
 	rm -f *.elf *.o tags
-	rm -f ${APP_DIR}/*.elf
-

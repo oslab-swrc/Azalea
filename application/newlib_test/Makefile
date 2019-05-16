@@ -4,37 +4,26 @@ ifeq ($(TARGET),)
   TARGET = knl
 endif
 
-KERNEL_DIR = ../../kernel
-LIB_DIR = ../../library
-ARCH_DIR = ../../include
-NEWLIB_DIR = /opt/hermit/x86_64-hermit
+UKDIR = ../..
+LIB_DIR = $(UKDIR)/library
 APP_DIR = ..
+NEWLIB_DIR = /opt/hermit/x86_64-hermit
 
 CSOURCEFILES = $(wildcard *.c) 
 COBJECTFILES = $(notdir $(patsubst %.c,%.o,$(CSOURCEFILES)))
 
-INCS = -I$(LIB_DIR) -I$(KERNEL_DIR) -I$(ARCH_DIR)/$(TARGET)
+INCS = -I$(UKDIR)/include/$(TARGET) -I$(LIB_DIR) 
 
 CC=gcc
 LD=ld
-CFLAGS = -c -m64 -Wall -mcmodel=large -fno-common -g -l$(LIB_DIR) -fno-stack-protector
-CFLAGS += -mno-mmx -mno-3dnow -mno-avx
-CFLAGS += -I $(NEWLIB_DIR)/include -L $(NEWLIB_DIR)/lib
+CFLAGS=-c -m64 -Wall -mcmodel=large -fno-common -g -l$(LIB_DIR) -fno-stack-protector
 
 LD = ${CROSS_COMPILE}ld 
 
-all: ${COBJECTFILES} COPY 
+all: ${COBJECTFILES}
 %.o: %.c
 	${CC} ${CFLAGS} ${INCS} -o $*.o $<
-#	${LD} -o uapp.elf -e main $*.o  /usr/lib64/libc.a -static ${LIB_DIR}/utility.o 
-#	${LD} -o uapp.elf -e main $*.o ${LIB_DIR}/*.o $(NEWLIB_DIR)/lib/libc.a -static -nostdlib
-	${LD} -o uapp.elf -e main $*.o ${LIB_DIR}/*.o $(NEWLIB_DIR)/lib/libpthread.a $(NEWLIB_DIR)/lib/libc.a -static -nostdlib
-#	${LD} -o uapp.elf -e main $*.o ${LIB_DIR}/*.o $(NEWLIB_DIR)/lib/libc.a -static
-
-COPY:
-	cp *.elf ${APP_DIR}/
+	${LD} -o uapp.elf -e main $*.o $(NEWLIB_DIR)/lib/libpthread.a ${NEWLIB_DIR}/lib/libc.a ${LIB_DIR}/*.o 
 
 clean:
 	rm -f *.elf *.o tags
-	rm -f ${APP_DIR}/*.elf
-
