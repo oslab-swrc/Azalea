@@ -5,4 +5,6 @@
 
 ulimit -n 1000000
 insmod ../offload_driver/offload.ko
-./offload_local_proxy -o 8 -i 8 -c 300 -t 10 
+#./offload_local_proxy -o 8 -i 8 -c 300 -t 10 
+./offload_local_proxy -o 32 -i 32 -c 16 -t 16
+
