@@ -32,7 +32,11 @@ void shell_enqueue(const char * msg)
 {
 #if 1
   spinlock_lock(&log_lock) ;
-  if ( *log_rear >= MAX_LOG_COUNT ) return ; 
+  if ( *log_rear >= MAX_LOG_COUNT ) {
+    spinlock_unlock(&log_lock);
+    return ;
+  }
+ 
   lk_memcpy(log_buffer+((*log_rear)*64), msg, lk_strlen(msg)) ; 
   (*log_rear)++ ;
   spinlock_unlock(&log_lock) ;
