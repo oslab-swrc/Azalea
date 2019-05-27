@@ -1,9 +1,11 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 
 #include "offload_channel.h"
 #include "offload_fio.h"
@@ -57,7 +59,7 @@ void sys_off_open(struct channel_struct *ch)
   }
 
   if(iret == -1)
-	fprintf(stdout, "%s\n", strerror(errno));
+	fprintf(stdout, "FIO OPEN: %s, %s\n", strerror(errno), path);
 
   // retrun ret
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
@@ -103,7 +105,7 @@ void sys_off_creat(struct channel_struct *ch)
   iret = creat(path, mode);
 
   if(iret == -1)
-	fprintf(stdout, "%s\n", strerror(errno));
+	fprintf(stdout, "FIO CREAT: %s, %s\n", strerror(errno), path);
 
   // retrun ret
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
@@ -187,7 +189,7 @@ void sys_off_read(struct channel_struct *ch)
 
   // check error
   if(sret  == -1)
-	fprintf(stdout, "%s\n", strerror(errno));
+	fprintf(stdout, "FIO READ: %s, %d\n", strerror(errno), fd);
 
   // retrun ret
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) sret);
@@ -274,7 +276,7 @@ void sys_off_write(struct channel_struct *ch)
 
   // check error
   if(sret == -1)
-	fprintf(stdout, "%s\n", strerror(errno));
+	fprintf(stdout, "FIO WRITE: %s, %d\n", strerror(errno), fd);
 
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) sret);
 }
@@ -315,7 +317,7 @@ void sys_off_close(struct channel_struct *ch)
 
   // check error
   if(iret == -1)
-	fprintf(stdout, "%s\n", strerror(errno));
+	fprintf(stdout, "FIO CLOSE: %s, %d\n", strerror(errno), fd);
 
   // retrun ret
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
@@ -362,7 +364,7 @@ void sys_off_lseek(struct channel_struct *ch)
 
   // check error
   if(oret == -1)
-        fprintf(stdout, "%s\n", strerror(errno));
+        fprintf(stdout, "FIO LSEEK: %s, %d\n", strerror(errno), fd);
 
   // retrun ret
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) oret);
@@ -405,9 +407,176 @@ void sys_off_unlink(struct channel_struct *ch)
 
   // check error
   if(iret == -1)
-    fprintf(stdout, "%s\n", strerror(errno));
+    fprintf(stdout, "FIO UNLINK: %s, %s\n", strerror(errno), path);
 
   // retrun ret
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
 }
 
+/**
+ * @brief execute stat system call 
+ * @param channel 
+ * @return none
+ */
+void sys_off_stat(struct channel_struct *ch)
+{
+  struct circular_queue *in_cq = NULL;
+  struct circular_queue *out_cq = NULL;
+  io_packet_t *in_pkt = NULL;
+
+  int  iret = -1;
+
+  char *pathname = NULL;;
+  struct stat *buf = NULL;
+
+  int tid = 0;
+  int  offload_function_type = 0;
+
+  in_cq = ch->in_cq;
+  out_cq = ch->out_cq;
+  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+
+  tid = (int) in_pkt->tid;
+  offload_function_type = (int) in_pkt->io_function_type;
+
+  pathname = (char *) get_va(in_pkt->param1);
+  buf = (struct stat *) get_va(in_pkt->param2);
+
+  // empty in_cq
+  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
+
+  // execute unlink
+  iret = stat(pathname, buf);
+
+  // check error
+  if(iret == -1)
+    fprintf(stdout, "FIO STAT: %s, %s\n", strerror(errno), pathname);
+
+  // retrun ret
+  send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+}
+
+/**
+ * @brief execute getcwd system call 
+ * @param channel 
+ * @return none
+ */
+void off_getcwd(struct channel_struct *ch)
+{
+  struct circular_queue *in_cq = NULL;
+  struct circular_queue *out_cq = NULL;
+  io_packet_t *in_pkt = NULL;
+
+  char *pret = NULL;
+
+  char *buf = NULL;;
+  size_t size = 0;
+
+  int tid = 0;
+  int  offload_function_type = 0;
+
+  in_cq = ch->in_cq;
+  out_cq = ch->out_cq;
+  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+
+  tid = (int) in_pkt->tid;
+  offload_function_type = (int) in_pkt->io_function_type;
+
+  buf = (char *) get_va(in_pkt->param1);
+  size = (size_t) in_pkt->param2;
+
+  // empty in_cq
+  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
+
+  // execute unlink
+  pret = getcwd(buf, size);
+
+  // check error
+  if(pret == NULL)
+    fprintf(stdout, "FIO GETCWd: %s, %s\n", strerror(errno), buf);
+
+  // retrun ret
+  send_offload_message(out_cq, tid, offload_function_type, (unsigned long) pret);
+}
+
+/**
+ * @brief execute system system call
+ * @param channel 
+ * @return none
+ */
+void off_system(struct channel_struct *ch)
+{
+  struct circular_queue *in_cq = NULL;
+  struct circular_queue *out_cq = NULL;
+  io_packet_t *in_pkt = NULL;
+
+  int iret = -1;
+
+  char *command = NULL;;
+
+  int tid = 0;
+  int  offload_function_type = 0;
+
+  in_cq = ch->in_cq;
+  out_cq = ch->out_cq;
+  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+
+  tid = (int) in_pkt->tid;
+  offload_function_type = (int) in_pkt->io_function_type;
+
+  command = (char *) get_va(in_pkt->param1);
+
+  // empty in_cq
+  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
+
+  // execute unlink
+  iret = system(command);
+
+  // check error
+  if(iret == -1)
+    fprintf(stdout, "FIO SYSTEM: %s, %s\n", strerror(errno), command);
+
+  // retrun ret
+  send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+}
+
+/**
+ * @brief execute chdir system call
+ * @param channel 
+ * @return none
+ */
+void sys_off_chdir(struct channel_struct *ch)
+{
+  struct circular_queue *in_cq = NULL;
+  struct circular_queue *out_cq = NULL;
+  io_packet_t *in_pkt = NULL;
+
+  int iret = -1;
+
+  char *path = NULL;;
+
+  int tid = 0;
+  int  offload_function_type = 0;
+
+  in_cq = ch->in_cq;
+  out_cq = ch->out_cq;
+  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+
+  tid = (int) in_pkt->tid;
+  offload_function_type = (int) in_pkt->io_function_type;
+
+  path = (char *) get_va(in_pkt->param1);
+
+  // empty in_cq
+  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
+
+  // execute unlink
+  iret = chdir(path);
+
+  // check error
+  if(iret == -1)
+    fprintf(stdout, "FIO CHDIR: %s, %s\n", strerror(errno), path);
+
+  // retrun ret
+  send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+}

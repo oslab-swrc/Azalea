@@ -451,3 +451,32 @@ ssize_t sys_sbrk(ssize_t incr)
 
   return ret;
 }
+
+ /**
+ * @brief Set the end of data space by val
+ * @param 
+ * @return Return the end of data space, or -ENOMEM for errors
+ */
+ssize_t sys_brk(ssize_t val)
+{
+  ssize_t ret = 0;
+
+  spinlock_lock(&heap_lock);
+  ret = heap_end;
+
+  if ((heap_end >= HEAP_START) && (heap_end < HEAP_START + HEAP_SIZE)) {
+    heap_end = val;
+
+    if (PAGE_FLOOR(heap_end) > PAGE_FLOOR(ret)) {
+      // Do something of VMA
+    }
+    ret = val;
+  } else {
+    ret = -ENOMEM;
+  }
+
+  spinlock_unlock(&heap_lock);
+
+  return ret;
+}
+

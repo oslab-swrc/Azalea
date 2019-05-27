@@ -39,6 +39,10 @@
 #define SYSCALL_sys_creat               528
 #define SYSCALL_sys_gettimeofday        529
 #define SYSCALL_sys_unlink              530
+#define SYSCALL_sys_stat                531
+#define SYSCALL_sys_brk                 532
+#define SYSCALL_sys_chdir               533
+
 
 #define SYSCALL_do_exit                 550
 #define SYSCALL_block_current_task      551
@@ -60,6 +64,8 @@
 
 #define SYSCALL_get_start_tsc           901
 #define SYSCALL_get_freq                902
+#define SYSCALL_getcwd                  903
+#define SYSCALL_sys_system              904
 
 #define SYSCALL_print_log               854
 #endif // __SYSTEMCALLLIST_H__

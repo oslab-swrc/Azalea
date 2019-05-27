@@ -320,6 +320,12 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
     lk_print_xy(0, yyloc++%YOFFSET, "unlink system call **");
 #endif
     break;
+  case SYSCALL_sys_stat:
+    ret_code = sys_off_stat((char *) param1, (struct stat *) param2);
+    break;
+  case SYSCALL_sys_brk:
+    ret_code = sys_brk((ssize_t) param1);
+    break;
   // Network related systemcalls
   case SYSCALL_sys_gethostname:
     ret_code = sys_off_gethostname((char *)param1, (size_t)param2);
@@ -344,6 +350,15 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
     break;
   case SYSCALL_sys_accept:
     ret_code = sys_off_accept((int)param1, (struct sockaddr *)param2, (socklen_t *)param3);
+    break;
+  case SYSCALL_getcwd:
+    ret_code = (QWORD) off_getcwd((char *)param1, (size_t)param2);
+    break;
+  case SYSCALL_sys_system:
+    ret_code = (QWORD) off_system((char *)param1);
+    break;
+  case SYSCALL_sys_chdir:
+    ret_code = (QWORD) sys_off_chdir((char *)param1);
     break;
   default:
     printk("Invalid system calls");

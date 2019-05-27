@@ -11,5 +11,9 @@ void sys_off_write(struct channel_struct *ch);
 void sys_off_lseek(struct channel_struct *ch);
 void sys_off_close(struct channel_struct *ch);
 void sys_off_unlink(struct channel_struct *ch);
+void sys_off_stat(struct channel_struct *ch);
+void off_getcwd(struct channel_struct *ch);
+void off_system(struct channel_struct *ch);
+void sys_off_chdir(struct channel_struct *ch);
 
-#endif
+#endif /*__OFFLOAD_IO_H__*/

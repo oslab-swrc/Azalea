@@ -7,10 +7,6 @@
 #include "atomic.h"
 #include "az_types.h"
 
-/* Macro */
-#define MIN(x, y)     (((x) < (y)) ? (x) : (y))
-#define MAX(x, y)     (((x) > (y)) ? (x) : (y))
-
 // __old and __new is for 64bit register assignement
 #define cmpxchg(ptr, old, new) ({ \
   __typeof__(*(ptr)) __ret; \

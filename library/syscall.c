@@ -38,6 +38,9 @@ _syscall2(int, sys_kill, tid_t, dest, int, signum);
 _syscall1(int, sys_signal, signal_handler_t, handler);
 _syscall2(int, sys_gettimeofday, struct timeval*, tv, void*, tz);
 _syscall1(int, sys_unlink, const char *, path);
+_syscall2(int, sys_stat, const char*, pathname, struct stat*, buf);
+_syscall1(int, sys_brk, void *, addr);
+_syscall1(int, sys_chdir, const char*, path);
 
 _syscall1(void, do_exit, int, arg);
 _syscall0(int, block_current_task);
@@ -61,5 +64,7 @@ _syscall3(int, sys_connect, int, sockfd, struct sockaddr *, addr, socklen_t, add
 _syscall3(int, sys_accept, int, sockfd, struct sockaddr *, addr, socklen_t *, addrlen);
 
 _syscall1(int, print_log, char*, msg);
+_syscall2(char *, getcwd, char *, buf, size_t, size);
+_syscall1(int, sys_system, char*, command);
 
 //EOF

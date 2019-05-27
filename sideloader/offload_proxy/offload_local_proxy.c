@@ -51,8 +51,8 @@ void *offload_local_proxy(void *arg)
 
     for(i = 0; i < n_channels_of_thread && g_offload_channel_runnable; i++) {
 
-      curr_channel = (offload_channels + i);
-      in_cq = curr_channel->in_cq;
+      curr_channel = (struct channel_struct *) (offload_channels + i);
+      in_cq = (struct circular_queue *) curr_channel->in_cq;
 
       if(cq_avail_data(in_cq)) {
 
@@ -104,8 +104,20 @@ void *offload_local_proxy(void *arg)
           case SYSCALL_sys_accept:
              sys_off_accept(curr_channel);
              break;
+          case SYSCALL_sys_stat:
+             sys_off_stat(curr_channel);
+             break;
+          case SYSCALL_getcwd:
+             off_getcwd(curr_channel);
+             break;
+          case SYSCALL_sys_system:
+             off_system(curr_channel);
+             break;
+          case SYSCALL_sys_chdir:
+             sys_off_chdir(curr_channel);
+             break;
           default :
-	         printf("function type: unknown\n");
+             printf("function type: unknown[%d]\n", (int) in_pkt->io_function_type);
              break;
         }
       }

@@ -5,7 +5,6 @@ ifeq ($(TARGET),)
 endif
 
 UKDIR = ..
-NEWLIB_DIR = /opt/hermit/x86_64-hermit
 
 INCS = -I. -I$(UKDIR)/include -I$(UKDIR)/include/$(TARGET)
 CFLAGS=-ffreestanding -Wall -mcmodel=large -g 
