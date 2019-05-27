@@ -54,5 +54,6 @@ void set_bitmap_flag(int block_list_index, int offset, BYTE flag);
 BYTE get_bitmap_flag(int block_list_index, int offset);
 
 ssize_t sys_sbrk(ssize_t incr);
+ssize_t sys_brk(ssize_t val);
 
 #endif /* __MEMORY_MANAGEMENT_H__ */

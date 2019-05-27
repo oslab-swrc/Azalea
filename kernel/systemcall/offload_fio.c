@@ -1,5 +1,6 @@
 #include <sys/lock.h>
 #include <sys/uio.h>
+#include <sys/stat.h>
 
 #include "console.h"
 #include "az_types.h"
@@ -8,12 +9,12 @@
 #include "offload_message.h"
 #include "offload_fio.h"
 #include "page.h"
+#include "memory.h"
 #include "systemcalllist.h"
 #include "utility.h"
 #include "thread.h"
 
 extern QWORD g_memory_start;
-
 
 /**
  * @brief get_iovec for buf(with count)
@@ -360,6 +361,164 @@ QWORD mytid = -1;
 
   send_offload_message(ocq, mytid, SYSCALL_sys_unlink, get_pa((QWORD) path), 0, 0, 0, 0, 0);
   iret = (int) receive_offload_message(icq, mytid, SYSCALL_sys_unlink);
+
+  return iret;
+}
+
+/**
+ * @brief file stat system call
+ * @param path for a file
+ * @param buf for struct stat
+ * @return success (0), fail (-1)
+ */
+int sys_off_stat(const char *pathname, struct stat *buf)
+{
+  int iret = 0;
+
+  channel_t *ch = NULL;
+  struct circular_queue *icq = NULL;
+  struct circular_queue *ocq = NULL;
+
+  TCB *current = NULL;
+  QWORD mytid = -1;
+
+  if(pathname == NULL || buf == NULL)
+    return -1;
+
+  ch = get_offload_channel(-1);
+  if(ch == NULL) {
+          return -1;
+  }
+
+  icq = ch->in;
+  ocq = ch->out;
+
+  current = get_current();
+  mytid = current->id;
+
+  send_offload_message(ocq, mytid, SYSCALL_sys_stat, get_pa((QWORD) pathname), get_pa((QWORD) buf), 0, 0, 0, 0);
+  iret = (int) receive_offload_message(icq, mytid, SYSCALL_sys_stat);
+
+  return iret;
+}
+
+/**
+ * @brief 
+ * @param
+ * @param 
+ * @return 
+ */
+char *off_getcwd(char *buf, size_t size)
+{
+  char *pret = NULL;
+  int az_alloc_flag = 0;
+
+  channel_t *ch = NULL;
+  struct circular_queue *icq = NULL;
+  struct circular_queue *ocq = NULL;
+
+  TCB *current = NULL;
+  int mytid = -1;
+
+  // check parameter
+  if(buf == NULL && size == 0) 
+    return (NULL);
+
+  ch = get_offload_channel(-1);
+  if(ch == NULL)
+    return (NULL);
+  icq = ch->in;
+  ocq = ch->out;
+
+  current = get_current();
+  mytid = current->id;
+
+  if(buf == NULL) {
+    buf = (char *) az_alloc(PAGE_SIZE_4K);
+    az_alloc_flag = 1;
+  }
+
+  send_offload_message(ocq, mytid, SYSCALL_getcwd, get_pa((QWORD) buf), size, 0, 0, 0, 0);
+  pret = (char *) receive_offload_message(icq, mytid, SYSCALL_getcwd);
+
+  if(pret == NULL) {
+    if(az_alloc_flag == 1)
+      az_free(buf);
+    return NULL;
+  }
+
+  return buf;
+}
+
+/**
+ * @brief 
+ * @param
+ * @param 
+ * @return 
+ */
+int off_system(char *command)
+{
+  int iret = -1;
+
+  channel_t *ch = NULL;
+  struct circular_queue *icq = NULL;
+  struct circular_queue *ocq = NULL;
+
+  TCB *current = NULL;
+  int mytid = -1;
+
+  // check parameter
+  if(command == NULL)
+    return (-1);
+
+  ch = get_offload_channel(-1);
+  if(ch == NULL)
+    return (-1);
+
+  icq = ch->in;
+  ocq = ch->out;
+
+  current = get_current();
+  mytid = current->id;
+
+  send_offload_message(ocq, mytid, SYSCALL_sys_system, get_pa((QWORD) command), 0, 0, 0, 0, 0);
+  iret = (int) receive_offload_message(icq, mytid, SYSCALL_sys_system);
+
+  return iret;
+}
+
+/**
+ * @brief 
+ * @param
+ * @param 
+ * @return 
+ */
+int sys_off_chdir(const char *path)
+{
+  int iret = -1;
+
+  channel_t *ch = NULL;
+  struct circular_queue *icq = NULL;
+  struct circular_queue *ocq = NULL;
+
+  TCB *current = NULL;
+  int mytid = -1;
+
+  // check parameter
+  if(path == NULL)
+    return (-1);
+
+  ch = get_offload_channel(-1);
+  if(ch == NULL)
+    return (-1);
+  icq = ch->in;
+  ocq = ch->out;
+
+  current = get_current();
+  mytid = current->id;
+
+  send_offload_message(ocq, mytid, SYSCALL_sys_chdir, get_pa((QWORD) path), 0, 0, 0, 0, 0);
+  iret = (int) receive_offload_message(icq, mytid, SYSCALL_sys_chdir);
 
   return iret;
 }

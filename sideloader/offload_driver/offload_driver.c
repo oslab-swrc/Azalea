@@ -70,16 +70,16 @@ static int offload_mmap(struct file *filp, struct vm_area_struct *vma)
   vma->vm_flags |= VM_IO;  
   vma->vm_flags |= (VM_DONTEXPAND | VM_DONTDUMP);
 
-  //printk("1. offload remap start : %llx, pg offset: %llx\n", (u64) vma->vm_start, (u64) vma->vm_pgoff);
-
+#if 0
   vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot); 
-  //printk(KERN_INFO "pg offset=%llx\n", vma->vm_pgoff); 
+#else
+  vma->vm_page_prot = pgprot_writecombine(vma->vm_page_prot);
+#endif
 
   if(remap_pfn_range(vma, vma->vm_start, offset >> PAGE_SHIFT, vma_size, vma->vm_page_prot) < 0) {
     printk("offload remap failed\n");
     return -EAGAIN;
   }
-  //printk("offload remap start : %llx, pg offset: %llx\n", (u64) vma->vm_start, (u64) vma->vm_pgoff);
 
   return 0;
 }

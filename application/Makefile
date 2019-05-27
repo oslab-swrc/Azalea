@@ -1,7 +1,7 @@
 ifeq ("$(APP)", "")
-  TARGET := helloworld
+  TARGETS := helloworld
 else
-  TARGET := $(APP)
+  TARGETS := $(APP)
 endif
 
 SUBDIRS := $(wildcard */)
@@ -9,11 +9,11 @@ SUBDIRS := $(wildcard */)
 .PHONY: all clean $(SUBDIRS) $(SUBDIRS_RM)
 
 all:
-	@echo "*** Target APP: $(TARGET)"
+	@echo "*** Target APP: $(TARGETS)"
 	for DIRS in $(SUBDIRS); do \
 		make -C $$DIRS;\
 	done
-	@cp $(TARGET)/uapp.elf .
+	@cp $(TARGETS)/uapp.elf .
 
 clean:
 	for DIRS in $(SUBDIRS); do \
