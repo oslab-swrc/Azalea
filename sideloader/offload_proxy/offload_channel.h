@@ -7,6 +7,20 @@
 #define CQ_ELE_PAGE_NUM (130)		// 2 + 128 
 #define CQ_ELE_SIZE	(130 * 4096)	// 8K + 512K
 
+#define   LOCK_ENABLED
+#define   LOCK_ENABLED_MAX_CHANNELS_NUM        320
+
+#ifdef LOCK_ENABLED
+typedef struct az_spinlock_struct {
+  volatile unsigned long lock;
+} az_spinlock_t __attribute__ ((aligned (8)));
+
+static inline void az_spinlock_init(az_spinlock_t *lock)
+{
+  lock->lock = 0;
+}
+#endif
+
 // Circular queue struct
 typedef struct cq_element_struct {
   char d[CQ_ELE_SIZE];
