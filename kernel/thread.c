@@ -722,6 +722,7 @@ retry:
           /*list_remove_init(&next_tcb->tcb_link);*/
           g_running_thread_list[cid] = next_tcb;
         }
+      // if selected next_tcb is not allowed in this core, then put it in the migrating list
       } else if (spinlock_trylock(&g_migrating_list.lock)) {
         // migrate the next_tcb to the g_migrating_list
         per_cpu(runnable_list).count--;
@@ -738,6 +739,7 @@ retry:
   if (!found) {
     int refilled = 0;
 
+   // if there are threads ready with no time slice in the runnable list, then refill the time slice
     dl_list_for_each(next_tcb, &per_cpu(runnable_list).tcb_list, TCB, tcb_link) {
       tcb_lock(next_tcb);
       if (next_tcb->state == THREAD_STATE_READY && next_tcb->remaining_time_slice <= 0) {
@@ -746,15 +748,15 @@ retry:
       }
       tcb_unlock(next_tcb);
     }
+
     if (refilled)
       goto retry;
 
-    // Prevent switching to idle thread when there is only one thread in the runnable list
+    // if there is only one thread in runnable list, then select it
     if (per_cpu(runnable_list).count == 1)
-      return (get_current());
-
-    refill_time_slice(g_idle_thread_list[cid]);
-    return g_idle_thread_list[cid];
+      found_tcb = dl_list_first(&per_cpu(runnable_list).tcb_list, TCB, tcb_link);
+    else
+      found_tcb = g_idle_thread_list[cid];
   }
 
   return found_tcb;
@@ -901,7 +903,6 @@ void __post_context_switch(TCB * prev)
 #endif
   }
 }
-
 
 /*
  * post context switch
@@ -1106,11 +1107,17 @@ BOOL schedule(QWORD intention)
   tcb_unlock(curr);
 
   next = select_next_thread();
+  // if there is no or one thread in runnable list, next == curr
   if (next == curr) {
+    refill_time_slice(curr);
     lapic_start_timer_oneshot(curr->remaining_time_slice);
 
     post_context_switch(curr);
     curr->state = THREAD_STATE_RUNNING;
+
+    // free intention
+    atomic_set(&curr->intention, atomic_get(&curr->intention) &  ~(THREAD_INTENTION_READY));
+
     return TRUE;
   }
 
