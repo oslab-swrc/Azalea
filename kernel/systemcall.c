@@ -351,11 +351,11 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
   case SYSCALL_sys_accept:
     ret_code = sys_off_accept((int)param1, (struct sockaddr *)param2, (socklen_t *)param3);
     break;
-  case SYSCALL_getcwd:
-    ret_code = (QWORD) off_getcwd((char *)param1, (size_t)param2);
+  case SYSCALL_sys3_getcwd:
+    ret_code = (QWORD) sys3_off_getcwd((char *)param1, (size_t)param2);
     break;
-  case SYSCALL_sys_system:
-    ret_code = (QWORD) off_system((char *)param1);
+  case SYSCALL_sys3_system:
+    ret_code = (QWORD) sys3_off_system((char *)param1);
     break;
   case SYSCALL_sys_chdir:
     ret_code = (QWORD) sys_off_chdir((char *)param1);

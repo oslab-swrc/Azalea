@@ -1,16 +1,17 @@
 #ifndef __OFFLOAD_CHANNEL_H__
 #define __OFFLOAD_CHANNEL_H__
 
+#include "offload_memory_config.h"
+
 #define	PAGE_SIZE_4K	(0x1000)
 #define	PAGE_SIZE_2M	(0x200000)
 
 #define CQ_ELE_PAGE_NUM (130)		// 2 + 128 
 #define CQ_ELE_SIZE	(130 * 4096)	// 8K + 512K
 
-#define   LOCK_ENABLED
-#define   LOCK_ENABLED_MAX_CHANNELS_NUM        320
+#define   OFFLOAD_LOCK_ENABLE_MAX_CHANNELS_NUM	300
 
-#ifdef LOCK_ENABLED
+#ifdef OFFLOAD_LOCK_ENABLE
 typedef struct az_spinlock_struct {
   volatile unsigned long lock;
 } az_spinlock_t __attribute__ ((aligned (8)));

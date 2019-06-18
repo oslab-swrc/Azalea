@@ -408,7 +408,7 @@ int sys_off_stat(const char *pathname, struct stat *buf)
  * @param 
  * @return 
  */
-char *off_getcwd(char *buf, size_t size)
+char *sys3_off_getcwd(char *buf, size_t size)
 {
   char *pret = NULL;
   int az_alloc_flag = 0;
@@ -438,8 +438,8 @@ char *off_getcwd(char *buf, size_t size)
     az_alloc_flag = 1;
   }
 
-  send_offload_message(ocq, mytid, SYSCALL_getcwd, get_pa((QWORD) buf), size, 0, 0, 0, 0);
-  pret = (char *) receive_offload_message(icq, mytid, SYSCALL_getcwd);
+  send_offload_message(ocq, mytid, SYSCALL_sys3_getcwd, get_pa((QWORD) buf), size, 0, 0, 0, 0);
+  pret = (char *) receive_offload_message(icq, mytid, SYSCALL_sys3_getcwd);
 
   if(pret == NULL) {
     if(az_alloc_flag == 1)
@@ -456,7 +456,7 @@ char *off_getcwd(char *buf, size_t size)
  * @param 
  * @return 
  */
-int off_system(char *command)
+int sys3_off_system(char *command)
 {
   int iret = -1;
 
@@ -481,8 +481,8 @@ int off_system(char *command)
   current = get_current();
   mytid = current->id;
 
-  send_offload_message(ocq, mytid, SYSCALL_sys_system, get_pa((QWORD) command), 0, 0, 0, 0, 0);
-  iret = (int) receive_offload_message(icq, mytid, SYSCALL_sys_system);
+  send_offload_message(ocq, mytid, SYSCALL_sys3_system, get_pa((QWORD) command), 0, 0, 0, 0, 0);
+  iret = (int) receive_offload_message(icq, mytid, SYSCALL_sys3_system);
 
   return iret;
 }

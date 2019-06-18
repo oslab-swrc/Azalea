@@ -107,11 +107,11 @@ void *offload_local_proxy(void *arg)
           case SYSCALL_sys_stat:
              sys_off_stat(curr_channel);
              break;
-          case SYSCALL_getcwd:
-             off_getcwd(curr_channel);
+          case SYSCALL_sys3_getcwd:
+             sys3_off_getcwd(curr_channel);
              break;
-          case SYSCALL_sys_system:
-             off_system(curr_channel);
+          case SYSCALL_sys3_system:
+             sys3_off_system(curr_channel);
              break;
           case SYSCALL_sys_chdir:
              sys_off_chdir(curr_channel);

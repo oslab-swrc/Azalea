@@ -8,6 +8,12 @@
 
 static QWORD vcon_addr;
 
+int get_cpufreq(void)
+{
+   return get_freq();
+}
+
+
 /**
  * Copy memory
  */ 

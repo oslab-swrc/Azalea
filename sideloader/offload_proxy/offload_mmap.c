@@ -13,7 +13,7 @@ unsigned long g_mmap_unikernels_mem_base_va = 0;
 // offload channel info address
 unsigned long g_offload_channels_info_va = 0;
 
-#ifdef LOCK_ENABLED
+#ifdef OFFLOAD_LOCK_ENABLE
 unsigned long g_offload_locks_va = 0;
 #endif
 
@@ -46,7 +46,7 @@ int munmap_channels(channel_t *offload_channels, int n_offload_channels)
     err++;
   }
 
-#ifdef LOCK_ENABLED
+#ifdef OFFLOAD_LOCK_ENABLE
   if(g_offload_locks_va != 0) {
     if(munmap((void *) g_offload_locks_va, (size_t) PAGE_SIZE_4K*2) < 0) {
       printf("munmap failed.\n");
@@ -87,7 +87,7 @@ int mmap_channels(channel_t *offload_channels, int n_offload_channels, int opage
   //unsigned long offload_channels_info_pa = 0;
   unsigned long *offload_channels_info = NULL;
 
-#ifdef LOCK_ENABLED
+#ifdef OFFLOAD_LOCK_ENABLE
   az_spinlock_t *locks = NULL;
   int locks_count = 0;
 #endif
@@ -150,11 +150,11 @@ int mmap_channels(channel_t *offload_channels, int n_offload_channels, int opage
     cq_init(offload_channels[offload_channels_offset].in_cq, (ipages - 1) / CQ_ELE_PAGE_NUM);
   }
 
-#ifdef LOCK_ENABLED
+#ifdef OFFLOAD_LOCK_ENABLE
   g_offload_locks_va = (unsigned long) mmap(NULL, PAGE_SIZE_4K * 2, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, OFFLOAD_CHANNEL_LOCK_PA);
   locks = (az_spinlock_t *) g_offload_locks_va;
 
-  for(offload_channels_offset = 0, locks_count = 0; (offload_channels_offset < n_offload_channels) && (offload_channels_offset < LOCK_ENABLED_MAX_CHANNELS_NUM); offload_channels_offset++ ) {
+  for(offload_channels_offset = 0, locks_count = 0; (offload_channels_offset < n_offload_channels) && (offload_channels_offset < OFFLOAD_LOCK_ENABLE_MAX_CHANNELS_NUM); offload_channels_offset++ ) {
     az_spinlock_init(locks + locks_count++ * 64);
     az_spinlock_init(locks + locks_count++ * 64);
   }

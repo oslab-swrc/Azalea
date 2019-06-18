@@ -64,7 +64,7 @@ _syscall3(int, sys_connect, int, sockfd, struct sockaddr *, addr, socklen_t, add
 _syscall3(int, sys_accept, int, sockfd, struct sockaddr *, addr, socklen_t *, addrlen);
 
 _syscall1(int, print_log, char*, msg);
-_syscall2(char *, getcwd, char *, buf, size_t, size);
-_syscall1(int, sys_system, char*, command);
+_syscall2(char *, sys3_getcwd, char *, buf, size_t, size);
+_syscall1(int, sys3_system, char*, command);
 
 //EOF

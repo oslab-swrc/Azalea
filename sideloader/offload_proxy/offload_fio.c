@@ -461,7 +461,7 @@ void sys_off_stat(struct channel_struct *ch)
  * @param channel 
  * @return none
  */
-void off_getcwd(struct channel_struct *ch)
+void sys3_off_getcwd(struct channel_struct *ch)
 {
   struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
@@ -504,7 +504,7 @@ void off_getcwd(struct channel_struct *ch)
  * @param channel 
  * @return none
  */
-void off_system(struct channel_struct *ch)
+void sys3_off_system(struct channel_struct *ch)
 {
   struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
