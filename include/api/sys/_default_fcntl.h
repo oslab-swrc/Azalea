@@ -1,9 +1,9 @@
-
 #ifndef	_SYS__DEFAULT_FCNTL_H_
 #ifdef __cplusplus
 extern "C" {
 #endif
 #define	_SYS__DEFAULT_FCNTL_H_
+#include <sys/_asm-generic_fcntl.h>
 #include <_ansi.h>
 #include <sys/cdefs.h>
 #define	_FOPEN		(-1)	/* from sys/file.h, kernel use only */
@@ -37,13 +37,14 @@ extern "C" {
 #define	_FNOATIME	0x1000000
 #endif
 
-#define	O_ACCMODE	(O_RDONLY|O_WRONLY|O_RDWR)
+//#define	O_ACCMODE	(O_RDONLY|O_WRONLY|O_RDWR)
 
 /*
  * Flag values for open(2) and fcntl(2)
  * The kernel adds 1 to the open modes to turn it into some
  * combination of FREAD and FWRITE.
  */
+#if 0
 #define	O_RDONLY	0		/* +1 == FREAD */
 #define	O_WRONLY	1		/* +1 == FWRITE */
 #define	O_RDWR		2		/* +1 == FREAD|FWRITE */
@@ -52,22 +53,29 @@ extern "C" {
 #define	O_TRUNC		_FTRUNC
 #define	O_EXCL		_FEXCL
 #define O_SYNC		_FSYNC
+#endif
 /*	O_NDELAY	_FNDELAY 	set in include/fcntl.h */
 /*	O_NDELAY	_FNBIO 		set in include/fcntl.h */
+#if 0
 #define	O_NONBLOCK	_FNONBLOCK
 #define	O_NOCTTY	_FNOCTTY
+#endif
 
 /* POSIX-1.2008 specific flags */
 #if __POSIX_VISIBLE >= 200809
+#if 0
 #define	O_CLOEXEC	_FNOINHERIT
 #define	O_NOFOLLOW	_FNOFOLLOW
 #define	O_DIRECTORY	_FDIRECTORY
+#endif
 #define	O_EXEC		_FEXECSRCH
 #define	O_SEARCH	_FEXECSRCH
 #endif
 
 #if __BSD_VISIBLE
+#if 0
 #define	O_DIRECT	_FDIRECT
+#endif
 #endif
 
 #if defined (__CYGWIN__)
@@ -90,7 +98,7 @@ extern "C" {
  */
 #define	FAPPEND		_FAPPEND
 #define	FSYNC		_FSYNC
-#define	FASYNC		_FASYNC
+//#define	FASYNC		_FASYNC
 #define	FNBIO		_FNBIO
 #define	FNONBIO		_FNONBLOCK	/* XXX fix to be NONBLOCK everywhere */
 #define	FNDELAY		_FNDELAY
@@ -131,12 +139,16 @@ extern "C" {
 #define	F_GETFL		3	/* Get file flags */
 #define	F_SETFL		4	/* Set file flags */
 #if __BSD_VISIBLE || __POSIX_VISIBLE >= 200112
+#if 0
 #define	F_GETOWN 	5	/* Get owner - for ASYNC */
 #define	F_SETOWN 	6	/* Set owner - for ASYNC */
+#endif
 #endif /* __BSD_VISIBLE || __POSIX_VISIBLE >= 200112 */
+#if 0
 #define	F_GETLK  	7	/* Get record-locking information */
 #define	F_SETLK  	8	/* Set or Clear a record-lock (Non-Blocking) */
 #define	F_SETLKW 	9	/* Set or Clear a record-lock (Blocking) */
+#endif
 #if __MISC_VISIBLE
 #define	F_RGETLK 	10	/* Test a remote lock to see if it is blocked */
 #define	F_RSETLK 	11	/* Set or unlock a remote lock */
@@ -148,9 +160,11 @@ extern "C" {
 #endif
 
 /* fcntl(2) flags (l_type field of flock structure) */
+#if 0
 #define	F_RDLCK		1	/* read lock */
 #define	F_WRLCK		2	/* write lock */
 #define	F_UNLCK		3	/* remove lock(s) */
+#endif
 #if __MISC_VISIBLE
 #define	F_UNLKSYS	4	/* remove remote locks for a given system */
 #endif	/* __MISC_VISIBLE */
@@ -168,16 +182,19 @@ extern "C" {
 
 #if __BSD_VISIBLE
 /* lock operations for flock(2) */
+#if 0
 #define	LOCK_SH		0x01		/* shared file lock */
 #define	LOCK_EX		0x02		/* exclusive file lock */
 #define	LOCK_NB		0x04		/* don't block when locking */
 #define	LOCK_UN		0x08		/* unlock file */
+#endif
 #endif
 
 /*#include <sys/stdtypes.h>*/
 
 #ifndef __CYGWIN__
 /* file segment locking set data type - information passed to system by user */
+#if 0
 struct flock {
 	short	l_type;		/* F_RDLCK, F_WRLCK, or F_UNLCK */
 	short	l_whence;	/* flag to choose starting offset */
@@ -186,6 +203,7 @@ struct flock {
 	short	l_pid;		/* returned with F_GETLK */
 	short	l_xxx;		/* reserved for future use */
 };
+#endif
 #endif /* __CYGWIN__ */
 
 #if __MISC_VISIBLE
