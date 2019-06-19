@@ -1,8 +1,6 @@
 #include "console.h"
 #include "offload_message.h"
 
-//#define   LOCK_ENABLED
-
 
 /**
  * @brief send offload message
@@ -22,7 +20,7 @@ void send_offload_message(struct circular_queue *ocq, int tid, int offload_funct
 cq_element *ce = NULL;
 io_packet_t *opkt = NULL;
 
-#ifdef LOCK_ENABLED
+#ifdef OFFLOAD_LOCK_ENABLE
 	spinlock_lock(ocq->lock);
 	while (cq_free_space(ocq) == 0);
 #else
@@ -44,7 +42,7 @@ io_packet_t *opkt = NULL;
 
 	ocq->head = (ocq->head + 1) % ocq->size;
 
-#ifdef LOCK_ENABLED
+#ifdef OFFLOAD_LOCK_ENABLE
 	  spinlock_unlock(ocq->lock);
 #endif
 }
@@ -63,7 +61,7 @@ io_packet_t *ipkt = NULL;
 QWORD ret = 0;
 
 retry_receive_sys_message:
-#ifdef LOCK_ENABLED
+#ifdef OFFLOAD_LOCK_ENABLE
 	spinlock_lock(icq->lock);
 	while (cq_avail_data(icq) == 0);
 #else
@@ -76,12 +74,12 @@ retry_receive_sys_message:
 		ret = ipkt->ret;
 		icq->tail = (icq->tail + 1) % icq->size;
 
-#ifdef LOCK_ENABLED
+#ifdef OFFLOAD_LOCK_ENABLE
 	spinlock_unlock(icq->lock);
 #endif
 	}
 	else {
-#ifdef LOCK_ENABLED
+#ifdef OFFLOAD_LOCK_ENABLE
 		spinlock_unlock(icq->lock);
 #endif
 		lk_print_xy(0, 5, " receive retry %d, %d", tid, offload_function_type);

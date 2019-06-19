@@ -159,10 +159,10 @@ BOOL sys_free(void* address);
 size_t get_start_tsc(void);
 size_t get_freq(void);
 int sys_gettimeofday(struct timeval *tv, void *tz);
-int sys_off_unlink(const char *path);
-int stat(const char *pathname, struct stat *buf);
-int brk(void *addr);
-int chdir(const char *path);
+int sys_unlink(const char *path);
+int sys_stat(const char *pathname, struct stat *buf);
+int sys_brk(void *addr);
+int sys_chdir(const char *path);
 
 // Network offloading related systemcalls
 int sys_gethostname(char *name, size_t len);
@@ -175,7 +175,7 @@ int sys_connect(int sockfd, struct sockaddr *addr, socklen_t addrlen);
 int sys_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 
 int print_log(char *msg);
-char *getcwd(char *buf, size_t size);
-int sys_system(char *command); 
+char *sys3_getcwd(char *buf, size_t size);
+int sys3_system(char *command); 
 
 #endif  /* __SYSCALL_H__ */

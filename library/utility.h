@@ -57,6 +57,7 @@ inline static size_t rdtsc(void)
   return ((unsigned long long)hi << 32ULL | (unsigned long long)lo);
 }
 
+int get_cpufreq(void);
 /* Functions */
 int a_memcpy(void *destination, const void *source, int size);
 int a_strlen(const char *buffer);

@@ -335,6 +335,18 @@ int az_gettimeofday(struct az_timeval *tv, struct az_timezone *tz)
   return 0;
 }
 
+/**
+ * @brief return cpu frequency
+ * @return CPU frequency
+ */
+int get_cpufreq(void)
+{
+  if (freq == 0)
+    freq = get_freq();
+
+  return freq;
+}
+
 #if 0
 /**
  * Random

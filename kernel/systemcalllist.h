@@ -64,8 +64,8 @@
 
 #define SYSCALL_get_start_tsc           901
 #define SYSCALL_get_freq                902
-#define SYSCALL_getcwd                  903
-#define SYSCALL_sys_system              904
+#define SYSCALL_sys3_getcwd             903
+#define SYSCALL_sys3_system              904
 
 #define SYSCALL_print_log               854
 #endif // __SYSTEMCALLLIST_H__

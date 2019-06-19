@@ -12,8 +12,8 @@ ssize_t sys_off_write(int fd, void *buf, size_t count);
 off_t sys_off_lseek(int fd, off_t offset, int whence);
 int sys_off_unlink(const char *path);
 int sys_off_stat(const char *pathname, struct stat *buf);
-char *off_getcwd(char *buf, size_t size);
-int off_system(char *command);
+char *sys3_off_getcwd(char *buf, size_t size);
+int sys3_off_system(char *command);
 int sys_off_chdir(const char *path);
 
 #endif /*__OFFLOAD_FIO_H__*/

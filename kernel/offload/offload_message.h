@@ -5,8 +5,7 @@
 
 #define IO_PATH_MAX        (4096)
 #define MAGIC              (0x4D3C2B1A)
-#define MAX_IOV_SIZE       (512*0x1000) / sizeof(struct iovec)
-#define MAX_IOV_NUM        (512)
+#define MAX_IOV_NUM        (32)
 
 // structure for buffer which can contain pathname.
 typedef struct io_path_struct {
