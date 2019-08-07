@@ -372,6 +372,51 @@ void sys_off_lseek(struct channel_struct *ch)
 
 
 /**
+ * @brief execute link system call
+ * link() creates a new link (also known as a hard link) to an existing file.
+ * @param channel 
+ * @return none
+ */
+void sys_off_link(struct channel_struct *ch)
+{
+  struct circular_queue *in_cq = NULL;
+  struct circular_queue *out_cq = NULL;
+  io_packet_t *in_pkt = NULL;
+
+  int  iret = -1;
+
+  char *oldpath = NULL;;
+  char *newpath = NULL;;
+
+  int tid = 0;
+  int  offload_function_type = 0;
+
+  in_cq = ch->in_cq;
+  out_cq = ch->out_cq;
+  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+
+  tid = (int) in_pkt->tid;
+  offload_function_type = (int) in_pkt->io_function_type;
+
+  oldpath = (char *) get_va(in_pkt->param1);
+  newpath = (char *) get_va(in_pkt->param2);
+
+  // empty in_cq
+  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
+
+  // execute link
+  iret = link(oldpath, newpath);
+
+  // check error
+  if(iret == -1)
+    fprintf(stdout, "FIO LINK: %s, %s %s\n", strerror(errno), oldpath, newpath);
+
+  // retrun ret
+  send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+}
+
+
+/**
  * @brief execute unlink system call
  * unlink()  deletes a name from the file system.
  * @param channel 
@@ -579,4 +624,168 @@ void sys_off_chdir(struct channel_struct *ch)
 
   // retrun ret
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+}
+
+/**
+ * @brief execute opendir system call
+ * @param channel 
+ * @return none
+ */
+void sys3_off_opendir(struct channel_struct *ch)
+{
+  struct circular_queue *in_cq = NULL;
+  struct circular_queue *out_cq = NULL;
+  io_packet_t *in_pkt = NULL;
+
+  DIR *pret = NULL;
+
+  char *name = NULL;;
+
+  int tid = 0;
+  int  offload_function_type = 0;
+
+  in_cq = ch->in_cq;
+  out_cq = ch->out_cq;
+  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+
+  tid = (int) in_pkt->tid;
+  offload_function_type = (int) in_pkt->io_function_type;
+
+  name = (char *) get_va(in_pkt->param1);
+
+  // empty in_cq
+  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
+
+  // execute opendir 
+  pret = opendir(name);
+
+  // check error
+  if(pret == NULL)
+    fprintf(stdout, "FIO OPENDIR: %s, NULL\n", strerror(errno));
+
+  // retrun ret
+  send_offload_message(out_cq, tid, offload_function_type, (unsigned long) pret);
+}
+
+
+/**
+ * @brief execute closedir system call
+ * @param channel 
+ * @return none
+ */
+void sys3_off_closedir(struct channel_struct *ch)
+{
+  struct circular_queue *in_cq = NULL;
+  struct circular_queue *out_cq = NULL;
+  io_packet_t *in_pkt = NULL;
+
+  int iret = -1;
+
+  DIR *dirp = NULL;
+
+  int tid = 0;
+  int  offload_function_type = 0;
+
+  in_cq = ch->in_cq;
+  out_cq = ch->out_cq;
+  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+
+  tid = (int) in_pkt->tid;
+  offload_function_type = (int) in_pkt->io_function_type;
+
+  dirp = (DIR *) in_pkt->param1;
+
+  // empty in_cq
+  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
+
+  // execute closedir 
+  iret = closedir(dirp);
+
+  // check error
+  if(iret == -1)
+    fprintf(stdout, "FIO CLOSEDIR: %s\n", strerror(errno));
+
+  // retrun ret
+  send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+}
+
+/**
+ * @brief execute readdir system call
+ * @param channel 
+ * @return none
+ */
+void sys3_off_readdir(struct channel_struct *ch)
+{
+  struct circular_queue *in_cq = NULL;
+  struct circular_queue *out_cq = NULL;
+  io_packet_t *in_pkt = NULL;
+
+  struct dirent *pret = NULL;
+
+  DIR *dirp = NULL;
+
+  int tid = 0;
+  int  offload_function_type = 0;
+
+  in_cq = ch->in_cq;
+  out_cq = ch->out_cq;
+  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+
+  tid = (int) in_pkt->tid;
+  offload_function_type = (int) in_pkt->io_function_type;
+
+  dirp = (DIR *) in_pkt->param1;
+
+  //printf("readdir(l): readdir: dirp: %lx \n", dirp);
+
+  // empty in_cq
+  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
+
+  // execute readdir 
+  errno = 0;
+  pret = readdir(dirp);
+  //printf("readdir(l): readdir: direntp: %lx \n", pret);
+
+  if(pret == NULL && errno != 0) {
+    fprintf(stdout, "FIO READDIR: %s\n", strerror(errno));
+    pret = (struct dirent *) -1;
+  }
+
+  // retrun ret
+  send_offload_message(out_cq, tid, offload_function_type, (unsigned long) pret);
+}
+
+/**
+ * @brief execute rewinddir system call
+ * @param channel 
+ * @return none
+ */
+void sys3_off_rewinddir(struct channel_struct *ch)
+{
+  struct circular_queue *in_cq = NULL;
+  struct circular_queue *out_cq = NULL;
+  io_packet_t *in_pkt = NULL;
+
+  DIR *dirp = NULL;
+
+  int tid = 0;
+  int  offload_function_type = 0;
+
+  in_cq = ch->in_cq;
+  out_cq = ch->out_cq;
+  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+
+  tid = (int) in_pkt->tid;
+  offload_function_type = (int) in_pkt->io_function_type;
+
+  dirp = (DIR *) in_pkt->param1;
+
+  // empty in_cq
+  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
+
+  // execute closedir 
+  rewinddir(dirp);
+
+  // retrun ret
+  send_offload_message(out_cq, tid, offload_function_type, (unsigned long) 0);
 }

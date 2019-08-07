@@ -470,9 +470,11 @@ ssize_t sys_brk(ssize_t val)
     if (PAGE_FLOOR(heap_end) > PAGE_FLOOR(ret)) {
       // Do something of VMA
     }
-    ret = val;
+    //ret = val;
+    ret = 0;
   } else {
-    ret = -ENOMEM;
+    //ret = -ENOMEM;
+    ret = -1;
   }
 
   spinlock_unlock(&heap_lock);

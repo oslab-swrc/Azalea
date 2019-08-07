@@ -13,6 +13,9 @@
 #include "page.h"
 #include "memory.h"
 
+struct hostent g_hp;
+int hostent_init_flag = 0;
+
 /**
  * @brief Offloading gethostname systemcall that used to access the hostname of the current processor 
  * @param name- the null-terminated hostname in the character array
@@ -59,7 +62,6 @@ struct hostent *sys_off_gethostbyname(char *name)
 
   TCB *current = NULL;
   int mytid = -1;
-  struct hostent *hp = NULL;
 
   // Get the channel for communicating with the driver
   ch = get_offload_channel(-1);
@@ -70,13 +72,26 @@ struct hostent *sys_off_gethostbyname(char *name)
 
   current = get_current();
   mytid = current->id;
-  hp = (void *) az_alloc(sizeof(struct hostent));
+
+  if(hostent_init_flag == 0) {
+    g_hp.h_name = (char *) az_alloc(256);
+    g_hp.h_aliases[0] = (char *) az_alloc(256);
+    g_hp.h_addr = (char *) az_alloc(256);
+    if(g_hp.h_name != NULL)
+    	lk_memset(g_hp.h_name, 0, 256);
+    if(g_hp.h_aliases[0] != NULL)
+      lk_memset(g_hp.h_aliases[0], 0, 256);
+    if(g_hp.h_addr != NULL)
+      lk_memset(g_hp.h_addr, 0, 256);
+    hostent_init_flag = 1;
+  }
 
   // Offload the function to the driver and receive the result
-  send_offload_message(ocq, mytid, SYSCALL_sys_gethostbyname, get_pa((QWORD) name), get_pa((QWORD) hp), 0, 0, 0, 0);
+  //send_offload_message(ocq, mytid, SYSCALL_sys_gethostbyname, get_pa((QWORD) name), get_pa((QWORD) hp), 0, 0, 0, 0);
+  send_offload_message(ocq, mytid, SYSCALL_sys_gethostbyname, get_pa((QWORD) name), get_pa((QWORD) g_hp.h_name), get_pa((QWORD) g_hp.h_aliases[0]), get_pa((QWORD) &(g_hp.h_addrtype)), get_pa((QWORD) &(g_hp.h_length)), get_pa((QWORD) g_hp.h_addr));
   receive_offload_message(icq, mytid, SYSCALL_sys_gethostbyname);
 
-  return hp;
+  return &g_hp;
 }
 
 /**
@@ -277,7 +292,7 @@ int sys_off_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
   mytid = current->id;
 
   // Offload the function to the driver and receive the result
-  send_offload_message(ocq, mytid, SYSCALL_sys_accept, sockfd, get_pa((QWORD) addr), *addrlen, 0, 0, 0);
+  send_offload_message(ocq, mytid, SYSCALL_sys_accept, sockfd, get_pa((QWORD) addr), get_pa((QWORD) addrlen), 0, 0, 0);
   fd = (int) receive_offload_message(icq, mytid, SYSCALL_sys_accept);
 
   return fd;

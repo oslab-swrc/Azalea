@@ -1,6 +1,7 @@
 #ifndef __SYSCALL_H__
 #define __SYSCALL_H__
 
+#include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
@@ -159,6 +160,7 @@ BOOL sys_free(void* address);
 size_t get_start_tsc(void);
 size_t get_freq(void);
 int sys_gettimeofday(struct timeval *tv, void *tz);
+int sys_link(const char *oldpath, const char *newpath);
 int sys_unlink(const char *path);
 int sys_stat(const char *pathname, struct stat *buf);
 int sys_brk(void *addr);
@@ -177,5 +179,9 @@ int sys_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 int print_log(char *msg);
 char *sys3_getcwd(char *buf, size_t size);
 int sys3_system(char *command); 
+DIR *sys3_opendir(const char *name);
+int sys3_closedir(DIR *dirp);
+struct dirent *sys3_readdir(DIR *dirp);
+void sys3_rewinddir(DIR *dirp);
 
 #endif  /* __SYSCALL_H__ */

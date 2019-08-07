@@ -77,6 +77,9 @@ void *offload_local_proxy(void *arg)
           case SYSCALL_sys_close:
              sys_off_close(curr_channel);
              break;
+          case SYSCALL_sys_link:
+             sys_off_link(curr_channel);
+             break;
           case SYSCALL_sys_unlink:
              sys_off_unlink(curr_channel);
              break;
@@ -115,6 +118,18 @@ void *offload_local_proxy(void *arg)
              break;
           case SYSCALL_sys_chdir:
              sys_off_chdir(curr_channel);
+             break;
+          case SYSCALL_sys3_opendir:
+             sys3_off_opendir(curr_channel);
+             break;
+          case SYSCALL_sys3_closedir:
+             sys3_off_closedir(curr_channel);
+             break;
+          case SYSCALL_sys3_readdir:
+             sys3_off_readdir(curr_channel);
+             break;
+          case SYSCALL_sys3_rewinddir:
+             sys3_off_rewinddir(curr_channel);
              break;
           default :
              printf("function type: unknown[%d]\n", (int) in_pkt->io_function_type);
@@ -189,6 +204,8 @@ int main(int argc, char *argv[])
   unsigned long opages, ipages;
   int err = 0;
   int i = 0;
+  int j = 0;
+  int k = 0;
   unsigned long status;
   pthread_t *offload_threads;
 
@@ -241,6 +258,68 @@ int main(int argc, char *argv[])
 
   g_offload_channel_runnable = 1;
 
+
+#if 0
+  int quotient_channel = (int) (g_n_channels / OFFLOAD_N_NODE);
+  int rest_channel = g_n_channels % OFFLOAD_N_NODE;
+  int n_channel_per_node[OFFLOAD_N_NODE];
+  for(i = 0; i < OFFLOAD_N_NODE;i++) {
+    n_channel_per_node[i] = quotient_channel;
+  }
+
+  int quotient_thread = (int) (g_n_threads / OFFLOAD_N_NODE);
+  int rest_thread = g_n_threads % OFFLOAD_N_NODE;
+  int n_thread_per_node[OFFLOAD_N_NODE];
+  for(i = 0; i < OFFLOAD_N_NODE;i++) {
+    n_thread_per_node[i] = quotient_thread;
+  }
+  for(i = 0; i < rest_thread;i++) {
+    n_thread_per_node[i]++;
+  }
+
+  channel_t *curr_ch = offload_channels;
+  channel_t *next_ch = NULL;
+
+  int range_channel;
+  int range_rest_channel;
+
+
+#endif
+
+  int n_channel_range_per_node  = (int) (g_n_channels / OFFLOAD_N_NODE);
+  int n_thread_per_node = (int) (g_n_threads / OFFLOAD_N_NODE);;
+
+  int quotient_channel = n_channel_range_per_node / n_thread_per_node;
+  //int rest_channel = n_channel_range_per_node % n_thread_per_node;
+  int rest_channel = 0;
+
+  channel_t *curr_ch = offload_channels;
+  channel_t *next_ch = NULL;
+  k = 0;
+  for (i = 0; i < OFFLOAD_N_NODE; i++) {
+
+    rest_channel = n_channel_range_per_node % n_thread_per_node;
+    for (j = 0; j < n_thread_per_node; j++) {
+
+      if(rest_channel == 0) {
+        thread_channels[k].ch = curr_ch;
+        thread_channels[k].n_ch = quotient_channel;
+        next_ch = curr_ch + quotient_channel;
+      }
+      else {
+        thread_channels[k].ch = curr_ch;
+        thread_channels[k].n_ch = quotient_channel + 1;
+        next_ch = curr_ch + (quotient_channel + 1);
+        rest_channel--;
+      }
+      pthread_create(offload_threads + k, NULL, offload_local_proxy, &thread_channels[k]);
+
+      k++;
+      curr_ch = next_ch;
+    }
+  }
+
+#if 0
   int quotient_channel = g_n_channels / g_n_threads;
   int rest_channel = g_n_channels % g_n_threads;
   channel_t *curr_ch = offload_channels;
@@ -262,6 +341,7 @@ int main(int argc, char *argv[])
 
     curr_ch = next_ch;
   }
+#endif
 
   // begin of logic
   cmd(offload_channels);

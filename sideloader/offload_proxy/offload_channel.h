@@ -31,6 +31,7 @@ struct circular_queue {
   int head;
   int tail;
   unsigned long size;
+  az_spinlock_t *lock;
   cq_element data[0] __attribute__((aligned(4096)));
 };
 

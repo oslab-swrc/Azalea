@@ -89,7 +89,7 @@ int mmap_channels(channel_t *offload_channels, int n_offload_channels, int opage
 
 #ifdef OFFLOAD_LOCK_ENABLE
   az_spinlock_t *locks = NULL;
-  int locks_count = 0;
+  //int locks_count = 0;
 #endif
 
   offload_fd = open("/dev/offload", O_RDWR) ;
@@ -107,7 +107,9 @@ int mmap_channels(channel_t *offload_channels, int n_offload_channels, int opage
   *(offload_channels_info++) = (unsigned long) 0;
   *(offload_channels_info++) = (unsigned long) n_offload_channels;
   *(offload_channels_info++) = (unsigned long) opages;
-  *(offload_channels_info) = (unsigned long) ipages;
+  *(offload_channels_info++) = (unsigned long) ipages;
+  offload_channels_info++; // skip node id 
+  //*(offload_channels_info) = (unsigned long) 0; // node id initialization
 
   for(offload_channels_offset = 0; offload_channels_offset < n_offload_channels; offload_channels_offset++) {
     // mmap ocq of ith channel
@@ -154,9 +156,14 @@ int mmap_channels(channel_t *offload_channels, int n_offload_channels, int opage
   g_offload_locks_va = (unsigned long) mmap(NULL, PAGE_SIZE_4K * 2, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, OFFLOAD_CHANNEL_LOCK_PA);
   locks = (az_spinlock_t *) g_offload_locks_va;
 
-  for(offload_channels_offset = 0, locks_count = 0; (offload_channels_offset < n_offload_channels) && (offload_channels_offset < OFFLOAD_LOCK_ENABLE_MAX_CHANNELS_NUM); offload_channels_offset++ ) {
-    az_spinlock_init(locks + locks_count++ * 64);
-    az_spinlock_init(locks + locks_count++ * 64);
+  for(offload_channels_offset = 0; (offload_channels_offset < n_offload_channels) && (offload_channels_offset < OFFLOAD_LOCK_ENABLE_MAX_CHANNELS_NUM); offload_channels_offset++ ) {
+    //az_spinlock_init(locks + locks_count++ * 64);
+    //az_spinlock_init(locks + locks_count++ * 64);
+
+    offload_channels[offload_channels_offset].out_cq->lock = locks++;
+    offload_channels[offload_channels_offset].in_cq->lock = locks++;
+    az_spinlock_init(offload_channels[offload_channels_offset].out_cq->lock);
+    az_spinlock_init(offload_channels[offload_channels_offset].in_cq->lock);
   }
 #endif
 

@@ -263,7 +263,7 @@ void init_tcb(TCB * tcb, QWORD stack)
     tcb->remaining_time_slice = THREAD_DEFAULT_TIME_SLICE;
     tcb->remaining_time_quantum = THREAD_DEFAULT_TIME_QUANTUM;
 #else
-    tcb->stack_base = (QWORD) stack + CONFIG_TCB_SIZE;
+    tcb->stack_base = (QWORD) stack + CONFIG_STACK_SIZE;
     tcb->remaining_time_slice = THREAD_DEFAULT_TIME_SLICE;
     tcb->remaining_time_quantum = THREAD_DEFAULT_TIME_QUANTUM;
 #endif
@@ -391,11 +391,11 @@ static void setup_thread(TCB * tcb, QWORD flags, QWORD entrypoint, void *stack_a
 {
   QWORD *kstack = (QWORD *) tcb->stack;
 
-  *(QWORD*) ((QWORD) stack_address + CONFIG_TCB_SIZE - sizeof(QWORD)) = (QWORD) __thread_exit;
+  *(QWORD*) ((QWORD) stack_address + CONFIG_STACK_SIZE - sizeof(QWORD)) = (QWORD) __thread_exit;
 
   // user context setup
   *(--kstack) = GDT_KERNEL_DATA_SEGMENT | SELECTOR_RPL_0; // SS
-  *(--kstack) = (QWORD) stack_address + CONFIG_TCB_SIZE - sizeof(QWORD); // RSP
+  *(--kstack) = (QWORD) stack_address + CONFIG_STACK_SIZE - sizeof(QWORD); // RSP
   *(--kstack) = THREAD_FLAGS_IOPL | THREAD_FLAGS_IF;	    // RFLAGS, interrupt enable
   *(--kstack) = GDT_KERNEL_CODE_SEGMENT | SELECTOR_RPL_0; // CS
 
@@ -403,7 +403,7 @@ static void setup_thread(TCB * tcb, QWORD flags, QWORD entrypoint, void *stack_a
   *(kstack - 6) = thread_param;			// thread parameters, RDI
   *(kstack - 7) = thread_param;			// TODO, RSI
 
-  *(--kstack) = (QWORD) stack_address + CONFIG_TCB_SIZE; // RBP
+  *(--kstack) = (QWORD) stack_address + CONFIG_STACK_SIZE; // RBP
 //  *(--kstack) = (QWORD) stack_address + CONFIG_TCB_SIZE - sizeof(QWORD); // RBP
   kstack -= THREAD_NUM_GP_REGISTER;
 
@@ -592,7 +592,7 @@ int create_thread(QWORD ip, QWORD argv, int core_mask)
 
   tcb_lock(thr);
 
-  stack_address = az_alloc(PAGE_SIZE_4K);
+  stack_address = az_alloc(CONFIG_STACK_SIZE);
   lk_print("Thread created: %d, stack: %q\n", thr->id, stack_address);
 
   init_tcb(thr, (QWORD) stack_address);
@@ -1185,7 +1185,7 @@ void start_idle_thread(int thread_type)
   if (thread_type == THREAD_TYPE_BSP) {
     while (g_ap_count != g_cpu_size)
       // TODO: if no wait_cnt, dont work
-      lk_print_xy(0, 20, "Wait until all cores are ready!!: (%d/%d) %q  ", g_ap_count, g_cpu_size, wait_cnt++);
+      lk_print_xy(0, 22, "Wait until all cores are ready!!: (%d/%d) %q  ", g_ap_count, g_cpu_size, wait_cnt++);
 
     lk_app_exec((void *) (va(CONFIG_APP_ADDRESS)));
   }

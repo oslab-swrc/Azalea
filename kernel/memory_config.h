@@ -15,6 +15,8 @@
 #define CONFIG_NUM_THREAD		2048
 
 #define CONFIG_TCB_SIZE         	0x1000
+//#define CONFIG_STACK_SIZE         	0x10000				// 64K
+#define CONFIG_STACK_SIZE         	0x200000			// 2M
 #define CONFIG_PAGE_OFFSET      	0xFFFF8000C0000000
 
 #define IDLE_THREAD_ADDRESS     	(0x800000+g_memory_start)
