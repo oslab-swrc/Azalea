@@ -333,6 +333,40 @@ QWORD mytid = -1;
 }
 
 /**
+ * @brief file link system call
+ * @param oldpath for an existing file
+ * @param newpath for a new link 
+ * @return success (0), fail (-1)
+ */
+int sys_off_link(const char *oldpath, const char *newpath)
+{
+int iret = 0;
+
+channel_t *ch = NULL;
+struct circular_queue *icq = NULL;
+struct circular_queue *ocq = NULL;
+
+TCB *current = NULL;
+QWORD mytid = -1;
+
+  ch = get_offload_channel(-1);
+  if(ch == NULL) {
+          return -1;
+  }
+
+  icq = ch->in;
+  ocq = ch->out;
+
+  current = get_current(); 
+  mytid = current->id;
+
+  send_offload_message(ocq, mytid, SYSCALL_sys_link, get_pa((QWORD) oldpath), get_pa((QWORD) newpath), 0, 0, 0, 0);
+  iret = (int) receive_offload_message(icq, mytid, SYSCALL_sys_link);
+
+  return iret;
+}
+
+/**
  * @brief file unlink system call
  * @param path for a file
  * @return success (0), fail (-1)
@@ -403,10 +437,10 @@ int sys_off_stat(const char *pathname, struct stat *buf)
 }
 
 /**
- * @brief 
- * @param
- * @param 
- * @return 
+ * @brief  file getcwd system call : get_current_dir_name - get current working directory
+ * @param  buf: buffer to contain current working directory
+ * @param  size: buf size
+ * @return success (a pointer to a string containing the pathname of the current working directory), faile (NULL)
  */
 char *sys3_off_getcwd(char *buf, size_t size)
 {
@@ -451,10 +485,9 @@ char *sys3_off_getcwd(char *buf, size_t size)
 }
 
 /**
- * @brief 
- * @param
- * @param 
- * @return 
+ * @brief system system call :  execute a shell command
+ * @param command
+ * @return success (the return status of the  command), fail (-1)
  */
 int sys3_off_system(char *command)
 {
@@ -488,10 +521,9 @@ int sys3_off_system(char *command)
 }
 
 /**
- * @brief 
- * @param
- * @param 
- * @return 
+ * @brief file chdir system call : change working directory
+ * @param path for directory
+ * @return success (0), fail (-1)
  */
 int sys_off_chdir(const char *path)
 {
@@ -521,4 +553,140 @@ int sys_off_chdir(const char *path)
   iret = (int) receive_offload_message(icq, mytid, SYSCALL_sys_chdir);
 
   return iret;
+}
+
+/**
+ * @brief file opendir system call : open a directory
+ * @param name for directory 
+ * @return success (a pointer to the directory stream), fail (NULL)
+ */
+DIR *sys3_off_opendir(const char *name)
+{
+DIR *pret = NULL;
+
+channel_t *ch = NULL;
+struct circular_queue *icq = NULL;
+struct circular_queue *ocq = NULL;
+
+TCB *current = NULL;
+QWORD mytid = -1;
+
+  ch = get_offload_channel(-1);
+  if(ch == NULL) {
+          return NULL;
+  }
+
+  icq = ch->in;
+  ocq = ch->out;
+
+  current = get_current(); 
+  mytid = current->id;
+
+  send_offload_message(ocq, mytid, SYSCALL_sys3_opendir, get_pa((QWORD) name), 0, 0, 0, 0, 0);
+  pret = (DIR *)receive_offload_message(icq, mytid, SYSCALL_sys3_opendir);
+
+  return pret;
+}
+
+/**
+ * @brief file closedir system call
+ * @param dirp for the directory stream
+ * @return success (0), fail (-1)
+ */
+int sys3_off_closedir(DIR *dirp)
+{
+int iret = 0;
+
+channel_t *ch = NULL;
+struct circular_queue *icq = NULL;
+struct circular_queue *ocq = NULL;
+
+TCB *current = NULL;
+QWORD mytid = -1;
+
+  ch = get_offload_channel(-1);
+  if(ch == NULL) {
+          return -1;
+  }
+
+  icq = ch->in;
+  ocq = ch->out;
+
+  current = get_current(); 
+  mytid = current->id;
+
+  send_offload_message(ocq, mytid, SYSCALL_sys3_closedir, (QWORD) dirp, 0, 0, 0, 0, 0);
+  iret = (int) receive_offload_message(icq, mytid, SYSCALL_sys3_closedir);
+
+  return iret;
+}
+
+/**
+ * @brief file readdir system call : read a directory
+ * @param dirp for the directory stream 
+ * @return success (a pointer to a dirent structure), (NULL on end of directory), fail (NULL)
+ */
+struct dirent *sys3_off_readdir(DIR *dirp)
+{
+struct dirent *pret = NULL;
+static struct dirent ret;
+
+channel_t *ch = NULL;
+struct circular_queue *icq = NULL;
+struct circular_queue *ocq = NULL;
+
+TCB *current = NULL;
+QWORD mytid = -1;
+
+  ch = get_offload_channel(-1);
+  if(ch == NULL) {
+          return NULL;
+  }
+
+  icq = ch->in;
+  ocq = ch->out;
+
+  current = get_current(); 
+  mytid = current->id;
+
+  send_offload_message(ocq, mytid, SYSCALL_sys3_readdir, (QWORD) dirp, 0, 0, 0, 0, 0);
+  pret = (struct dirent *) receive_offload_message(icq, mytid, SYSCALL_sys3_readdir);
+
+  if(pret != NULL && (QWORD) pret != -1) {
+    lk_memcpy(&ret, pret, sizeof(struct dirent));
+    return (&ret);
+  }
+  else {
+    return NULL;
+  }
+}
+
+
+/**
+ * @brief file rewinddir system call : reset directory stream
+ * @param dirp for the position of the directory stream
+ * @return none
+ */
+void sys3_off_rewinddir(DIR *dirp)
+{
+channel_t *ch = NULL;
+struct circular_queue *icq = NULL;
+struct circular_queue *ocq = NULL;
+
+TCB *current = NULL;
+QWORD mytid = -1;
+
+  ch = get_offload_channel(-1);
+  if(ch == NULL) {
+          return;
+  }
+
+  icq = ch->in;
+  ocq = ch->out;
+
+  current = get_current(); 
+  mytid = current->id;
+
+  send_offload_message(ocq, mytid, SYSCALL_sys3_rewinddir, (QWORD) dirp, 0, 0, 0, 0, 0);
+  receive_offload_message(icq, mytid, SYSCALL_sys3_rewinddir);
 }

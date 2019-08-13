@@ -1,30 +1,57 @@
-/* <dirent.h> includes <sys/dirent.h>, which is this file.  On a
-   system which supports <dirent.h>, this file is overridden by
-   dirent.h in the libc/sys/.../sys directory.  On a system which does
-   not support <dirent.h>, we will get this file which uses #error to force
-   an error.  */
+/* Copyright (C) 1996-2012 Free Software Foundation, Inc.
+   This file is part of the GNU C Library.
 
-#ifdef __cplusplus
-extern "C" {
+   The GNU C Library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
+
+   The GNU C Library is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Lesser General Public License for more details.
+
+   You should have received a copy of the GNU Lesser General Public
+   License along with the GNU C Library; if not, see
+   <http://www.gnu.org/licenses/>.  */
+
+#ifndef _DIRENT_H
+# error "Never use <bits/dirent.h> directly; include <dirent.h> instead."
 #endif
-#if 0
-#error "<dirent.h> not supported"
+
+struct dirent
+  {
+#ifndef __USE_FILE_OFFSET64
+    __ino_t d_ino;
+    __off_t d_off;
+#else
+    __ino64_t d_ino;
+    __off64_t d_off;
 #endif
-#ifdef __cplusplus
-}
+    unsigned short int d_reclen;
+    unsigned char d_type;
+    char d_name[256];		/* We must not include limits.h! */
+  };
+
+#ifdef __USE_LARGEFILE64
+struct dirent64
+  {
+    __ino64_t d_ino;
+    __off64_t d_off;
+    unsigned short int d_reclen;
+    unsigned char d_type;
+    char d_name[256];		/* We must not include limits.h! */
+  };
 #endif
 
-struct __dirstream
-{
-        off_t tell;
-        int fd;
-        int buf_pos;
-        int buf_end;
-        volatile int lock[1];
-        /* Any changes to this struct must preserve the property:
- *          * offsetof(struct __dirent, buf) % sizeof(off_t) == 0 */
-        char buf[2048];
-};
+#define d_fileno	d_ino	/* Backwards compatibility.  */
 
-typedef struct __dirstream DIR;
+#undef  _DIRENT_HAVE_D_NAMLEN
+#define _DIRENT_HAVE_D_RECLEN
+#define _DIRENT_HAVE_D_OFF
+#define _DIRENT_HAVE_D_TYPE
 
+#if defined __OFF_T_MATCHES_OFF64_T && defined __INO_T_MATCHES_INO64_T
+/* Inform libc code that these two types are effectively identical.  */
+# define _DIRENT_MATCHES_DIRENT64	1
+#endif

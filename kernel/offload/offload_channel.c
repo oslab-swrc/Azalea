@@ -1,11 +1,15 @@
+
 #include "console.h"
 #include "offload_channel.h"
 #include "offload_memory_config.h"
 #include "page.h"
+#include "atomic.h"
+#include "utility.h"
 
 static int g_offload_initialization_flag;
 static channel_t *g_offload_channels;
 static int g_n_offload_channels;
+int g_node_id;
 
 /**
  * @brief initialize circular queue
@@ -111,6 +115,7 @@ BOOL init_offload_channel()
 	QWORD ocq_base_va = 0;
 	QWORD offload_channel_info_va = 0;
 	QWORD offload_channel_base_va = 0;
+	QWORD *p_node_id = NULL;
  
 	g_offload_channels = (channel_t *) ((QWORD) OFFLOAD_CHANNEL_STRUCT_VA);
 
@@ -131,6 +136,10 @@ BOOL init_offload_channel()
 	g_n_offload_channels = * ((QWORD *)(offload_channel_info_va) + 1);
 	n_icq = *((QWORD *)(offload_channel_info_va) + 2);
 	n_ocq = *((QWORD *)(offload_channel_info_va) + 3);
+	p_node_id = (QWORD *)(offload_channel_info_va + sizeof(QWORD) * 4);
+	//p_node_id = (QWORD *)(offload_channel_info_va + 4);
+	g_node_id = (int) *p_node_id;
+	(*p_node_id)++;
 
 	// initialize offload channel
 	for(offload_channels_offset = 0; offload_channels_offset < g_n_offload_channels; offload_channels_offset++) {
@@ -145,6 +154,7 @@ BOOL init_offload_channel()
 		ocq_base_va = (QWORD) icq_base_va + (n_icq * PAGE_SIZE_4K);
 		cur_channel->out = (struct circular_queue *) (ocq_base_va);
 	}
+
 	return(TRUE);
 }
 
@@ -157,14 +167,20 @@ BOOL init_offload_channel()
 channel_t *get_offload_channel(int n_requested_channel)
 {
   int offload_channels_offset = 0;
+  int offload_channels_range_per_node = 0;
 
   // offload channel is not initialized
   if(g_offload_initialization_flag == FALSE)
 	return (NULL);
 
+
   offload_channels_offset = (n_requested_channel == -1) ? get_apic_id() : n_requested_channel;
 
-  offload_channels_offset = (int) (offload_channels_offset % g_n_offload_channels);
+  //offload_channels_offset = (int) (offload_channels_offset % g_n_offload_channels);
+  offload_channels_range_per_node = (int) (g_n_offload_channels / OFFLOAD_N_NODE);
+  offload_channels_offset = (int) (offload_channels_offset % offload_channels_range_per_node);
+  offload_channels_offset = (int) (offload_channels_range_per_node * g_node_id + offload_channels_offset);
+  //lk_print_xy(0, offload_channels_offset%24, "My node id %d", g_node_id);
 
   return (&(g_offload_channels[offload_channels_offset]));
 }

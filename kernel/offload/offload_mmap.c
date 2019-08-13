@@ -23,6 +23,10 @@ unsigned long get_pa(QWORD virtual_address)
   QWORD new_page = 0;
   int index = -1;
 
+  // address  is NULL
+  if(virtual_address == 0)
+    return (0); 
+
   // identical mapping in high half memory
   if(virtual_address > CONFIG_HIGH_HALF_LIMIT) {
 #ifdef DEBUG

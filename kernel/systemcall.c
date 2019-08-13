@@ -314,6 +314,12 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
   case SYSCALL_sys_gettimeofday:
     ret_code = sys_gettimeofday((struct timeval *)param1, (void *)param2);
     break;
+  case SYSCALL_sys_link:
+    ret_code = sys_off_link((char *) param1, (char *) param2);
+#ifdef DDBUG
+    lk_print_xy(0, yyloc++%YOFFSET, "link system call **");
+#endif
+    break;
   case SYSCALL_sys_unlink:
     ret_code = sys_off_unlink((char *) param1);
 #ifdef DDBUG
@@ -359,6 +365,18 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
     break;
   case SYSCALL_sys_chdir:
     ret_code = (QWORD) sys_off_chdir((char *)param1);
+    break;
+  case SYSCALL_sys3_opendir:
+    ret_code = (QWORD) sys3_off_opendir((const char *)param1);
+    break;
+  case SYSCALL_sys3_closedir:
+    ret_code = sys3_off_closedir((DIR *)param1);
+    break;
+  case SYSCALL_sys3_readdir:
+    ret_code = (QWORD) sys3_off_readdir((DIR *)param1);
+    break;
+  case SYSCALL_sys3_rewinddir:
+    sys3_off_rewinddir((DIR *)param1);
     break;
   default:
     printk("Invalid system calls");

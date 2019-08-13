@@ -55,7 +55,7 @@ struct	stat
   long		st_spare3;
   blksize_t	st_blksize;
   blkcnt_t	st_blocks;
-  long	st_spare4[2];
+  long	st_spare4[7];
 #endif
 #endif
 };

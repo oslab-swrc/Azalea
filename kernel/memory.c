@@ -453,9 +453,9 @@ ssize_t sys_sbrk(ssize_t incr)
 }
 
  /**
- * @brief Set the end of data space by val
- * @param 
- * @return Return the end of data space, or -ENOMEM for errors
+ * @brief Change the location of the program break, which defines the end of the data segment
+ * @param val - the end of the data segment to the value specified
+ * @return On success, returns zero, On error, -a returned
  */
 ssize_t sys_brk(ssize_t val)
 {
@@ -470,9 +470,9 @@ ssize_t sys_brk(ssize_t val)
     if (PAGE_FLOOR(heap_end) > PAGE_FLOOR(ret)) {
       // Do something of VMA
     }
-    ret = val;
+    ret = 0;
   } else {
-    ret = -ENOMEM;
+    ret = -1;
   }
 
   spinlock_unlock(&heap_lock);

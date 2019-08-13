@@ -64,8 +64,13 @@ void sys_off_gethostbyname(struct channel_struct *ch)
   int tid = 0;
   int offload_function_type = 0;
   char *name;
-  struct hostent *hp;
   struct hostent *ret;
+
+  char *h_name;
+  char *h_aliase;
+  int *h_addrtype;
+  int *h_length;
+  char *h_addr;
 
   // Get the queue information
   in_cq = ch->in_cq;
@@ -76,17 +81,40 @@ void sys_off_gethostbyname(struct channel_struct *ch)
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
   name = (char *) get_va(in_pkt->param1);
-  hp = (struct hostent *) get_va(in_pkt->param2);
+
+  h_name = (char *) get_va(in_pkt->param2);
+  h_aliase = (char *) get_va(in_pkt->param3);
+  h_addrtype = (int *) get_va(in_pkt->param4);
+  h_length = (int *) get_va(in_pkt->param5);
+  h_addr = (char *) get_va(in_pkt->param6);
 
   // Empty in_cq
   in_cq->tail = (in_cq->tail + 1) % in_cq->size;
 
   // Execute gethostbyname systemcall
   ret = gethostbyname(name);
-  memcpy(hp, ret, sizeof(struct hostent));
+
+  if(ret != NULL) {
+    if(ret->h_name != NULL) {
+      //printf("h_name: %s\n", ret->h_name);
+      strcpy(h_name, ret->h_name);
+    }
+
+    if(ret->h_aliases[0] != NULL) {
+      strcpy(h_aliase, ret->h_aliases[0]);
+    }
+
+    *h_addrtype = ret->h_addrtype;
+    *h_length = ret->h_length;
+
+    if(ret->h_addr_list[0] != NULL && ret->h_length > 0) {
+      //printf("h_addr: %s\n", ret->h_addr);
+      memcpy(h_addr, ret->h_addr, ret->h_length);
+    }
+  }
 
   // Sent to the result to the kernel
-  send_offload_message(out_cq, tid, offload_function_type, (unsigned long) hp->h_length);
+  send_offload_message(out_cq, tid, offload_function_type, (unsigned long) ret);
 }
 
 /**
@@ -104,7 +132,6 @@ void sys_off_getsockname(struct channel_struct *ch)
   int sockfd = 0;
   struct sockaddr *addr;
   socklen_t *addrlen;
-  struct sockaddr_in name;
   int iret = -1;
 
   // Get the queue information
@@ -123,11 +150,9 @@ void sys_off_getsockname(struct channel_struct *ch)
   in_cq->tail = (in_cq->tail + 1) % in_cq->size;
 
   // Execute getsockname systemcall
-  iret = getsockname(sockfd, &name, addrlen);
+  iret = getsockname(sockfd, addr, addrlen);
   if(iret == -1)
     fprintf(stdout, "%s\n", strerror(errno));
-  else
-    memcpy(addr, &name, sizeof(struct sockaddr));
 
   // Sent to the result to the kernel
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
@@ -309,8 +334,7 @@ void sys_off_accept(struct channel_struct *ch)
   int offload_function_type = 0;
   int sockfd = 0;
   struct sockaddr *addr;
-  socklen_t addrlen;
-  struct sockaddr_in name;
+  socklen_t *addrlen;
   int iret = -1;
 
   // Get the queue information
@@ -323,17 +347,15 @@ void sys_off_accept(struct channel_struct *ch)
   offload_function_type = (int) in_pkt->io_function_type;
   sockfd = (int) in_pkt->param1;
   addr = (struct sockaddr *) get_va(in_pkt->param2);
-  addrlen = (socklen_t) in_pkt->param3;
+  addrlen = (socklen_t *) get_va(in_pkt->param3);
 
   // Empty in_cq
   in_cq->tail = (in_cq->tail + 1) % in_cq->size;
 
   // Execute accept systemcall
-  iret = accept(sockfd, &name, &addrlen);
+  iret = accept(sockfd, addr, addrlen);
   if(iret == -1)
-    fprintf(stdout, "%s\n", strerror(errno));
-  else
-    memcpy(addr, &name, sizeof(struct sockaddr));
+      fprintf(stdout, "%s\n", strerror(errno));
 
   // Sent to the result to the kernel
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
