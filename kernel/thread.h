@@ -66,8 +66,6 @@
 
 #define THREAD_INIT_NAME	      (~0x0)
 
-#define THREAD_USER_STACK_SIZE        (PAGE_SIZE_4K * 16)		// 64K
-
 // Thread state definitions
 enum thread_state_enum {
     THREAD_STATE_NOTALLOC=0,
