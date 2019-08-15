@@ -10,7 +10,7 @@
 .extern apic_id_address, g_ap_count
 .extern process_systemcall
 .extern release_thread_spl 
-.extern disable_x2apic, normalize_apic_id
+.extern disable_x2apic, normalize_apic_id, get_papic_id
 .global systemcall_entrypoint, context_switch, return_from_setup_thread
 
 start:
@@ -51,12 +51,9 @@ COPYPARAMETER:
 COPYEND:
 #endif
 
-  call disable_x2apic
-
-  // Get APIC ID from register. ID is in bit 24-31
-  mov (CONFIG_APIC_ADDR), %eax
-  mov APIC_REGISTER_APIC_ID(%eax), %eax
-  shr $24, %rax
+  // X2APIC
+  call enable_x2apic
+  call get_papic_id
 
   // Register APIC ID and get sequential logical number of CORE
   movq %rax, %rdi
