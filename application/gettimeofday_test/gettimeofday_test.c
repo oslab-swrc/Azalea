@@ -66,8 +66,3 @@ int main()
 
   return 0;
 }
- 
-int get_cpufreq() {
-
-return 0;
-}
