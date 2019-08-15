@@ -74,6 +74,9 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
   case SYSCALL_get_vcon_addr:
     ret_code = get_vcon_addr();
     break;
+  case SYSCALL_get_cpu_num:
+    ret_code = get_cpu_num();
+    break;
   case SYSCALL_delay:
     ret_code = az_delay((QWORD) param1);
     break;

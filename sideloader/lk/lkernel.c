@@ -207,21 +207,19 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
     // Set cpu and memory information based on index
     start_index = g_param[0];
-    if (start_index != 0) {
-      core_start = (start_index * CPUS_PER_NODE);        // core_start
-      core_end = ((start_index+1) * CPUS_PER_NODE);      // core_end
-      memory_start = MEMORYS_START + ((start_index-1) * MEMORYS_PER_NODE);   // memory_start
-      memory_end = MEMORYS_START + (start_index * MEMORYS_PER_NODE);  // memory_end
+    core_start = g_param[1] == 0 ? CPUS_PER_NODE : g_param[1];
+    core_end = 0;    // deprecated
+    if (start_index != -1) {
+      memory_start = MEMORYS_START + (start_index * MEMORYS_PER_NODE);   // memory_start
+      memory_end = MEMORYS_START + ((start_index+1) * MEMORYS_PER_NODE);  // memory_end
     } else {
-      core_start = g_param[1];
-      core_end = g_param[2];
       memory_start = g_param[3];
       memory_end = g_param[4];
     }
     memory_start_addr = memory_start * 1024 * 1024 * 1024;
 
-    printk(KERN_INFO "LK_PARAM: index: %d, core_start: %d, core_end: %d, memory_start: %d, memory_end: %d\n",
-           (int)start_index, (int)core_start, (int)core_end, (int)memory_start, (int)memory_end);
+    printk(KERN_INFO "LK_PARAM: index: %d, core_num: %d, memory_start: %d, memory_end: %d\n",
+           (int)start_index, (int)core_start, (int)memory_start, (int)memory_end);
     printk(KERN_INFO "LK_PARAM: memory_start_addr: %lx\n", (unsigned long) memory_start_addr);
 
     // Pagetable Initialize
@@ -341,7 +339,7 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     *((unsigned long *) (bladdr + META_OFFSET + QEMU_OFFSET)) = 0;
 
     printk(KERN_INFO "LK_LOADING: VCON_ADDR: %lx\n", vcon_addr);
-    printk(KERN_INFO "LK_LOADING: CPU_START: %d, CPU_END: %d\n", core_start, core_end);
+    printk(KERN_INFO "LK_LOADING: CPU_NUM: %d\n", core_start);
     printk(KERN_INFO "LK_LOADING: MEMORY_START: %d GB, MEMORY_END: %d GB\n", (int) memory_start, (int) memory_end);
     printk(KERN_INFO "LK_LOADING: g_pml_addr %lx, apic_addr %lx\n", (unsigned long) g_pml_addr, (unsigned long) APIC_DEFAULT_PHYS_BASE);
 

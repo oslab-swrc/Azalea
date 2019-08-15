@@ -115,6 +115,7 @@ type name(type1 arg1, type2 arg2, type3 arg3, type4 arg4, type5 arg5, type6 arg6
  
 int create_thread(QWORD ip, QWORD argv, int core_mask);
 QWORD get_vcon_addr(void);
+int get_cpu_num(void);
 
 int delay(QWORD sec);
 int mdelay(QWORD msec);

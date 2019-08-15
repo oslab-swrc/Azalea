@@ -3,6 +3,7 @@
 
 _syscall3(int, create_thread, QWORD, ip, QWORD, argv, int, core_mask);
 _syscall0(QWORD, get_vcon_addr);
+_syscall0(int, get_cpu_num);
 
 _syscall1(int, delay, QWORD, sec);
 _syscall1(int, mdelay, QWORD, msec);

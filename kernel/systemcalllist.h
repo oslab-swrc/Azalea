@@ -4,6 +4,7 @@
 #define SYSCALL_create_thread      853
 
 #define SYSCALL_get_vcon_addr      200
+#define SYSCALL_get_cpu_num        201
 
 #define SYSCALL_delay              300
 #define SYSCALL_mdelay             301
