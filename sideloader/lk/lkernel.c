@@ -116,12 +116,11 @@ static int apic_send_ipi(unsigned int dest_shorthand, unsigned int dest, int vec
 
   printk(KERN_DEBUG "send_ipi (%d)\n", dest);
 
-  apic_icr_write(APIC_TRIGGER_MODE_EDGE | APIC_LEVEL_ASSERT |
+  x2apic_write32(APIC_REGISTER_ICR_LOWER, (APIC_TRIGGER_MODE_EDGE | APIC_LEVEL_ASSERT |
                  APIC_DESTINATION_MODE_PHYSICAL | APIC_DELIVERY_MODE_FIXED |
-                 49, dest);
+                 49), dest);
 
-  send_status = safe_apic_wait_icr_idle();
-  accept_status = (apic_read(APIC_ESR) & 0xEF);
+  accept_status = (unsigned int) x2apic_read(APIC_REGISTER_ERROR) & 0xEF  ;
 
   printk("send %d, accept %d\n", send_status, accept_status);
 
@@ -387,10 +386,6 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
   {
     unsigned int phy;
     retu = copy_from_user(&phy, (const void __user *) arg, sizeof(unsigned int));
-
-    if (phy >= MAX_PROCESSOR_COUNT || g_onoff_bitmap[phy] == 1)
-      return -1;
-    g_onoff_bitmap[phy] = 1;
 
     wakeup_secondary_cpu_via_init(phy, g_boot_addr);
 

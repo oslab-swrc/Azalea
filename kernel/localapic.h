@@ -3,21 +3,27 @@
 
 #include "az_types.h"
 
-#define APIC_REGISTER_EOI				  0x0000B0
-#define APIC_REGISTER_SVR				  0x0000F0
-#define APIC_REGISTER_APIC_ID				  0x000020
-#define APIC_REGISTER_TASK_PRIORITY			  0x000080
-#define APIC_REGISTER_TIMER				  0x000320
-#define APIC_REGISTER_THERMAL_SENSOR			  0x000330
-#define APIC_REGISTER_PERFORMANCE_MONITORING_COUNTER	  0x000340
-#define APIC_REGISTER_LINT0				  0x000350
-#define APIC_REGISTER_LINT1				  0x000360
-#define APIC_REGISTER_ERROR				  0x000370
-#define APIC_REGISTER_ICR_LOWER				  0x000300
-#define APIC_REGISTER_ICR_UPPER				  0x000310
-#define APIC_REGISTER_TIMER_DIV				  0x0003E0
-#define APIC_REGISTER_TIMER_INIT_CNT			  0x000380
-#define APIC_REGISTER_TIMER_CURR_CNT			  0x000390
+//X2APIC
+#define BASE_APIC_MSR					  0x00000800
+#define APIC_REGISTER_EOI                                 (BASE_APIC_MSR+((0x0000B0)>>4))
+#define APIC_REGISTER_SVR                                 (BASE_APIC_MSR+((0x0000F0)>>4))
+#define APIC_REGISTER_APIC_ID                             (BASE_APIC_MSR+((0x000020)>>4))
+#define APIC_REGISTER_TASK_PRIORITY                       (BASE_APIC_MSR+((0x000080)>>4))
+#define APIC_REGISTER_TIMER                               (BASE_APIC_MSR+((0x000320)>>4))
+#define APIC_REGISTER_THERMAL_SENSOR                      (BASE_APIC_MSR+((0x000330)>>4))
+#define APIC_REGISTER_PERFORMANCE_MONITORING_COUNTER      (BASE_APIC_MSR+((0x000340)>>4))
+#define APIC_REGISTER_LINT0                               (BASE_APIC_MSR+((0x000350)>>4))
+#define APIC_REGISTER_LINT1                               (BASE_APIC_MSR+((0x000360)>>4))
+#define APIC_REGISTER_ERROR                               (BASE_APIC_MSR+((0x000370)>>4))
+#define APIC_REGISTER_ICR_LOWER                           (BASE_APIC_MSR+((0x000300)>>4))
+#define APIC_REGISTER_ICR_UPPER                           (BASE_APIC_MSR+((0x000310)>>4))
+#define APIC_REGISTER_TIMER_DIV                           (BASE_APIC_MSR+((0x0003E0)>>4))
+#define APIC_REGISTER_TIMER_INIT_CNT                      (BASE_APIC_MSR+((0x000380)>>4))
+#define APIC_REGISTER_TIMER_CURR_CNT                      (BASE_APIC_MSR+((0x000390)>>4))
+
+#define IA32_APIC_BASE_MSR                    0x0000001B
+#define MSR_XAPIC_ENABLE                      (1UL << 11)
+#define MSR_X2APIC_ENABLE                     (1UL << 10)
 
 // Delivery Mode
 #define APIC_DELIVERY_MODE_FIXED			  0x000000
@@ -62,6 +68,35 @@
 #define APIC_POLARITY_ACTIVE_HIGH			  0x000000
 
 #ifndef __ASSEMBLY__
+
+inline static QWORD x2apic_read(DWORD msr)
+{
+  DWORD low, high;
+
+  asm volatile ("rdmsr" : "=a" (low), "=d" (high) : "c" (msr));
+
+  return ((QWORD)high << 32) | low;
+}
+
+inline static void x2apic_write(DWORD msr, QWORD value)
+{
+  DWORD low =  (DWORD) value;
+  DWORD high = (DWORD) (value >> 32);
+
+  asm volatile("wrmsr" :: "c"(msr), "a"(low), "d"(high) : "memory");
+}
+
+inline static void x2apic_write32(DWORD msr, DWORD high, DWORD low) 
+{
+  asm volatile("wrmsr" :: "c"(msr), "a"(low), "d"(high) : "memory");	
+}
+
+/*
+inline static DWORD safe_x2apic_wait_icr_idle()
+{
+	return 0;
+}
+*/
 
 // Functions
 QWORD get_local_apic_base_address(void);
