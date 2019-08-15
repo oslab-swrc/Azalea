@@ -210,8 +210,8 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     if (start_index != 0) {
       core_start = (start_index * CPUS_PER_NODE);        // core_start
       core_end = ((start_index+1) * CPUS_PER_NODE);      // core_end
-      memory_start = (start_index * MEMORYS_PER_NODE);   // memory_start
-      memory_end = ((start_index+1) * MEMORYS_PER_NODE);  // memory_end
+      memory_start = MEMORYS_START + ((start_index-1) * MEMORYS_PER_NODE);   // memory_start
+      memory_end = MEMORYS_START + (start_index * MEMORYS_PER_NODE);  // memory_end
     } else {
       core_start = g_param[1];
       core_end = g_param[2];

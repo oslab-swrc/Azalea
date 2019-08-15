@@ -10,6 +10,10 @@
 #define KERNEL_ADDR		(0x300000)		// 3MB (unit: B)
 #define APP_ADDR		(0xC800000)		// 200MB (unit: B)
 
+#define CPUS_PER_NODE      24
+#define MEMORYS_START      48
+#define MEMORYS_PER_NODE   10
+
 //Fixed value for QEMU
 #define VCON_ADDR	(0xb8000)
 #define PML4_ADDR	(BOOT_ADDR+0x1000)
