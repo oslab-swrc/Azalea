@@ -15,13 +15,8 @@
 
 #define TOTAL_COUNT_OFFSET	0x83
 
-#define CPUS_PER_NODE       18
-#define MEMORYS_PER_NODE    48   // unit:GB
-
 #define REMOTE_PAGE_MEMORY_SIZE     64
 
-int alloc_vcon(void);
-int free_vcon(int loc);
 void init_page_table(unsigned long base_va);
 
 #endif  /* __LKERNEL_H__ */

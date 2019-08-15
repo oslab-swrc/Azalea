@@ -7,6 +7,10 @@
 #define VCON_INDEX		(5)
 #define VCON_SIZE		(6)
 
+#define CPUS_PER_NODE      24
+#define MEMORYS_START      48
+#define MEMORYS_PER_NODE   10
+
 #define KERNEL_ADDR		(0x300000)		// 3MB (unit: B)
 #define APP_ADDR		(0xC800000)		// 200MB (unit: B)
 

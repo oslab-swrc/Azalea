@@ -94,3 +94,11 @@ BOOL startup_ap(void)
 
   return TRUE;
 }
+
+/**
+ * Return the number of cores
+ */
+int get_cpu_num(void)
+{
+  return g_cpu_start;
+}

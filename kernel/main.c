@@ -55,9 +55,7 @@ void Main(int boot_mode)
   g_vcon_addr = ((*((QWORD*) CONFIG_VCON_ADDR)) + CONFIG_PAGE_OFFSET);
   g_cpu_start = (*((QWORD*) CONFIG_CPU_START));
   g_cpu_end = (*((QWORD*) CONFIG_CPU_END));
-  // TODO: For now, APIC cannot wake more 256 CPU numbers, kernel starts with 2 core shortened 
-  // TODO: It should be removed when X2APIC will be applied.
-  g_cpu_size = g_cpu_end - g_cpu_start - 2;
+  g_cpu_size = g_cpu_start;
   g_memory_start = (*(QWORD*) (CONFIG_MEM_START + CONFIG_PAGE_OFFSET))*1024*1024*1024;
   g_memory_end = (*(QWORD*) (CONFIG_MEM_END + CONFIG_PAGE_OFFSET)) << 30;
 
@@ -70,7 +68,7 @@ void Main(int boot_mode)
   lk_print_xy(0, yloc++, "Switch to IA-32e mode success!!");
   lk_print_xy(0, yloc++, "IA-32e C language kernel started.............[Pass]");
   lk_print_xy(2, yloc++, "VCON: 0x%q", g_vcon_addr);
-  lk_print_xy(2, yloc++, "CPU_START: %d, CPU_END: %d", g_cpu_start, g_cpu_end);
+  lk_print_xy(2, yloc++, "CPU_NUM: %d", g_cpu_start);
   lk_print_xy(2, yloc++, "MEMORY_START: 0x%q, MEMORY_END: 0x%q", g_memory_start, g_memory_end);
   store_init_stat(INIT_IA32E_START_STAT);
 
