@@ -11,7 +11,7 @@
 #define APP_ADDR		(0xC800000)		// 200MB (unit: B)
 
 #define CPUS_PER_NODE      24
-#define MEMORYS_START      48
+#define UNIKERNEL_START    48
 #define MEMORYS_PER_NODE   10
 
 //Fixed value for QEMU

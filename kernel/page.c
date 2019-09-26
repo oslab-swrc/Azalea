@@ -1,3 +1,4 @@
+#include "arch.h"
 #include "page.h"
 #include "assemblyutility.h"
 #include "console.h"
@@ -9,6 +10,7 @@
 
 extern QWORD g_memory_start;
 extern QWORD g_memory_end;
+extern QWORD g_shared_memory;
 
 /**
  * Initialize Kernel Pagetable
@@ -42,9 +44,9 @@ void kernel_pagetables_init(QWORD address)
   mapping_address = 0; // 0 ~ 1GB + 2MB (vcon)
   set_page_entry_data(&(pd_entry[0]), mapping_address, (PAGE_FLAGS_DEFAULT | PAGE_FLAGS_PS));
 
-  // 2 ~ 3 GB (shared memory)
-  mapping_address = CONFIG_SHARED_MEMORY;
-  for (i=PAGE_MAX_ENTRY_COUNT*2; i<PAGE_MAX_ENTRY_COUNT*3; i++) {
+  // 1 ~ 3 GB (shared memory)
+  mapping_address = g_shared_memory;
+  for (i=PAGE_MAX_ENTRY_COUNT*1; i<PAGE_MAX_ENTRY_COUNT*3; i++) {
     set_page_entry_data(&(pd_entry[i]), mapping_address, (PAGE_FLAGS_DEFAULT | PAGE_FLAGS_PS));
 
     mapping_address += PAGE_SIZE_2M;

@@ -1,13 +1,12 @@
 #ifndef __OFFLOAD_MEMORY_CONFIG_H__
 #define __OFFLOAD_MEMORY_CONFIG_H__
 
-#define UNIKERNELS_MEM_BASE_PA  (0xC00000000)		// 48G 
-#define UNIKERNELS_MEM_SIZE     (0xC00000000 * 3)	// 48G * 3
+#include "arch.h"
 
-// reference this value from "memory_config.h" in unikernel
-#define CONFIG_SHARED_MEMORY	(0xA80000000)		// 42GB
+#define UNIKERNELS_MEM_BASE_PA  ((unsigned long) UNIKERNEL_START << 30)          // UNIKERNEL_START
+#define UNIKERNELS_MEM_SIZE     (((unsigned long) MEMORYS_PER_NODE << 30) * 7)   // assume max # of unikernel is 7
 
-#define CONFIG_SHARED_MEMORY_PA	(CONFIG_SHARED_MEMORY)
+#define CONFIG_SHARED_MEMORY_PA	((unsigned long) (UNIKERNEL_START-SHARED_MEMORY_SIZE+CHANNEL_START_OFFSET) << 30)
 
 #define	OFFLOAD_LOCK_ENABLE
 
@@ -21,7 +20,6 @@
 #define OFFLOAD_CHANNEL_STRUCT_VA (CONFIG_SHARED_MEMORY_VA + (PAGE_SIZE_4K * 100))
 #define OFFLOAD_CHANNEL_INFO_VA (CONFIG_SHARED_MEMORY_VA + (PAGE_SIZE_4K * 200))
 #define OFFLOAD_CHANNEL_BASE_VA (CONFIG_SHARED_MEMORY_VA + (PAGE_SIZE_4K * 300))
-
 
 #define OFFLOAD_MAX_CHANNEL     (300)
 #define OFFLOAD_MAGIC           (0x5D4C3B2A)

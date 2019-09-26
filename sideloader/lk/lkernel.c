@@ -21,6 +21,7 @@
 
 #include "arch.h"
 #include "cmds.h"
+#include "stat.h"
 
 #include "../include/localapic.h"
 #include "../include/page.h"
@@ -41,15 +42,19 @@ static unsigned short g_total = 0;
 static unsigned short g_vcon[VCON_SIZE] = {0, };
 
 static unsigned int start_index, core_start, core_end;
-static unsigned long memory_start, memory_end, memory_start_addr;
+static unsigned long memory_start, memory_end;
+static unsigned long memory_start_addr, memory_shared_addr;
 
 unsigned long g_pml_addr = 0;
 static struct page *g_ipcs_page = 0;
 unsigned long g_boot_addr = 0;
 unsigned long g_va_boot_addr = 0;
 
+static char *g_stat;
+static char *g_shell_storage;
+static char *g_log;
 static SHELL_STORAGE_AREA *g_shell_addr;
-static char *g_addr;
+
 static TCB *g_tcb_addr[MAX_PROCESSOR_COUNT+CONFIG_NUM_THREAD];
 static char *g_log;
 static unsigned long g_check_memory;
@@ -210,13 +215,15 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     core_start = g_param[1] == 0 ? CPUS_PER_NODE : g_param[1];
     core_end = 0;    // deprecated
     if (start_index != -1) {
-      memory_start = MEMORYS_START + (start_index * MEMORYS_PER_NODE);   // memory_start
-      memory_end = MEMORYS_START + ((start_index+1) * MEMORYS_PER_NODE);  // memory_end
+      memory_start = UNIKERNEL_START + (start_index * MEMORYS_PER_NODE);
+      memory_end = UNIKERNEL_START + ((start_index+1) * MEMORYS_PER_NODE);
     } else {
       memory_start = g_param[3];
       memory_end = g_param[4];
     }
-    memory_start_addr = memory_start * 1024 * 1024 * 1024;
+
+    memory_start_addr = memory_start << 30;
+    memory_shared_addr = ((unsigned long) (UNIKERNEL_START-SHARED_MEMORY_SIZE)) << 30;
 
     printk(KERN_INFO "LK_PARAM: index: %d, core_num: %d, memory_start: %d, memory_end: %d\n",
            (int)start_index, (int)core_start, (int)memory_start, (int)memory_end);
@@ -235,33 +242,31 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
     printk(KERN_INFO "LK_PARAM: Pagetable initialization complete, g_boot_addr: %llx, g_pml_addr : %llx\n", (unsigned long long) g_boot_addr, (unsigned long long) g_pml_addr);
 
-    // Ioremap of the shell storage
-    g_addr = ioremap ((memory_start_addr + ((CONFIG_SHELL_STORAGE+5)*1024*1024)), sizeof (SHELL_STORAGE_AREA));
-    if (g_addr == NULL) {
-      printk (KERN_INFO "g_addr ioremap error\n");
+    // Ioremap for stat memory
+    g_stat = ioremap(memory_shared_addr + STAT_START_OFFSET, sizeof(STAT_AREA));
+    if (g_stat == NULL) {
+      printk (KERN_INFO "g_stat ioremap error\n");
       return -EINVAL;
     }
-    printk (KERN_INFO "LK_PARAM: g_shell_addr ioremap success!!\n");
-    g_shell_addr = (SHELL_STORAGE_AREA *) g_addr;
+    printk (KERN_INFO "LK_PARAM: g_stat ioremap success!!\n");
 
-    g_log = ioremap ((memory_start_addr + (CONFIG_SHELL_STORAGE*1024*1024)+ LOG_LENGTH), (MAX_LOG_COUNT+1)*LOG_LENGTH);
+    // Ioremap for shell storage memory
+    g_shell_storage = ioremap(memory_shared_addr + SHELL_STORAGE_START_OFFSET, sizeof(SHELL_STORAGE_AREA));
+    if (g_stat == NULL) {
+      printk (KERN_INFO "g_shell_storage ioremap error\n");
+      return -EINVAL;
+    }
+    printk (KERN_INFO "LK_PARAM: g_shell_storage ioremap success!!\n");
+    g_shell_addr = (SHELL_STORAGE_AREA *) g_shell_storage;
+
+    // Ioremap for log memory
+    g_log = ioremap(memory_shared_addr + LOG_START_OFFSET + LOG_LENGTH, LOG_SIZE);
     if (g_log == NULL) {
       printk (KERN_INFO "g_log ioremap error\n");
       return -EINVAL;
     }
     printk (KERN_INFO "LK_PARAM: g_log ioremap success!!\n");
 
-//j    printk (KERN_INFO "*** %lx, %lx\n", g_shell_addr->thread_area[i], pa(g_shell_addr->thread_area[i]);
-#if 0
-    for (i = 0; i < MAX_PROCESSOR_COUNT + CONFIG_NUM_THREAD; i++) {
-      g_tcb_addr[i] = ioremap(pa(g_shell_addr->thread_area[i]), sizeof(TCB));
-      if (g_tcb_addr[i] == NULL) {
-        printk (KERN_INFO "tcb ioremap error - %d\n", i);
-        return -EINVAL;
-      }
-    }
-    printk (KERN_INFO "LK_PARAM: g_tcb_addr ioremap success!!\n");
-#endif
   }
     break;
 
@@ -683,7 +688,9 @@ void lk_exit(void)
   // TODO
   __free_pages(g_ipcs_page, get_order(PAGE_SIZE * REMOTE_PAGE_MEMORY_SIZE));
   iounmap((void *) g_boot_addr);
-  iounmap((void *) g_addr);
+  iounmap((void *) g_stat);
+  iounmap((void *) g_shell_storage);
+  iounmap((void *) g_log);
 
   device_destroy(lk_class, MKDEV(lk_major, 0));
   class_unregister(lk_class);

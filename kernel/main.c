@@ -29,6 +29,7 @@ extern int g_cpu_end;
 extern int g_cpu_size;
 extern QWORD g_memory_start;
 extern QWORD g_memory_end;
+extern QWORD g_shared_memory;
 
 inline static void flush_cache(void)
 {
@@ -56,8 +57,9 @@ void Main(int boot_mode)
   g_cpu_start = (*((QWORD*) CONFIG_CPU_START));
   g_cpu_end = (*((QWORD*) CONFIG_CPU_END));
   g_cpu_size = g_cpu_start;
-  g_memory_start = (*(QWORD*) (CONFIG_MEM_START + CONFIG_PAGE_OFFSET))*1024*1024*1024;
+  g_memory_start = (*(QWORD*) (CONFIG_MEM_START + CONFIG_PAGE_OFFSET)) * 1024 * 1024 * 1024;
   g_memory_end = (*(QWORD*) (CONFIG_MEM_END + CONFIG_PAGE_OFFSET)) << 30;
+  g_shared_memory = ((QWORD) (UNIKERNEL_START-SHARED_MEMORY_SIZE)) * 1024 * 1024 * 1024;
 
   if (boot_mode == 0) { // AP mode
     while(g_ap_ready == 0)
@@ -71,10 +73,6 @@ void Main(int boot_mode)
   lk_print_xy(2, yloc++, "CPU_NUM: %d", g_cpu_start);
   lk_print_xy(2, yloc++, "MEMORY_START: 0x%q, MEMORY_END: 0x%q", g_memory_start, g_memory_end);
   store_init_stat(INIT_IA32E_START_STAT);
-
-  lk_print_xy(0, yloc, "Shell storage initialize.....................[    ]");
-  shell_storage_area_init();		// Initialize shell storage area
-  lk_print_xy(xloc, yloc++, "Pass");
 
 #if 0
   lk_print_xy(0, yloc, "Memory check.................................[    ]");
@@ -96,6 +94,10 @@ void Main(int boot_mode)
 
   lk_print_xy(0, yloc, "Adjust Kernel Page Table.....................[    ]");
   adjust_pagetables(CONFIG_KERNEL_PAGETABLE_ADDRESS);
+  lk_print_xy(xloc, yloc++, "Pass");
+
+  lk_print_xy(0, yloc, "Shell storage initialize.....................[    ]");
+  shell_storage_area_init();		// Initialize shell storage area
   lk_print_xy(xloc, yloc++, "Pass");
 
   lk_print_xy(0, yloc, "Init GDT and switch to IA-32e mode...........[    ]");

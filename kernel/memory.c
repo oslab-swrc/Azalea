@@ -11,6 +11,7 @@ static QWORD g_free_count;
 
 QWORD g_memory_start;
 QWORD g_memory_end;
+QWORD g_shared_memory;
 
 static QWORD heap_end;
 
