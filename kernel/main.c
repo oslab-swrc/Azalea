@@ -54,14 +54,14 @@ void Main(int boot_mode)
 {
   int xloc = 46, yloc = 0;
 
-  g_ukid = (*((int*) CONFIG_VCON_ADDR));
-  g_vcon_addr = (BOOT_ADDR + (PAGE_SIZE_4K * (g_ukid + VCON_INDEX)) + CONFIG_PAGE_OFFSET);
+  g_ukid = (*((int*) CONFIG_UKID_ADDR));
+  g_vcon_addr = CONFIG_SHARED_MEMORY + VCON_START_OFFSET + (g_ukid * PAGE_SIZE_4K);
   g_cpu_start = (*((QWORD*) CONFIG_CPU_START));
   g_cpu_end = (*((QWORD*) CONFIG_CPU_END));
   g_cpu_size = g_cpu_start;
-  g_memory_start = (*(QWORD*) (CONFIG_MEM_START + CONFIG_PAGE_OFFSET)) * 1024 * 1024 * 1024;
+  g_memory_start = (*(QWORD*) (CONFIG_MEM_START + CONFIG_PAGE_OFFSET)) << 30;
   g_memory_end = (*(QWORD*) (CONFIG_MEM_END + CONFIG_PAGE_OFFSET)) << 30;
-  g_shared_memory = ((QWORD) (UNIKERNEL_START-SHARED_MEMORY_SIZE)) * 1024 * 1024 * 1024;
+  g_shared_memory = ((QWORD) (UNIKERNEL_START-SHARED_MEMORY_SIZE)) << 30;
 
   if (boot_mode == 0) { // AP mode
     while(g_ap_ready == 0)
@@ -69,9 +69,14 @@ void Main(int boot_mode)
     main_for_ap();
   }
 
+  kernel_pagetables_init(CONFIG_KERNEL_PAGETABLE_ADDRESS);
+  lk_print_xy(0, yloc++, "Init Kernel Page Tables .....................[Pass]");
+  store_init_stat(INIT_PAGETABLE_STAT);
+  yloc++;
+
   lk_print_xy(0, yloc++, "Switch to IA-32e mode success!!");
   lk_print_xy(0, yloc++, "IA-32e C language kernel started.............[Pass]");
-  lk_print_xy(2, yloc++, "VCON: 0x%q", g_vcon_addr);
+  lk_print_xy(2, yloc++, "ID: %d, VCON: 0x%q", g_ukid, g_vcon_addr);
   lk_print_xy(2, yloc++, "CPU_NUM: %d", g_cpu_start);
   lk_print_xy(2, yloc++, "MEMORY_START: 0x%q, MEMORY_END: 0x%q", g_memory_start, g_memory_end);
   store_init_stat(INIT_IA32E_START_STAT);
@@ -82,11 +87,6 @@ void Main(int boot_mode)
     while(1) ;
   lk_print_xy(xloc, yloc++, "Pass");
 #endif
-
-  lk_print_xy(0, yloc, "Init Kernel Page Tables .....................[    ]");
-  kernel_pagetables_init(CONFIG_KERNEL_PAGETABLE_ADDRESS);
-  lk_print_xy(xloc, yloc++, "Pass");
-  store_init_stat(INIT_PAGETABLE_STAT);
 
   lk_print_xy(0, yloc, "Init Free Memory Management .................[    ]");
   free_mem_init();
@@ -102,8 +102,6 @@ void Main(int boot_mode)
   shell_storage_area_init();		// Initialize shell storage area
   lk_print_xy(xloc, yloc++, "Pass");
 
-  lk_print("ukid : %d \n", g_ukid);
-  lk_print("vcon : %q \n", g_vcon_addr);
   lk_print_xy(0, yloc, "Init GDT and switch to IA-32e mode...........[    ]");
   gdt_and_tss_init();
   load_gdtr(va(GDTR_START_ADDRESS));

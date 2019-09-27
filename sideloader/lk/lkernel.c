@@ -50,9 +50,8 @@ static struct page *g_ipcs_page = 0;
 unsigned long g_boot_addr = 0;
 unsigned long g_va_boot_addr = 0;
 
-static char *g_stat;
-static char *g_shell_storage;
-static char *g_log;
+static char *g_vcon, *g_stat;
+static char *g_shell_storage, *g_log;
 static SHELL_STORAGE_AREA *g_shell_addr;
 
 static TCB *g_tcb_addr[MAX_PROCESSOR_COUNT+CONFIG_NUM_THREAD];
@@ -243,6 +242,14 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
     printk(KERN_INFO "LK_PARAM: Pagetable initialization complete, g_boot_addr: %llx, g_pml_addr : %llx\n", (unsigned long long) g_boot_addr, (unsigned long long) g_pml_addr);
 
+    // Ioremap for vcon memory
+    g_vcon = ioremap(memory_shared_addr + VCON_START_OFFSET, PAGE_4K * MAX_UNIKERNEL);
+    if (g_vcon == NULL) {
+      printk (KERN_INFO "g_vcon ioremap error\n");
+      return -EINVAL;
+    }
+    printk (KERN_INFO "LK_PARAM: g_vcon ioremap success!!\n");
+
     // Ioremap for stat memory
     g_stat = ioremap(memory_shared_addr + STAT_START_OFFSET, sizeof(STAT_AREA));
     if (g_stat == NULL) {
@@ -325,6 +332,9 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
       return -1;
     }
+
+    // Initialize vcon memory
+    memset(g_vcon+PAGE_4K*ukid, 0x20, PAGE_4K);
 
     // Bootloader
     bladdr = __va(g_boot_addr);
@@ -493,8 +503,7 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
   case LK_CMD_CONSOLE:
   {
-    unsigned long vcon_start_addr = BOOT_ADDR + PAGE_4K*VCON_INDEX; 
-    retu = copy_to_user((void __user *) arg, __va(vcon_start_addr), PAGE_4K*VCON_SIZE);
+    retu = copy_to_user((void __user *) arg, g_vcon, PAGE_4K * MAX_UNIKERNEL);
   }
     break;
 
