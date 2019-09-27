@@ -39,7 +39,7 @@ static unsigned short g_kernel64 = 0;
 static unsigned short g_uapp = 0;
 static unsigned short g_total = 0;
 
-static unsigned short g_vcon[VCON_SIZE] = {0, };
+static unsigned short g_ukid[MAX_UNIKERNEL] = {0, };
 
 static unsigned int start_index, core_start, core_end;
 static unsigned long memory_start, memory_end;
@@ -72,37 +72,38 @@ static const struct file_operations lk_fops = {
 };
 
 /**
- * Allocate vcon
+ * Allocate id for the unikernel
  * 0: usable, 1: used
  */
-int alloc_vcon(void)
+int alloc_ukid(void)
 {
-  int vcon_num = -1;
+  int ukid = -1;
   int i;
 
-  for (i=0; i<VCON_SIZE; i++) {
-    if (g_vcon[i] == 0) {
-      vcon_num = i;
-      g_vcon[i] = 1;
+  for (i=0; i<MAX_UNIKERNEL; i++) {
+    if (g_ukid[i] == 0) {
+      ukid = i;
+      g_ukid[i] = 1;
       break;
     }
   }
 
-  return vcon_num;
+  return ukid;
 }
 
 /**
- * Free vcon : Set the input number of vcon to usable 
+ * Free id : Set the input number of id to usable 
  */
-int free_vcon(int loc)
+int free_ukid(int loc)
 {
-  if (g_vcon[loc] == 1)
-    g_vcon[loc] = 0;
+  if (g_ukid[loc] == 1)
+    g_ukid[loc] = 0;
   else
     return -1;
 
   return 0; 
 }
+
 
 /**
  * open lkernel
@@ -293,7 +294,7 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
   case LK_LOADING:
   {
   // LK_LOADING: Copy image file into the memory separated into bootloader, kernel, and application
-    unsigned long vcon_addr;
+    int ukid;
     char *addr = NULL, *bladdr = NULL, *lkbin = NULL;
 
     // copy image file into the lkbin variable
@@ -316,16 +317,14 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
       return -1;
     }
 
-    // Initialize vcon address
-    vcon_addr = alloc_vcon();
-    if (vcon_addr == -1) {
+    // Get id for the unikernel
+    ukid = alloc_ukid();
+    if (ukid == -1) {
       vfree(lkbin);
-      printk(KERN_INFO "LK_LOADING: vcon address is not allocated\n");
+      printk(KERN_INFO "LK_LOADING: unikernel id is not allocated\n");
 
       return -1;
     }
-    vcon_addr = g_boot_addr + PAGE_4K * (vcon_addr+VCON_INDEX);
-    memset(__va(vcon_addr), 0x20, PAGE_4K);
 
     // Bootloader
     bladdr = __va(g_boot_addr);
@@ -334,7 +333,7 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     memcpy(__va(g_boot_addr), lkbin, (g_kernel32) * SECTOR);
 
     // Metadata
-    *((unsigned long *) (bladdr + META_OFFSET)) = (vcon_addr);
+    *((unsigned long *) (bladdr + META_OFFSET)) = (ukid);
     *((unsigned long *) (bladdr + META_OFFSET + PML4_OFFSET)) = g_pml_addr;
     *((unsigned long *) (bladdr + META_OFFSET + APIC_OFFSET)) = APIC_DEFAULT_PHYS_BASE;
     *((unsigned long *) (bladdr + META_OFFSET + CPU_START_OFFSET)) = core_start;
@@ -343,7 +342,7 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     *((unsigned long *) (bladdr + META_OFFSET + MEMORY_END_OFFSET)) = memory_end;
     *((unsigned long *) (bladdr + META_OFFSET + QEMU_OFFSET)) = 0;
 
-    printk(KERN_INFO "LK_LOADING: VCON_ADDR: %lx\n", vcon_addr);
+    printk(KERN_INFO "LK_LOADING: UK ID: %d\n", ukid);
     printk(KERN_INFO "LK_LOADING: CPU_NUM: %d\n", core_start);
     printk(KERN_INFO "LK_LOADING: MEMORY_START: %d GB, MEMORY_END: %d GB\n", (int) memory_start, (int) memory_end);
     printk(KERN_INFO "LK_LOADING: g_pml_addr %lx, apic_addr %lx\n", (unsigned long) g_pml_addr, (unsigned long) APIC_DEFAULT_PHYS_BASE);

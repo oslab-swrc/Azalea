@@ -27,6 +27,7 @@ extern int g_ap_ready;
 extern int g_cpu_start;
 extern int g_cpu_end;
 extern int g_cpu_size;
+extern int g_ukid;
 extern QWORD g_memory_start;
 extern QWORD g_memory_end;
 extern QWORD g_shared_memory;
@@ -53,7 +54,8 @@ void Main(int boot_mode)
 {
   int xloc = 46, yloc = 0;
 
-  g_vcon_addr = ((*((QWORD*) CONFIG_VCON_ADDR)) + CONFIG_PAGE_OFFSET);
+  g_ukid = (*((int*) CONFIG_VCON_ADDR));
+  g_vcon_addr = (BOOT_ADDR + (PAGE_SIZE_4K * (g_ukid + VCON_INDEX)) + CONFIG_PAGE_OFFSET);
   g_cpu_start = (*((QWORD*) CONFIG_CPU_START));
   g_cpu_end = (*((QWORD*) CONFIG_CPU_END));
   g_cpu_size = g_cpu_start;
@@ -100,6 +102,8 @@ void Main(int boot_mode)
   shell_storage_area_init();		// Initialize shell storage area
   lk_print_xy(xloc, yloc++, "Pass");
 
+  lk_print("ukid : %d \n", g_ukid);
+  lk_print("vcon : %q \n", g_vcon_addr);
   lk_print_xy(0, yloc, "Init GDT and switch to IA-32e mode...........[    ]");
   gdt_and_tss_init();
   load_gdtr(va(GDTR_START_ADDRESS));
@@ -118,8 +122,6 @@ void Main(int boot_mode)
   lk_print_xy(xloc, yloc++, "Pass");
   store_init_stat(INIT_IDT_STAT);
 
-  lk_print("xloc: %q, %q\n", xloc, &xloc);
-  lk_print("yloc: %q, %q\n", yloc, &yloc);
   lk_print_xy(0, yloc, "Init System Calls ...........................[    ]");
   systemcall_init();
   lk_print_xy(xloc, yloc++, "Pass");
