@@ -12,6 +12,7 @@ volatile QWORD g_apic_id_address = 0;
 int g_cpu_start;
 int g_cpu_end;
 int g_cpu_size;
+int g_ukid;
 
 extern QWORD g_memory_start;
 

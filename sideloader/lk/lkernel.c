@@ -21,6 +21,7 @@
 
 #include "arch.h"
 #include "cmds.h"
+#include "stat.h"
 
 #include "../include/localapic.h"
 #include "../include/page.h"
@@ -38,18 +39,21 @@ static unsigned short g_kernel64 = 0;
 static unsigned short g_uapp = 0;
 static unsigned short g_total = 0;
 
-static unsigned short g_vcon[VCON_SIZE] = {0, };
+static unsigned short g_ukid[MAX_UNIKERNEL] = {0, };
 
 static unsigned int start_index, core_start, core_end;
-static unsigned long memory_start, memory_end, memory_start_addr;
+static unsigned long memory_start, memory_end;
+static unsigned long memory_start_addr, memory_shared_addr;
 
 unsigned long g_pml_addr = 0;
 static struct page *g_ipcs_page = 0;
 unsigned long g_boot_addr = 0;
 unsigned long g_va_boot_addr = 0;
 
+static char *g_vcon, *g_stat;
+static char *g_shell_storage, *g_log;
 static SHELL_STORAGE_AREA *g_shell_addr;
-static char *g_addr;
+
 static TCB *g_tcb_addr[MAX_PROCESSOR_COUNT+CONFIG_NUM_THREAD];
 static char *g_log;
 static unsigned long g_check_memory;
@@ -67,37 +71,38 @@ static const struct file_operations lk_fops = {
 };
 
 /**
- * Allocate vcon
+ * Allocate id for the unikernel
  * 0: usable, 1: used
  */
-int alloc_vcon(void)
+int alloc_ukid(void)
 {
-  int vcon_num = -1;
+  int ukid = -1;
   int i;
 
-  for (i=0; i<VCON_SIZE; i++) {
-    if (g_vcon[i] == 0) {
-      vcon_num = i;
-      g_vcon[i] = 1;
+  for (i=0; i<MAX_UNIKERNEL; i++) {
+    if (g_ukid[i] == 0) {
+      ukid = i;
+      g_ukid[i] = 1;
       break;
     }
   }
 
-  return vcon_num;
+  return ukid;
 }
 
 /**
- * Free vcon : Set the input number of vcon to usable 
+ * Free id : Set the input number of id to usable 
  */
-int free_vcon(int loc)
+int free_ukid(int loc)
 {
-  if (g_vcon[loc] == 1)
-    g_vcon[loc] = 0;
+  if (g_ukid[loc] == 1)
+    g_ukid[loc] = 0;
   else
     return -1;
 
   return 0; 
 }
+
 
 /**
  * open lkernel
@@ -210,13 +215,15 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     core_start = g_param[1] == 0 ? CPUS_PER_NODE : g_param[1];
     core_end = 0;    // deprecated
     if (start_index != -1) {
-      memory_start = MEMORYS_START + (start_index * MEMORYS_PER_NODE);   // memory_start
-      memory_end = MEMORYS_START + ((start_index+1) * MEMORYS_PER_NODE);  // memory_end
+      memory_start = UNIKERNEL_START + (start_index * MEMORYS_PER_NODE);
+      memory_end = UNIKERNEL_START + ((start_index+1) * MEMORYS_PER_NODE);
     } else {
       memory_start = g_param[3];
       memory_end = g_param[4];
     }
-    memory_start_addr = memory_start * 1024 * 1024 * 1024;
+
+    memory_start_addr = memory_start << 30;
+    memory_shared_addr = ((unsigned long) (UNIKERNEL_START-SHARED_MEMORY_SIZE)) << 30;
 
     printk(KERN_INFO "LK_PARAM: index: %d, core_num: %d, memory_start: %d, memory_end: %d\n",
            (int)start_index, (int)core_start, (int)memory_start, (int)memory_end);
@@ -235,33 +242,39 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
     printk(KERN_INFO "LK_PARAM: Pagetable initialization complete, g_boot_addr: %llx, g_pml_addr : %llx\n", (unsigned long long) g_boot_addr, (unsigned long long) g_pml_addr);
 
-    // Ioremap of the shell storage
-    g_addr = ioremap ((memory_start_addr + ((CONFIG_SHELL_STORAGE+5)*1024*1024)), sizeof (SHELL_STORAGE_AREA));
-    if (g_addr == NULL) {
-      printk (KERN_INFO "g_addr ioremap error\n");
+    // Ioremap for vcon memory
+    g_vcon = ioremap(memory_shared_addr + VCON_START_OFFSET, PAGE_4K * MAX_UNIKERNEL);
+    if (g_vcon == NULL) {
+      printk (KERN_INFO "g_vcon ioremap error\n");
       return -EINVAL;
     }
-    printk (KERN_INFO "LK_PARAM: g_shell_addr ioremap success!!\n");
-    g_shell_addr = (SHELL_STORAGE_AREA *) g_addr;
+    printk (KERN_INFO "LK_PARAM: g_vcon ioremap success!!\n");
 
-    g_log = ioremap ((memory_start_addr + (CONFIG_SHELL_STORAGE*1024*1024)+ LOG_LENGTH), (MAX_LOG_COUNT+1)*LOG_LENGTH);
+    // Ioremap for stat memory
+    g_stat = ioremap(memory_shared_addr + STAT_START_OFFSET, sizeof(STAT_AREA));
+    if (g_stat == NULL) {
+      printk (KERN_INFO "g_stat ioremap error\n");
+      return -EINVAL;
+    }
+    printk (KERN_INFO "LK_PARAM: g_stat ioremap success!!\n");
+
+    // Ioremap for shell storage memory
+    g_shell_storage = ioremap(memory_shared_addr + SHELL_STORAGE_START_OFFSET, sizeof(SHELL_STORAGE_AREA));
+    if (g_stat == NULL) {
+      printk (KERN_INFO "g_shell_storage ioremap error\n");
+      return -EINVAL;
+    }
+    printk (KERN_INFO "LK_PARAM: g_shell_storage ioremap success!!\n");
+    g_shell_addr = (SHELL_STORAGE_AREA *) g_shell_storage;
+
+    // Ioremap for log memory
+    g_log = ioremap(memory_shared_addr + LOG_START_OFFSET + LOG_LENGTH, LOG_SIZE);
     if (g_log == NULL) {
       printk (KERN_INFO "g_log ioremap error\n");
       return -EINVAL;
     }
     printk (KERN_INFO "LK_PARAM: g_log ioremap success!!\n");
 
-//j    printk (KERN_INFO "*** %lx, %lx\n", g_shell_addr->thread_area[i], pa(g_shell_addr->thread_area[i]);
-#if 0
-    for (i = 0; i < MAX_PROCESSOR_COUNT + CONFIG_NUM_THREAD; i++) {
-      g_tcb_addr[i] = ioremap(pa(g_shell_addr->thread_area[i]), sizeof(TCB));
-      if (g_tcb_addr[i] == NULL) {
-        printk (KERN_INFO "tcb ioremap error - %d\n", i);
-        return -EINVAL;
-      }
-    }
-    printk (KERN_INFO "LK_PARAM: g_tcb_addr ioremap success!!\n");
-#endif
   }
     break;
 
@@ -288,7 +301,7 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
   case LK_LOADING:
   {
   // LK_LOADING: Copy image file into the memory separated into bootloader, kernel, and application
-    unsigned long vcon_addr;
+    int ukid;
     char *addr = NULL, *bladdr = NULL, *lkbin = NULL;
 
     // copy image file into the lkbin variable
@@ -311,16 +324,17 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
       return -1;
     }
 
-    // Initialize vcon address
-    vcon_addr = alloc_vcon();
-    if (vcon_addr == -1) {
+    // Get id for the unikernel
+    ukid = alloc_ukid();
+    if (ukid == -1) {
       vfree(lkbin);
-      printk(KERN_INFO "LK_LOADING: vcon address is not allocated\n");
+      printk(KERN_INFO "LK_LOADING: unikernel id is not allocated\n");
 
       return -1;
     }
-    vcon_addr = g_boot_addr + PAGE_4K * (vcon_addr+VCON_INDEX);
-    memset(__va(vcon_addr), 0x20, PAGE_4K);
+
+    // Initialize vcon memory
+    memset(g_vcon+PAGE_4K*ukid, 0x20, PAGE_4K);
 
     // Bootloader
     bladdr = __va(g_boot_addr);
@@ -329,7 +343,7 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     memcpy(__va(g_boot_addr), lkbin, (g_kernel32) * SECTOR);
 
     // Metadata
-    *((unsigned long *) (bladdr + META_OFFSET)) = (vcon_addr);
+    *((unsigned long *) (bladdr + META_OFFSET)) = (ukid);
     *((unsigned long *) (bladdr + META_OFFSET + PML4_OFFSET)) = g_pml_addr;
     *((unsigned long *) (bladdr + META_OFFSET + APIC_OFFSET)) = APIC_DEFAULT_PHYS_BASE;
     *((unsigned long *) (bladdr + META_OFFSET + CPU_START_OFFSET)) = core_start;
@@ -338,7 +352,7 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     *((unsigned long *) (bladdr + META_OFFSET + MEMORY_END_OFFSET)) = memory_end;
     *((unsigned long *) (bladdr + META_OFFSET + QEMU_OFFSET)) = 0;
 
-    printk(KERN_INFO "LK_LOADING: VCON_ADDR: %lx\n", vcon_addr);
+    printk(KERN_INFO "LK_LOADING: UK ID: %d\n", ukid);
     printk(KERN_INFO "LK_LOADING: CPU_NUM: %d\n", core_start);
     printk(KERN_INFO "LK_LOADING: MEMORY_START: %d GB, MEMORY_END: %d GB\n", (int) memory_start, (int) memory_end);
     printk(KERN_INFO "LK_LOADING: g_pml_addr %lx, apic_addr %lx\n", (unsigned long) g_pml_addr, (unsigned long) APIC_DEFAULT_PHYS_BASE);
@@ -489,8 +503,7 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
   case LK_CMD_CONSOLE:
   {
-    unsigned long vcon_start_addr = BOOT_ADDR + PAGE_4K*VCON_INDEX; 
-    retu = copy_to_user((void __user *) arg, __va(vcon_start_addr), PAGE_4K*VCON_SIZE);
+    retu = copy_to_user((void __user *) arg, g_vcon, PAGE_4K * MAX_UNIKERNEL);
   }
     break;
 
@@ -683,7 +696,9 @@ void lk_exit(void)
   // TODO
   __free_pages(g_ipcs_page, get_order(PAGE_SIZE * REMOTE_PAGE_MEMORY_SIZE));
   iounmap((void *) g_boot_addr);
-  iounmap((void *) g_addr);
+  iounmap((void *) g_stat);
+  iounmap((void *) g_shell_storage);
+  iounmap((void *) g_log);
 
   device_destroy(lk_class, MKDEV(lk_major, 0));
   class_unregister(lk_class);

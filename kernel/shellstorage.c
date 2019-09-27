@@ -1,9 +1,11 @@
 #include <sys/lock.h>
 #include "shellstorage.h"
+#include "stat.h"
 #include "console.h"
 #include "arch.h"
 
 extern QWORD g_memory_start;
+extern QWORD g_shared_memory;
 static SHELL_STORAGE_AREA *g_ss_area;
 
 static unsigned int *log_front, *log_rear ;
@@ -18,19 +20,19 @@ void shell_storage_area_init(void)
 {
   spinlock_init(&log_lock) ;
 
-  log_buffer = (char*) va(CONFIG_SHELL_STORAGE_AREA+LOG_LENGTH);
-  log_front = (unsigned int *) va(CONFIG_SHELL_STORAGE_AREA);
-  log_rear = (unsigned int *) va(CONFIG_SHELL_STORAGE_AREA+4);    
+  // log
+  log_buffer = (char*) (CONFIG_SHARED_MEMORY + LOG_START_OFFSET + LOG_LENGTH);
+  log_front = (unsigned int *) (CONFIG_SHARED_MEMORY + LOG_START_OFFSET);
+  log_rear = (unsigned int *) (CONFIG_SHARED_MEMORY + LOG_START_OFFSET + 4);    
+  lk_memset(log_buffer, 0, (MAX_LOG_COUNT+1) * LOG_LENGTH);
 
-  lk_memset(log_buffer, 0, (MAX_LOG_COUNT+1) * LOG_LENGTH) ;
-	
-  g_ss_area = (SHELL_STORAGE_AREA *) (va(CONFIG_SHELL_STORAGE_AREA+(5<<20)));
+  // shell_storage
+  g_ss_area = (SHELL_STORAGE_AREA *) (CONFIG_SHARED_MEMORY + SHELL_STORAGE_START_OFFSET);
   lk_memset(g_ss_area, 0, sizeof(SHELL_STORAGE_AREA));
 }
 
 void shell_enqueue(const char * msg) 
 {
-#if 1
   spinlock_lock(&log_lock) ;
   if ( *log_rear >= MAX_LOG_COUNT ) {
     spinlock_unlock(&log_lock);
@@ -40,7 +42,6 @@ void shell_enqueue(const char * msg)
   lk_memcpy(log_buffer+((*log_rear)*64), msg, lk_strlen(msg)) ; 
   (*log_rear)++ ;
   spinlock_unlock(&log_lock) ;
-#endif
 }
 
 /**

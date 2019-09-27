@@ -18,7 +18,7 @@ char *g_screen ;
 
 /**
  * Print the console
- *  - input: the number of console (0~VCON_SIZE);
+ *  - input: the number of console (0~MAX_UNIKERNEL);
  */
 int main(int argc, char *argv[])
 {
@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
   loc = (argc < 2) ? 0 : atoi(argv[1]);
 
   // Print the console
-  g_vcon = malloc(sizeof(PAGE_4K * VCON_SIZE));
+  g_vcon = malloc(sizeof(PAGE_4K * MAX_UNIKERNEL));
   g_screen = (char *) g_vcon + PAGE_4K*loc;
 
   // 

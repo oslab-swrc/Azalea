@@ -12,21 +12,18 @@
 #define CONFIG_HIGH_HALF_LIMIT		((QWORD)0xFFFF800000000000)
 #define CONFIG_LOW_HALF_LIMIT		((QWORD)0x0000700000000000)
 
-#define CONFIG_NUM_THREAD		2048
+#define CONFIG_NUM_THREAD	 	2048
 
 #define CONFIG_TCB_SIZE         	0x1000
 //#define CONFIG_STACK_SIZE         	0x10000				// 64K
 #define CONFIG_STACK_SIZE         	0x200000			// 2M
 #define CONFIG_PAGE_OFFSET      	0xFFFF8000C0000000
+#define CONFIG_SHARED_MEMORY        0xFFFF800040000000
 
 #define IDLE_THREAD_ADDRESS     	(0x800000+g_memory_start)
 #define IDLE_THREAD_ADDRESS_VA		(0x800000+CONFIG_PAGE_OFFSET)
 
 #define CONFIG_APP_ADDRESS          ((200<<20)+g_memory_start)		// 200MB (unit: B)
-
-#define CONFIG_SHARED_MEMORY        (0xA80000000)       // 42GB
-
-#define CONFIG_SHELL_STORAGE_AREA   ((CONFIG_SHELL_STORAGE<<20)+g_memory_start)
 
 #define HEAP_START                  (0x40000000)        // 1GB (unit: B)
 #define HEAP_SIZE                   (0x280000000)       // 10GB (unit: B)

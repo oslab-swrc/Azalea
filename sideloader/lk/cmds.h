@@ -127,7 +127,6 @@ typedef struct {
   QWORD     timer[MAX_PROCESSOR_COUNT];
   PF_AREA   pf_area;
   TCB       *thread_area[MAX_PROCESSOR_COUNT+CONFIG_NUM_THREAD];
-  char *stat[4*1024*1024];
 } SHELL_STORAGE_AREA;
 
 #endif  /* __CMDS_H__ */
