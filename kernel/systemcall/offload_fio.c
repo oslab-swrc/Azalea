@@ -572,7 +572,7 @@ TCB *current = NULL;
 QWORD mytid = -1;
 
   ch = get_offload_channel(-1);
-  if(ch == NULL) {
+  if(ch == NULL || name == NULL) {
           return NULL;
   }
 
@@ -605,7 +605,7 @@ TCB *current = NULL;
 QWORD mytid = -1;
 
   ch = get_offload_channel(-1);
-  if(ch == NULL) {
+  if(ch == NULL || dirp == NULL) {
           return -1;
   }
 
@@ -639,7 +639,7 @@ TCB *current = NULL;
 QWORD mytid = -1;
 
   ch = get_offload_channel(-1);
-  if(ch == NULL) {
+  if(ch == NULL || dirp == NULL) {
           return NULL;
   }
 
@@ -677,7 +677,7 @@ TCB *current = NULL;
 QWORD mytid = -1;
 
   ch = get_offload_channel(-1);
-  if(ch == NULL) {
+  if(ch == NULL || dirp == NULL) {
           return;
   }
 

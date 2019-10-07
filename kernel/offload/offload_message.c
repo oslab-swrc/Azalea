@@ -1,6 +1,7 @@
 #include "console.h"
 #include "offload_message.h"
 
+#define OFFLOAD_LOCK_ENABLE
 
 /**
  * @brief send offload message
@@ -21,7 +22,10 @@ cq_element *ce = NULL;
 io_packet_t *opkt = NULL;
 
 #ifdef OFFLOAD_LOCK_ENABLE
-	spinlock_lock(ocq->lock);
+	//spinlock_lock(ocq->lock);
+	//spinlock_lock(&ocq->lock);
+	//spinlock_irqsave_lock(&ocq->lock);
+	mutex_lock(&ocq->lock);
 	while (cq_free_space(ocq) == 0);
 #else
 	while (cq_free_space(ocq) == 0);
@@ -43,7 +47,10 @@ io_packet_t *opkt = NULL;
 	ocq->head = (ocq->head + 1) % ocq->size;
 
 #ifdef OFFLOAD_LOCK_ENABLE
-	  spinlock_unlock(ocq->lock);
+	  //spinlock_unlock(ocq->lock);
+	//spinlock_unlock(&ocq->lock);
+	//spinlock_irqsave_unlock(&ocq->lock);
+	mutex_unlock(&ocq->lock);
 #endif
 }
 
@@ -62,7 +69,10 @@ QWORD ret = 0;
 
 retry_receive_sys_message:
 #ifdef OFFLOAD_LOCK_ENABLE
-	spinlock_lock(icq->lock);
+	//spinlock_lock(icq->lock);
+	//spinlock_lock(&icq->lock);
+	//spinlock_irqsave_lock(&icq->lock);
+	mutex_lock(&icq->lock);
 	while (cq_avail_data(icq) == 0);
 #else
 	while (cq_avail_data(icq) == 0);
@@ -75,14 +85,22 @@ retry_receive_sys_message:
 		icq->tail = (icq->tail + 1) % icq->size;
 
 #ifdef OFFLOAD_LOCK_ENABLE
-	spinlock_unlock(icq->lock);
+		//spinlock_unlock(icq->lock);
+		//spinlock_unlock(&icq->lock);
+		//spinlock_irqsave_unlock(&icq->lock);
+		mutex_unlock(&icq->lock);
 #endif
 	}
 	else {
 #ifdef OFFLOAD_LOCK_ENABLE
-		spinlock_unlock(icq->lock);
+		//spinlock_unlock(icq->lock);
+		//spinlock_unlock(&icq->lock);
+		//`spinlock_irqsave_unlock(&icq->lock);
+		mutex_unlock(&icq->lock);
+		lk_print_xy(0, 4, " receive retry %d, %d : lock enabled", tid, offload_function_type);
 #endif
 		lk_print_xy(0, 5, " receive retry %d, %d", tid, offload_function_type);
+		//schedule(THREAD_INTENTION_READY);
 		goto retry_receive_sys_message;
 	}
 

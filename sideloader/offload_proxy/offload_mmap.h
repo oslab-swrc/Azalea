@@ -3,11 +3,13 @@
 
 #include "offload_channel.h"
 
-int mmap_channels(channel_t *io_channels, int n_io_channels, int opages, int ipages);
-int munmap_channels(channel_t *io_channels, int n_io_channels);
-int mmap_unikernels_memory();
+#define OFFLOAD_MAGIC           (0x5D4C3B2A)
+
+int mmap_channels(channel_t *offload_channels, int n_nodes, int n_offload_channels, int opages, int ipages);
+int munmap_channels(channel_t *offload_channels, int n_offload_channels);
+unsigned long mmap_unikernels_memory(int n_nodes);
 unsigned long get_va(unsigned long pa);
-unsigned long get_pa_base();
-unsigned long get_va_base();
+unsigned long get_pa_base(void);
+unsigned long get_va_base(void);
 
 #endif

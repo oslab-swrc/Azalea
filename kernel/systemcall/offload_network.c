@@ -34,8 +34,9 @@ int sys_off_gethostname(char *name, size_t len)
 
   // Get the channel for communicating with the driver
   ch = get_offload_channel(-1);
-  if(ch == NULL)
+  if(ch == NULL || name == NULL || len == 0)
     return (-1);
+
   icq = ch->in;
   ocq = ch->out;
 
@@ -65,8 +66,9 @@ struct hostent *sys_off_gethostbyname(char *name)
 
   // Get the channel for communicating with the driver
   ch = get_offload_channel(-1);
-  if(ch == NULL)
+  if(ch == NULL || name == NULL)
     return NULL;
+
   icq = ch->in;
   ocq = ch->out;
 
@@ -113,8 +115,9 @@ int sys_off_getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 
   // Get the channel for communicating with the driver
   ch = get_offload_channel(-1);
-  if(ch == NULL)
+  if(ch == NULL || addr == NULL || addrlen == NULL)
     return (-1);
+
   icq = ch->in;
   ocq = ch->out;
 
@@ -182,7 +185,7 @@ int sys_off_bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 
   // Get the channel for communicating with the driver
   ch = get_offload_channel(-1);
-  if(ch == NULL)
+  if(ch == NULL || addr == NULL)
     return (-1);
   icq = ch->in;
   ocq = ch->out;
@@ -249,7 +252,7 @@ int sys_off_connect(int sockfd, struct sockaddr *addr, socklen_t addrlen)
 
   // Get the channel for communicating with the driver
   ch = get_offload_channel(-1);
-  if(ch == NULL)
+  if(ch == NULL || addr == NULL)
     return (-1);
   icq = ch->in;
   ocq = ch->out;
@@ -283,7 +286,7 @@ int sys_off_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen)
 
   // Get the channel for communicating with the driver
   ch = get_offload_channel(-1);
-  if(ch == NULL)
+  if(ch == NULL || addr == NULL || addrlen == NULL)
     return (-1);
   icq = ch->in;
   ocq = ch->out;

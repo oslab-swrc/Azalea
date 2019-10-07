@@ -11,9 +11,12 @@
 #include "offload_fio.h"
 #include "offload_network.h"
 #include "systemcalllist.h"
+#include "arch.h"
 
 #define PAGE_SHIFT (12)
 #define PAGE_SIZE (1 << PAGE_SHIFT)
+
+#define OFFLOAD_MAX_CHANNEL     (300)
 
 //mmapped unikernels' start memory address, unikernels's start physical address = 48G
 extern unsigned long g_mmap_unikernels_mem_base_va;
@@ -26,6 +29,7 @@ struct thread_channel_information {
 int g_offload_channel_runnable;
 int g_n_channels;
 int g_n_threads;
+int g_n_nodes;
 
 /**
  * @brief offload local proxy thread
@@ -208,10 +212,13 @@ int main(int argc, char *argv[])
   int k = 0;
   unsigned long status;
   pthread_t *offload_threads;
+  int n_channels_per_node = 0;
+  int n_threads_per_node = 0;
+  unsigned long unikernels_mem_size = 0;
 
-  if (argc != 9) {
+  if (argc != 11) {
     printf("usage: ./offload_local_proxy -o <no elements> -i <no elements> -c"
-	   " <no channels> -t <no threads>\n");
+	   " <no channels per node> -t <no threads per node> -n <no nodes>\n");
     exit(1);
   }
 
@@ -220,12 +227,20 @@ int main(int argc, char *argv[])
   opages = ocq_elements * CQ_ELE_PAGE_NUM + 1; // payload = CQ_ELE_PAGE_NUM pages, metadata = 1 page
   ipages = icq_elements * CQ_ELE_PAGE_NUM + 1;
 
-  g_n_channels = atoi(argv[6]);
-  g_n_threads = atoi(argv[8]);
+  n_channels_per_node = atoi(argv[6]);
+  n_threads_per_node = atoi(argv[8]);
+  g_n_nodes = atoi(argv[10]);
+  if(g_n_nodes <= 0) {
+    printf("Error: Requested node number is %d.", g_n_nodes);
+    exit(1);
+  }
 
-  err = mmap_unikernels_memory();
+  g_n_channels = n_channels_per_node * g_n_nodes;
+  g_n_threads = n_threads_per_node * g_n_nodes;
 
-  if(err) 
+  unikernels_mem_size = mmap_unikernels_memory(g_n_nodes);
+
+  if(unikernels_mem_size == 0) 
 	  goto __exit; 
 
   if ((opages * PAGE_SIZE) <= 0 || (opages * PAGE_SIZE) > LONG_MAX ||
@@ -249,8 +264,8 @@ int main(int argc, char *argv[])
   for (i = 0; i < g_n_channels; i++)
     init_channel(offload_channels + i);
 
-  printf("#channels = %d #out elements = %d #in elements = %d \n", (int) g_n_channels, (int) ocq_elements, (int) icq_elements);
-  if (!mmap_channels(offload_channels, g_n_channels, opages, ipages))
+  printf("#nodes = %d #channels = %d #out elements = %d #in elements = %d \n", (int) g_n_nodes, (int) g_n_channels, (int) ocq_elements, (int) icq_elements);
+  if (!mmap_channels(offload_channels, g_n_nodes, g_n_channels, opages, ipages))
       err++;
 
   if (err)
@@ -258,48 +273,16 @@ int main(int argc, char *argv[])
 
   g_offload_channel_runnable = 1;
 
-
-#if 0
-  int quotient_channel = (int) (g_n_channels / OFFLOAD_N_NODE);
-  int rest_channel = g_n_channels % OFFLOAD_N_NODE;
-  int n_channel_per_node[OFFLOAD_N_NODE];
-  for(i = 0; i < OFFLOAD_N_NODE;i++) {
-    n_channel_per_node[i] = quotient_channel;
-  }
-
-  int quotient_thread = (int) (g_n_threads / OFFLOAD_N_NODE);
-  int rest_thread = g_n_threads % OFFLOAD_N_NODE;
-  int n_thread_per_node[OFFLOAD_N_NODE];
-  for(i = 0; i < OFFLOAD_N_NODE;i++) {
-    n_thread_per_node[i] = quotient_thread;
-  }
-  for(i = 0; i < rest_thread;i++) {
-    n_thread_per_node[i]++;
-  }
-
-  channel_t *curr_ch = offload_channels;
-  channel_t *next_ch = NULL;
-
-  int range_channel;
-  int range_rest_channel;
-
-
-#endif
-
-  int n_channel_range_per_node  = (int) (g_n_channels / OFFLOAD_N_NODE);
-  int n_thread_per_node = (int) (g_n_threads / OFFLOAD_N_NODE);;
-
-  int quotient_channel = n_channel_range_per_node / n_thread_per_node;
-  //int rest_channel = n_channel_range_per_node % n_thread_per_node;
+  int quotient_channel = n_channels_per_node / n_threads_per_node;
   int rest_channel = 0;
 
   channel_t *curr_ch = offload_channels;
   channel_t *next_ch = NULL;
   k = 0;
-  for (i = 0; i < OFFLOAD_N_NODE; i++) {
+  for (i = 0; i < g_n_nodes; i++) {
 
-    rest_channel = n_channel_range_per_node % n_thread_per_node;
-    for (j = 0; j < n_thread_per_node; j++) {
+    rest_channel = n_channels_per_node % n_threads_per_node;
+    for (j = 0; j < n_threads_per_node; j++) {
 
       if(rest_channel == 0) {
         thread_channels[k].ch = curr_ch;
@@ -318,30 +301,6 @@ int main(int argc, char *argv[])
       curr_ch = next_ch;
     }
   }
-
-#if 0
-  int quotient_channel = g_n_channels / g_n_threads;
-  int rest_channel = g_n_channels % g_n_threads;
-  channel_t *curr_ch = offload_channels;
-  channel_t *next_ch = NULL;
-  for (i = 0; i < g_n_threads; i++) {
-	
-    if(rest_channel == 0) {
-      thread_channels[i].ch = curr_ch;
-      thread_channels[i].n_ch = quotient_channel;
-      next_ch = curr_ch + quotient_channel;
-    }
-    else {
-      thread_channels[i].ch = curr_ch;
-      thread_channels[i].n_ch = quotient_channel + 1;
-      next_ch = curr_ch + (quotient_channel + 1);
-      rest_channel--;
-    }
-    pthread_create(offload_threads + i, NULL, offload_local_proxy, &thread_channels[i]);
-
-    curr_ch = next_ch;
-  }
-#endif
 
   // begin of logic
   cmd(offload_channels);
@@ -378,7 +337,7 @@ __free_offload_threads:
     printf("======== Program Failed ========\n");
 
   if(g_mmap_unikernels_mem_base_va != 0)
-    munmap((void *) g_mmap_unikernels_mem_base_va, UNIKERNELS_MEM_SIZE); 
+    munmap((void *) g_mmap_unikernels_mem_base_va, unikernels_mem_size); 
 
 __exit:
 
