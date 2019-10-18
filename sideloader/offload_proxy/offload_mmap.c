@@ -13,6 +13,8 @@ unsigned long g_mmap_unikernels_mem_base_va = 0;
 // offload channel info address
 unsigned long g_offload_channels_info_va = 0;
 
+#define OFFLOAD_LOCK_ENABLE
+
 #ifdef OFFLOAD_LOCK_ENABLE
 unsigned long g_offload_locks_va = 0;
 #endif
@@ -69,7 +71,7 @@ int munmap_channels(channel_t *offload_channels, int n_offload_channels)
  * @param ipages  whole page number of in channels
  * @return success (1), fail (0)
  */
-int mmap_channels(channel_t *offload_channels, int n_offload_channels, int opages, int ipages)
+int mmap_channels(channel_t *offload_channels, int n_nodes, int n_offload_channels, int opages, int ipages)
 {
   int offload_channels_offset = 0;
 
@@ -87,11 +89,6 @@ int mmap_channels(channel_t *offload_channels, int n_offload_channels, int opage
   //unsigned long offload_channels_info_pa = 0;
   unsigned long *offload_channels_info = NULL;
 
-#ifdef OFFLOAD_LOCK_ENABLE
-  az_spinlock_t *locks = NULL;
-  //int locks_count = 0;
-#endif
-
   offload_fd = open("/dev/offload", O_RDWR) ;
   if (offload_fd < 0) {
     printf("/dev/offload open error\n") ;
@@ -108,6 +105,7 @@ int mmap_channels(channel_t *offload_channels, int n_offload_channels, int opage
   *(offload_channels_info++) = (unsigned long) n_offload_channels;
   *(offload_channels_info++) = (unsigned long) opages;
   *(offload_channels_info++) = (unsigned long) ipages;
+  *(offload_channels_info++) = (unsigned long) n_nodes;
   offload_channels_info++; // skip node id 
   //*(offload_channels_info) = (unsigned long) 0; // node id initialization
 
@@ -152,21 +150,6 @@ int mmap_channels(channel_t *offload_channels, int n_offload_channels, int opage
     cq_init(offload_channels[offload_channels_offset].in_cq, (ipages - 1) / CQ_ELE_PAGE_NUM);
   }
 
-#ifdef OFFLOAD_LOCK_ENABLE
-  g_offload_locks_va = (unsigned long) mmap(NULL, PAGE_SIZE_4K * 2, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, OFFLOAD_CHANNEL_LOCK_PA);
-  locks = (az_spinlock_t *) g_offload_locks_va;
-
-  for(offload_channels_offset = 0; (offload_channels_offset < n_offload_channels) && (offload_channels_offset < OFFLOAD_LOCK_ENABLE_MAX_CHANNELS_NUM); offload_channels_offset++ ) {
-    //az_spinlock_init(locks + locks_count++ * 64);
-    //az_spinlock_init(locks + locks_count++ * 64);
-
-    offload_channels[offload_channels_offset].out_cq->lock = locks++;
-    offload_channels[offload_channels_offset].in_cq->lock = locks++;
-    az_spinlock_init(offload_channels[offload_channels_offset].out_cq->lock);
-    az_spinlock_init(offload_channels[offload_channels_offset].in_cq->lock);
-  }
-#endif
-
   //set OFFLOAD_MAGIC
   offload_channels_info = (unsigned long *) offload_channels_info_va;
   *(offload_channels_info) = (unsigned long) OFFLOAD_MAGIC;
@@ -178,13 +161,13 @@ int mmap_channels(channel_t *offload_channels, int n_offload_channels, int opage
 
 
 /**
- * @brief mmap unikernels' memory
+ * @brief mmap unikernels' whole memory
  * @return success (0), fail (1)
  */
-int mmap_unikernels_memory()
+unsigned long mmap_unikernels_memory(int n_nodes)
 {
-  unsigned long kernels_mem_base_pa;
-  unsigned long kernels_mem_base_pa_len;
+  unsigned long kernels_mem_base_pa = 0;
+  unsigned long kernels_mem_base_pa_len = 0;
 
   int offload_fd = 0;
 
@@ -195,8 +178,8 @@ int mmap_unikernels_memory()
     return 1;
   }
 
-  kernels_mem_base_pa = UNIKERNELS_MEM_BASE_PA; // 48G
-  kernels_mem_base_pa_len = UNIKERNELS_MEM_SIZE; // 48G * 3
+  kernels_mem_base_pa = (unsigned long) UNIKERNELS_MEM_BASE_PA; 
+  kernels_mem_base_pa_len = (unsigned long) (MEMORYS_PER_NODE * n_nodes * 1024UL*1024UL*1024UL); 
 
   g_mmap_unikernels_mem_base_va = (unsigned long) mmap(NULL, kernels_mem_base_pa_len, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, kernels_mem_base_pa);
 
@@ -204,14 +187,14 @@ int mmap_unikernels_memory()
     printf("mmap failed.\n") ;
     close(offload_fd) ;
 
-    return 1;
+    return (0);
   }
 
   printf("mmap = virtual address: 0x%lx physical address begin: 0x%lx end: 0x%lx\n", g_mmap_unikernels_mem_base_va, kernels_mem_base_pa, kernels_mem_base_pa + kernels_mem_base_pa_len) ;
 
   close(offload_fd) ;
 
-  return 0;
+  return kernels_mem_base_pa_len;
 }
 
 /**

@@ -3,9 +3,14 @@
 
 #include <sys/lock.h>
 #include "sync.h"
+#include "mutex.h"
 
-#define CQ_ELE_PAGE_NUM (130)           //
-#define CQ_ELE_SIZE (130 * 4096)        // 8K + 512K
+//#define CQ_ELE_PAGE_NUM (130)           //
+//#define CQ_ELE_SIZE (130 * 4096)        // 8K + 512K
+#define CQ_ELE_PAGE_NUM (2)             // 2
+#define CQ_ELE_SIZE     (2 * 4096)      // 8K
+
+#define L_CACHE_LINE_SIZE       64
 
 // Circular Queue
 typedef struct cq_element_struct {
@@ -16,7 +21,8 @@ struct circular_queue {
   int head;
   int tail;
   unsigned long size;
-  spinlock_t *lock;
+  ticket_mutex_t lock __attribute__((aligned(L_CACHE_LINE_SIZE)));
+
   cq_element data[0] __attribute__((aligned(4096)));
 };
 
