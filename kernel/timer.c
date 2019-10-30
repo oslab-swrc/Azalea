@@ -4,8 +4,15 @@
 #include "localapic.h"
 #include "shellstorage.h"
 #include "delay.h"
+#include "stat.h"
+#include "console.h"
 
 static QWORD g_tick_count[MAX_PROCESSOR_COUNT] = {0, }; 
+static QWORD g_tick_total_prev[MAX_PROCESSOR_COUNT] = {0, };
+static QWORD g_tick_total_curr[MAX_PROCESSOR_COUNT] = {0, };
+static QWORD g_tick_cpu_prev[MAX_PROCESSOR_COUNT] = {0, };
+static QWORD g_tick_cpu_curr[MAX_PROCESSOR_COUNT] = {0, };
+
 static unsigned long long start_tsc;
 static unsigned long long freq;
 
@@ -43,12 +50,13 @@ void timer_init(void)
  */
 void timer_handler(int irq_no, QWORD rip)
 {
-  int cid = 0;
+  int cid, pid;
   TCB *curr = get_current();
 
   lapic_send_eoi();
 
   cid = (int) get_apic_id();
+  pid = (int) get_papic_id();
 
 #ifdef DEBUG
   lk_print_xy(0, 22, "TIMER: core id: %d, irq_no: %d", cid, irq_no);
@@ -62,17 +70,19 @@ void timer_handler(int irq_no, QWORD rip)
 
   g_tick_count[cid]++;
 
-#ifdef DEBUG
-  lk_print_xy(0, 23, "Tick_count: %Q %Q %Q %Q %Q %Q %Q %Q",
-           g_tick_count[0],
-           g_tick_count[1],
-           g_tick_count[2],
-           g_tick_count[3],
-           g_tick_count[4],
-           g_tick_count[5],
-           g_tick_count[6],
-           g_tick_count[7]);
-#endif
+  // Calculate load of the cpu at 100 ticks intervals
+  g_tick_total_curr[cid]++;
+  if (!(curr->id < MAX_PROCESSOR_COUNT))
+    g_tick_cpu_curr[cid]++;
+
+  if (g_tick_count[cid] % 100 == 0) {
+    QWORD cpu_load = (g_tick_cpu_curr[cid]-g_tick_cpu_prev[cid]) * 100 / 
+                     (g_tick_total_curr[cid] - g_tick_total_prev[cid]);
+    set_cpu_load(pid, cpu_load);
+
+    g_tick_cpu_prev[cid] = g_tick_cpu_curr[cid];
+    g_tick_total_prev[cid] = g_tick_total_curr[cid];
+  }
 
   store_timer_info(cid, g_tick_count[cid]);
 
