@@ -4,6 +4,7 @@
 #include "page.h"
 #include "az_types.h"
 #include "utility.h"
+#include "stat.h"
 
 static MM g_free_memory;
 static QWORD g_alloc_count;
@@ -140,6 +141,10 @@ void* az_alloc(QWORD size)
 
   g_alloc_count++;
   lk_print_xy(50, 22, "ac: %d, fc: %d   ", g_alloc_count, g_free_count);
+
+  // set used memory info. into stat memory
+  set_mem_info(g_free_memory.used_size);
+
   spinlock_unlock(&(g_free_memory.mm_spl));
   return ret_addr;
 }
@@ -189,6 +194,9 @@ BOOL az_free( void* address )
 
     g_free_count++;
     lk_print_xy(50, 22, "ac: %d, fc: %d   ", g_alloc_count, g_free_count);
+
+    // set used memory info. into stat memory
+    set_mem_info(g_free_memory.used_size);
 
     spinlock_unlock(&(g_free_memory.mm_spl));
     return TRUE;

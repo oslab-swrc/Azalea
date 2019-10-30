@@ -53,6 +53,7 @@ unsigned long g_va_boot_addr = 0;
 static char *g_vcon, *g_stat;
 static char *g_shell_storage, *g_log;
 static SHELL_STORAGE_AREA *g_shell_addr;
+static STAT_AREA *g_stat_addr;
 
 static TCB *g_tcb_addr[MAX_PROCESSOR_COUNT+CONFIG_NUM_THREAD];
 static char *g_log;
@@ -257,6 +258,7 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
       return -EINVAL;
     }
     printk (KERN_INFO "LK_PARAM: g_stat ioremap success!!\n");
+    g_stat_addr = (STAT_AREA *) g_stat;
 
     // Ioremap for shell storage memory
     g_shell_storage = ioremap(memory_shared_addr + SHELL_STORAGE_START_OFFSET, sizeof(SHELL_STORAGE_AREA));
@@ -351,6 +353,14 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     *((unsigned long *) (bladdr + META_OFFSET + MEMORY_START_OFFSET)) = memory_start;
     *((unsigned long *) (bladdr + META_OFFSET + MEMORY_END_OFFSET)) = memory_end;
     *((unsigned long *) (bladdr + META_OFFSET + QEMU_OFFSET)) = 0;
+
+    // Store basic information of unikernel
+    g_stat_addr->ukernel[ukid].used = 1;
+    //g_stat_addr->ukernel[ukid].name 
+    g_stat_addr->ukernel[ukid].mem_size = memory_end - memory_start;
+    g_stat_addr->ukernel[ukid].mem_start = memory_start;
+    g_stat_addr->ukernel[ukid].mem_used = 0;
+    //g_stat_addr->ukernel[ukid].start_time = time();
 
     printk(KERN_INFO "LK_LOADING: UK ID: %d\n", ukid);
     printk(KERN_INFO "LK_LOADING: CPU_NUM: %d\n", core_start);

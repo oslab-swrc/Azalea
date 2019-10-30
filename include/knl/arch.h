@@ -20,7 +20,11 @@
 #define MAX_LOG_COUNT               (16383)
 #define LOG_LENGTH                  (64)
 
-#define MAX_UNIKERNEL               (100)
+// Systemwide resource informaion
+// Should be modified depend on the system
+#define MAX_UNIKERNEL               (100)   // Theoretically total core - linux core
+#define MAX_CORE                    (100)
+#define MAX_MEMORY                  (100)
 
 // Used only start with index
 #define CPUS_PER_NODE               (24)

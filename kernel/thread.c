@@ -18,6 +18,7 @@
 #include "elf_load.h"
 #include "memory.h"
 #include "signal.h"
+#include "stat.h"
 
 extern void HALT() ;
 unsigned int shutdown_kernel = 0 ;
@@ -1181,6 +1182,9 @@ void start_idle_thread(int thread_type)
   int wait_cnt = 0;
 
   setup_idle_thread();
+
+  // Store physical number of cpu in stat memory 
+  set_cpu_num(get_papic_id());
 
   if (thread_type == THREAD_TYPE_BSP) {
     while (g_ap_count != g_cpu_size)
