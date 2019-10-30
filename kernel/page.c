@@ -56,7 +56,7 @@ void kernel_pagetables_init(QWORD address)
   set_page_entry_data(&(pd_entry[(PAGE_MAX_ENTRY_COUNT*3)]), mapping_address, (PAGE_FLAGS_DEFAULT | PAGE_FLAGS_PS));
 
   mapping_address = address ; // 3GB + 2MB ~ g_memory_end 
-  for (i=PAGE_MAX_ENTRY_COUNT*3+1; i<PAGE_MAX_ENTRY_COUNT*((g_memory_end >> 30)+3); i++) {
+  for (i=PAGE_MAX_ENTRY_COUNT*3+1; i<PAGE_MAX_ENTRY_COUNT*(((g_memory_end-g_memory_start) >> 30)+3); i++) {
     set_page_entry_data(&(pd_entry[i]), mapping_address, (PAGE_FLAGS_DEFAULT | PAGE_FLAGS_PS));
 
     mapping_address += PAGE_SIZE_2M;
