@@ -46,7 +46,7 @@ int mutex_lock(ticket_mutex_t *lock)
   int t = __sync_fetch_and_add(&lock->u.s.request, 1);
 
   while (lock->u.s.grant != t) {
-    ;//__asm volatile ("pause" ::: "memory");
+    __asm volatile ("pause" ::: "memory");
   }
 
   return (0);

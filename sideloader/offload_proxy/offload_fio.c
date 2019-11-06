@@ -145,6 +145,9 @@ ssize_t do_sys_off_read_v(int fd, unsigned long iov_pa, int iovcnt)
 	  }
 	  
 	  readbytes += count;
+
+	  //next iov
+	  iov++;
 	}
 
 	return readbytes;
@@ -229,6 +232,9 @@ ssize_t do_sys_off_write_v(int fd, unsigned long iov_pa, int iovcnt)
 	  }
 	  
 	  writebytes += count;
+
+	  //next iov
+	  iov++;
 	}
 
 	//fprintf(stdout, "\nwrite : fd=%d write bytes=%d", fd, writebytes);

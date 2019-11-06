@@ -8,6 +8,7 @@
 #include "offload_channel.h"
 #include "offload_mmap.h"
 #include "offload_message.h"
+#include "offload_page.h"
 #include "console.h"
 #include "utility.h"
 #include "page.h"
