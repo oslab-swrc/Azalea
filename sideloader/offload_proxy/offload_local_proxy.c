@@ -161,8 +161,6 @@ void *offload_local_proxy(void *arg)
 
     is_data[index] = 0;
     watch_data[index] = 1;
-    //mfence();
-    //asm volatile ("" : : : "memory");
     pthread_mutex_unlock(&count_mutex[index]);
   }
 
@@ -171,6 +169,11 @@ void *offload_local_proxy(void *arg)
 }
 
 
+/**
+ * @brief offload local watch thread
+ * @param arg contains channels and channel number for this thread 
+ * @return (NULL)
+ */
 void *offload_local_watch(void *arg)
 {
   struct thread_channel_information *thread_channels = (struct thread_channel_information *)arg;
@@ -197,8 +200,6 @@ void *offload_local_watch(void *arg)
           pthread_mutex_lock(&count_mutex[mutex_index + i]);
           is_data[mutex_index + i] = 1;
           watch_data[mutex_index + i] = 0;
-          //mfence();
-          //asm volatile ("" : : : "memory");
           pthread_cond_signal(&count_threshold_cv[mutex_index + i]);  
           pthread_mutex_unlock(&count_mutex[mutex_index + i]); 
         }
@@ -393,8 +394,11 @@ int main(int argc, char *argv[])
     pthread_join(*(offload_threads + i), (void **)&status);
   }
 
-  //for (i = 0; i < g_n_nodes; i++) { // 1 for watch
+#if 0
+  for (i = 0; i < g_n_nodes; i++) { // 1 for watch
+#else
   for (i = 0; i < 1; i++) { // 1 for watch
+#endif
     pthread_join(*(offload_threads_watch + i), (void **)&status);
   }
 

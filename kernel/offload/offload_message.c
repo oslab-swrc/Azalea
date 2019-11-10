@@ -25,15 +25,13 @@ io_packet_t *opkt = NULL;
 int offload_tid = 0;
 
 #ifdef OFFLOAD_LOCK_ENABLE
-	//spinlock_lock(ocq->lock);
-	//spinlock_lock(&ocq->lock);
-	//spinlock_irqsave_lock(&ocq->lock);
 	mutex_lock(&ocq->lock);
 	while (cq_free_space(ocq) == 0);
 #else
 	while (cq_free_space(ocq) == 0);
 #endif
 	offload_tid = g_ukid * 10000 + tid;
+
 	// make packet header
 	ce = (ocq->data + ocq->head);
 	opkt = (io_packet_t *) ce;
@@ -51,9 +49,6 @@ int offload_tid = 0;
 	ocq->head = (ocq->head + 1) % ocq->size;
 
 #ifdef OFFLOAD_LOCK_ENABLE
-	//spinlock_unlock(ocq->lock);
-	//spinlock_unlock(&ocq->lock);
-	//spinlock_irqsave_unlock(&ocq->lock);
 	mutex_unlock(&ocq->lock);
 #endif
 }
@@ -74,9 +69,6 @@ int offload_tid = 0;
 
 retry_receive_sys_message:
 #ifdef OFFLOAD_LOCK_ENABLE
-	//spinlock_lock(icq->lock);
-	//spinlock_lock(&icq->lock);
-	//spinlock_irqsave_lock(&icq->lock);
 	mutex_lock(&icq->lock);
 	while (cq_avail_data(icq) == 0);
 #else
@@ -90,21 +82,13 @@ retry_receive_sys_message:
 		icq->tail = (icq->tail + 1) % icq->size;
 
 #ifdef OFFLOAD_LOCK_ENABLE
-		//spinlock_unlock(icq->lock);
-		//spinlock_unlock(&icq->lock);
-		//spinlock_irqsave_unlock(&icq->lock);
 		mutex_unlock(&icq->lock);
 #endif
 	}
 	else {
 #ifdef OFFLOAD_LOCK_ENABLE
-		//spinlock_unlock(icq->lock);
-		//spinlock_unlock(&icq->lock);
-		//spinlock_irqsave_unlock(&icq->lock);
 		mutex_unlock(&icq->lock);
-		lk_print_xy(0, 4, " receive retry %d, %d : lock enabled", offload_tid, offload_function_type);
 #endif
-		lk_print_xy(0, 5, " receive retry %d, %d", offload_tid, offload_function_type);
 		//schedule(THREAD_INTENTION_READY);
 		goto retry_receive_sys_message;
 	}

@@ -2,7 +2,6 @@
 #include "offload_mmap.h"
 #include "offload_memory_config.h"
 #include "page.h"
-//#include "atomic.h"
 #include "utility.h"
 #include "multiprocessor.h"
 
@@ -54,7 +53,6 @@ BOOL init_offload_channel()
 	g_n_nodes = *((QWORD *)(offload_channel_info_va) + 4);
 	p_node_id = (QWORD *)(offload_channel_info_va + sizeof(QWORD) * 5);
 	g_node_id = (int) *p_node_id;
-	//lk_print_xy(0, 10, "#ch %d, #icq %d, #ocq %d, #node %d, node id %d", g_n_offload_channels, n_icq, n_ocq, g_n_nodes, g_node_id);
 	(*p_node_id)++;
 
 	// initialize offload channel
@@ -80,7 +78,6 @@ BOOL init_offload_channel()
 		}
 	}
 
-	//lk_print("\n#ch %d, #ipage %d, #opage %d, #node %d, node id %d", g_n_offload_channels, n_ipages, n_opages, g_n_nodes, g_node_id);
 	return(TRUE);
 }
 
@@ -102,10 +99,7 @@ channel_t *get_offload_channel(int n_requested_channel)
 
 #if 0
   if(get_papic_id() >= g_n_offload_channels)
-    lk_print_xy(0, 12, "Error Offload ch# %d papic id %d", g_n_offload_channels, get_papic_id());
-
-    lk_print_xy(0, 13, "Offload ch# %d node id %d", get_papic_id(), g_node_id);
-  return (&(g_offload_channels[get_apic_id() ]));
+    return (&(g_offload_channels[get_apic_id()]));
 
 #else
   if(g_n_nodes != 0) 
@@ -117,8 +111,6 @@ channel_t *get_offload_channel(int n_requested_channel)
 
   offload_channels_offset_in_node = (n_requested_channel == -1) ? get_apic_id() : n_requested_channel;
   offload_channels_index = offload_channels_size_per_node * g_node_id + offload_channels_offset_in_node;
-
-  //lk_print_xy(0, get_apic_id()%24, "ch # = %d, My node id %d, apic_id %d", offload_channels_index, g_node_id, get_apic_id());
 
   return (&(g_offload_channels[offload_channels_index]));
 #endif

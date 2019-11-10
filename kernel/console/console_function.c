@@ -18,14 +18,13 @@
  * @param void
  * @return none
  */
-void cs_boot_msg__print(int yloc) {
+void cs_boot_msg_print(int yloc) {
 int x = 0, y = 0;
 char *screen = NULL;
 char line[CONSOLE_WIDTH+3];
 
   screen = (char *) get_vcon_addr();
   cs_puts("\n\r");
-  //for (y = 0; y < CONSOLE_HEIGHT; y++) {
   for (y = 0; y < yloc; y++) {
     for (x = 0; x < CONSOLE_WIDTH; x++) {
       line[x] = *(screen + y*CONSOLE_WIDTH + x);
@@ -33,11 +32,8 @@ char line[CONSOLE_WIDTH+3];
     line[CONSOLE_WIDTH] = '\n';
     line[CONSOLE_WIDTH+1] = '\r';
     line[CONSOLE_WIDTH+2] = '\0';
-    //console_off_print(line);
     cs_write(1, line, lk_strlen(line));
   }
-  //console_off_print("\n\r> ");
-  //console_off_write(1, "\n\r> ", lk_strlen("\n\r> "));
 }
 
 
@@ -112,7 +108,6 @@ int len = 0;
   ch = get_console_channel();
   if(ch == NULL) return (-1);
 
-//  icq = ch->in;
   ocq = ch->out;
   icq = ch->in;
 
@@ -154,7 +149,6 @@ int iovcnt = 0;
   ch = get_console_channel();
   if(ch == NULL) return (-1);
 
-//  icq = ch->in;
   ocq = ch->out;
   icq = ch->in;
 
@@ -169,8 +163,8 @@ int iovcnt = 0;
 }
 
 /**
- * @brief console print call
- * @param buf buffer
+ * @brief console exit call
+ * @param 
  * @return success (0), fail (-1)
  */
 int cs_exit(void)
@@ -187,7 +181,6 @@ int iret = 0;
   ch = get_console_channel();
   if(ch == NULL) return (-1);
 
-//  icq = ch->in;
   ocq = ch->out;
   icq = ch->in;
 

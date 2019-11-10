@@ -13,4 +13,4 @@ void console_off_write(struct channel_struct *ch);
 void console_print(struct channel_struct *ch);
 void console_getch(struct channel_struct *ch);
 
-#endif /*__OFFLOAD_IO_H__*/
+#endif /*__CONSOLE_FUNCTION_H__*/

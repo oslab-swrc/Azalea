@@ -4,11 +4,11 @@
 #include "console_message.h"
 
 /**
- * @brief send offload message
+ * @brief send console message
  * @param out_cq circular queue
  * @param in_cq circular queue
- * @param offload_function_type system call type
- * @param ret the result of systgem call
+ * @param console_function_type system call type
+ * @param ret the result of console pirnt call
  * return none
  */
 void send_console_message(struct circular_queue *out_cq, int tid, int console_function_type, unsigned long  ret) 
@@ -26,6 +26,5 @@ io_packet_t *out_pkt = NULL;
 	out_pkt->ret = ret;
 
 	out_cq->head = (out_cq->head + 1) % out_cq->size;
-	//printf("\n send message tid %d, type %d availiabledata %d", tid, console_function_type, cq_avail_data(out_cq));
 }
 

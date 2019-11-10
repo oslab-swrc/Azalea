@@ -13,33 +13,31 @@ unsigned long g_mmap_unikernel_mem_base_va = 0;
 
 
 /**
- * @brief munmap_channels()
- * @param console_channels channel
+ * @brief munmap_channel()
+ * @param console_channel channel
  * @param n_console_channels channel number
  * @return success (0), fail (-1)
  */
-int munmap_console_channels(channel_t *console_channels, int n_console_channels)
+int munmap_console_channel(channel_t *console_channel)
 {
-  int console_channels_offset = 0;
   int err = 0;
 
-  // munmap channel
-  for(console_channels_offset = 0; console_channels_offset < n_console_channels; console_channels_offset++) {
-    if(munmap(console_channels[console_channels_offset].out_cq, console_channels[console_channels_offset].out_cq_len) < 0) {
+    if(munmap(console_channel->out_cq, console_channel->out_cq_len) < 0) {
       printf("munmap failed.\n");
       err++;
     }
-    if(munmap(console_channels[console_channels_offset].in_cq, console_channels[console_channels_offset].in_cq_len) < 0) {
+
+    if(munmap(console_channel->in_cq, console_channel->in_cq_len) < 0) {
       printf("munmap failed.\n");
       err++;
     }
-  }
 
   if(err)
     return -1;
 
   return 0;
 }
+
 
 /**
  * @brief mmap channels
@@ -49,7 +47,7 @@ int munmap_console_channels(channel_t *console_channels, int n_console_channels)
  * @param ipages  whole page number of in channels
  * @return success (1), fail (0)
  */
-int mmap_console_channels(channel_t *console_channel, int node_id, int n_console_channels, int opages, int ipages)
+int mmap_console_channel(channel_t *console_channel, int node_id, int n_console_channels, int opages, int ipages)
 {
   int offload_fd = 0;
 
@@ -67,16 +65,14 @@ int mmap_console_channels(channel_t *console_channel, int node_id, int n_console
 
     return 0;
   }
-  //printf("node id: %d, #ch %d, #opages %d, #ipages %d", node_id, n_console_channels, opages, ipages) ;
 
-    // mmap ocq of ith channel
+  // mmap ocq of ith channel
   out_cq_base_pa = ((unsigned long) (CONSOLE_CHANNEL_BASE_PA)) + node_id * (opages + ipages) * PAGE_SIZE_4K;
   out_cq_base_pa_len = (unsigned long) (opages * PAGE_SIZE_4K);
   out_cq_base = (unsigned long) mmap(NULL, out_cq_base_pa_len, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, out_cq_base_pa);
 
   if(out_cq_base == (unsigned long) MAP_FAILED ) {
     printf("mmap failed.\n") ;
-    munmap_console_channels(console_channel, 1);
     close(offload_fd) ;
     return 0;
   }
@@ -95,8 +91,10 @@ int mmap_console_channels(channel_t *console_channel, int node_id, int n_console
 
   if(in_cq_base == (unsigned long) MAP_FAILED ) {
     printf("mmap failed.\n") ;
-    munmap(console_channel->out_cq, console_channel->out_cq_len);
-    munmap_console_channels(console_channel, 1);
+    // munmap out_cq
+    if(munmap(console_channel->out_cq, console_channel->out_cq_len) < 0) {
+      printf("munmap failed.\n");
+    }
     close(offload_fd) ;
 
     return 0;
@@ -108,7 +106,6 @@ int mmap_console_channels(channel_t *console_channel, int node_id, int n_console
   //init cq
   //cq_init(console_channel.in_cq, (ipages - 1) / CQ_ELE_PAGE_NUM);
   //mutex_init(console_channel.in_cq->lock);
-  //printf("\n icq - ocq distance %lx ", in_cq_base_pa - out_cq_base_pa) ;
 
   close(offload_fd);
 
@@ -117,7 +114,7 @@ int mmap_console_channels(channel_t *console_channel, int node_id, int n_console
 
 
 /**
- * @brief mmap unikernels' whole memory
+ * @brief mmap unikernels' memory
  * @return success (0), fail (1)
  */
 int mmap_unikernel_memory(int node_id)
@@ -145,8 +142,6 @@ int mmap_unikernel_memory(int node_id)
     return 1;
   }
 
-  //printf("mmap = virtual address: 0x%lx physical address begin: 0x%lx end: 0x%lx\n", g_mmap_unikernels_mem_base_va, kernels_mem_base_pa, kernels_mem_base_pa + kernels_mem_base_pa_len) ;
-
   close(offload_fd) ;
 
   return 0;
@@ -164,7 +159,6 @@ unsigned long get_va(unsigned long pa)
   if(pa == 0)
     return 0;
 
-  //offset = (unsigned long) pa - UNIKERNELS_MEM_BASE_PA;
   offset = (unsigned long) (pa - g_mmap_unikernel_mem_base_pa);
 
   return (g_mmap_unikernel_mem_base_va + offset);

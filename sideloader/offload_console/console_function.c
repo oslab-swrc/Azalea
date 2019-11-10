@@ -35,7 +35,7 @@ ssize_t do_console_off_write_v(int fd, unsigned long iov_pa, int iovcnt)
         for(i = 0; i < iovcnt; i++) {
           iov_base_va = get_va((unsigned long) iov[i].iov_base);
           count = write(fd, (void *) iov_base_va, (size_t) iov[i].iov_len);
-	  fflush(stdout);
+	      fflush(stdout);
 
           if(count == -1) {
                 return -1;
@@ -49,7 +49,6 @@ ssize_t do_console_off_write_v(int fd, unsigned long iov_pa, int iovcnt)
           writebytes += count;
         }
 
-        //fprintf(stdout, "\nwrite : fd=%d write bytes=%d", fd, writebytes);
         return writebytes;
 }
 
@@ -174,8 +173,8 @@ void console_print(struct channel_struct *ch)
 
 
 /**
- * @brief execute print
- * console_print()  prints buf 
+ * @brief execute getch() 
+ * console_getch()  get character  
  * @param channel 
  * @return none
  */
@@ -203,10 +202,9 @@ void console_getch(struct channel_struct *ch)
   // execute write
   cret = getchar();
 
-  putchar(cret);
   // check error
   //if(cret == ERR)
-//	fprintf(stdout, "GETCH: %s\n", strerror(errno));
+  //  fprintf(stdout, "GETCH: %s\n", strerror(errno));
 
   send_console_message(out_cq, tid, console_function_type, (unsigned long) cret);
 }

@@ -1,8 +1,6 @@
 #ifndef __OFFLOAD_CHANNEL_H__
 #define __OFFLOAD_CHANNEL_H__
 
-//#include <sys/lock.h>
-//#include "sync.h"
 #include "mutex.h"
 
 #define CQ_ELE_PAGE_NUM (2)             // 2

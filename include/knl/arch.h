@@ -20,18 +20,16 @@
 #define MAX_LOG_COUNT               (16383)
 #define LOG_LENGTH                  (64)
 
-// Systemwide resource informaion
-// Should be modified depend on the system
-#define MAX_UNIKERNEL               (100)   // Theoretically total core - linux core
+#define MAX_UNIKERNEL               (100)
 #define MAX_CORE                    (100)
 #define MAX_MEMORY                  (100)
 
 // Used only start with index
-#define CPUS_PER_NODE               (24)
-#define MEMORYS_PER_NODE            (10)
+#define CPUS_PER_NODE               (48)
+#define MEMORYS_PER_NODE            (128)
 
 // Share Memory Layout
-#define UNIKERNEL_START             (128)
+#define UNIKERNEL_START             (172)
 #define SHARED_MEMORY_SIZE          (2)     // 2GB (unit: GB), DO NOT MODIFY
 #define CHANNEL_START_OFFSET        (0)     // DO NOT MODIFY
 #define CHANNEL_SIZE                (1)		// 1GB (unit: GB)

@@ -284,7 +284,6 @@ void init_tcb(TCB * tcb, QWORD stack)
 void init_tcb_destroy(TCB * tcb)
 {
   // free the allocated stack memory
-  //az_free((void *) (tcb->stack_base - CONFIG_TCB_SIZE));
   az_free((void *) (tcb->stack_base - CONFIG_STACK_SIZE));
 
   init_tcb(tcb, 0);

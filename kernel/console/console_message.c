@@ -4,10 +4,10 @@
 #define CONSOLE_LOCK_ENABLE
 
 /**
- * @brief send offload message
+ * @brief send offload console message
  * @param ocq circular queue
  * @param tid thread id
- * @param offload_function_type system call type
+ * @param console_function_type console print call type
  * @param param1 1st parameter
  * @param param2 2nd parameter
  * @param param3 3rd parameter
@@ -46,15 +46,14 @@ io_packet_t *opkt = NULL;
 #ifdef CONSOLE_LOCK_ENABLE
 	mutex_unlock(&ocq->lock);
 #endif
-	//lk_print_xy(0, 3, " send console message tid: %d type: %d",  tid, console_function_type);
 }
 
 /**
- *@brief receive offload message
+ *@brief receive offload console message
  *@param icq circular queue
  *@param tid thread id
- *@param offload_function_type system call type
- *@return ret result of system call
+ *@param console_function_type console print call type
+ *@return ret result of console print
  */
 QWORD receive_console_message(struct circular_queue *icq, int tid, int console_function_type)
 {
@@ -84,7 +83,6 @@ retry_receive_sys_message:
 #ifdef CONSOLE_LOCK_ENABLE
 		mutex_unlock(&icq->lock);
 #endif
-		//lk_print_xy(0, 6, " receive retry %d, %d", tid, console_function_type);
 		//schedule(THREAD_INTENTION_READY);
 		goto retry_receive_sys_message;
 	}

@@ -130,10 +130,9 @@ void cmd(channel_t *cs)
 
 
 /**
- * @brief console local proxy main
+ * @brief console proxy main
  * @param argc
- * @param argv  "-o <no elements> -i <no elements> -c"
- *              " <no channels> -t <no threads>
+ * @param argv  "-i [index]"
  * @return  success 0, fail > 0
  */
 int main(int argc, char *argv[])
@@ -148,7 +147,7 @@ int main(int argc, char *argv[])
   pthread_t console_thread;
 
   if (argc != 3) {
-    printf("usage: ./console_console -n <no node>\n");
+    printf("usage: ./console_console -i [index]\n");
     exit(1);
   }
 
@@ -158,14 +157,6 @@ int main(int argc, char *argv[])
   icq_elements = CONSOLE_CHANNEL_CQ_ELEMENT_NUM;
   opages = ocq_elements * CQ_ELE_PAGE_NUM + 1; // payload = CQ_ELE_PAGE_NUM pages, metadata = 1 page
   ipages = icq_elements * CQ_ELE_PAGE_NUM + 1;
-
-#if 0
-  if(g_node_id > MAX_NODE_NUM) {
-    printf("Max node number is %d. Requested node number is %d.", MAX_NODE_NUM, g_node_id);
-    exit(1);
-  }
-#endif
-
   g_n_channels = N_CHANNEL_PER_NODE;
 
   err = mmap_unikernel_memory(g_node_id);
@@ -179,10 +170,9 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
-  //printf("#nodes = %d #node id = %d, #channels = %d #out elements = %d #in elements = %d \n", (int) MAX_NODE_NUM, (int) g_node_id, (int) g_n_channels, (int) ocq_elements, (int) icq_elements);
 
   init_channel(&console_channel);
-  if (!mmap_console_channels(&console_channel, g_node_id, g_n_channels, opages, ipages))
+  if (!mmap_console_channel(&console_channel, g_node_id, g_n_channels, opages, ipages))
       err++;
 
   if (err)
@@ -195,7 +185,6 @@ int main(int argc, char *argv[])
   thread_arg.n_ch = 1;
   pthread_create(&console_thread, NULL, console_proxy, &thread_arg);
 
-
   // begin of logic
   //cmd(&console_channel);
 
@@ -206,7 +195,7 @@ int main(int argc, char *argv[])
 
 //__unregister:
 
-  if (munmap_console_channels(&console_channel, g_n_channels) < 0)
+  if (munmap_console_channel(&console_channel) < 0)
       err++;
 
   if (err) {
@@ -221,7 +210,6 @@ __end:
 //__free_console_threads:
 
   if (errno == 0)
-    //printf("======== Console proxy finished ========\n");
     printf("\n");
   else
     printf("======== Program Failed ========\n");

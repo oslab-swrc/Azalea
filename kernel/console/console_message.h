@@ -8,17 +8,6 @@
 
 #define MAGIC              (0x4D3C2B1A)
 
-// structure for buffer which can contain pathname.
-typedef struct io_path_struct {
-  unsigned long length;
-  unsigned char data[MAX_IO_PATH];
-} io_path_t;
-
-// structure for buffer which can contain data.
-typedef struct io_buffer_struct {
-  unsigned long length;
-  unsigned char data[0] __attribute__((aligned(4096)));
-} io_buffer_t;
 
 // structure for packet which can contain header and data.
 typedef struct io_packet_struct {
@@ -37,8 +26,6 @@ typedef struct io_packet_struct {
   unsigned long param5;
   unsigned long param6;
   unsigned long ret;
-  //io_path_t path;
-  //io_buffer_t buffer;
 } io_packet_t;
 
 void send_console_message(struct circular_queue *ocq, int tid, int console_function_type, QWORD param1, QWORD param2, QWORD param3, QWORD param4, QWORD param5, QWORD param6);
