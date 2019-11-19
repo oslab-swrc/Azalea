@@ -1,6 +1,6 @@
-# Azalea-unikernel
+# Azalea OS
 
-Azalea OS consists of a simple kernel for fast processing of applications and FWK for providing full capability of Linux. For simple kernels, we developed LWK and Unikernel, and this repository is a prototype of Unikernel, named Azalea-Unikernel, for the Intel KNL based manycore system. Azalea-LWK is in https://github.com/oslab-swrc/Azalea, and detailed information of Azalea OS is also described.
+Azalea OS is an operating system (OS) research project. This repository contains the prototype of Azalea OS for the Intel  X86 based manycore system. Azalea OS consists of unikernel for a simple kernel for fast processing of applications and Full-Kernel for providing full capability of Linux. 
 
 We have released this prototype under an open-source license to enable collaboration with parties outside. Most parts of Azalea OS are available to you under MIT while some parts are also available to you under the GNU General Public License (GPL) version 2. Please feel free to explore the source code and the documentation provided here
 
@@ -18,7 +18,19 @@ The documentation in this repository is structured as follows:
 * Booting and Running Azalea-unikernel 
 * Developer Information
 
-## What is Azalea-unikernel
+## What is Azalea
+
+In this section, we first discuss the idea behind Azalea OS and then describe what you can do with our prototype today.
+
+As manycore systems have evolved recently, it has been required to provide scalability and stable performance of applications in manycore environments. General-purpose operating systems provide a rich set of functionality to support a broad set of application, whereas it does not show scalable performance in manycore systems because of OS noise. Therefore, manycore systems provide only the features that are absolutely required, in a way to provide the targeted applications the scalable performance in proportion to the number of cores.
+
+Azalea OS is our approach to bridge the gap between these two extremes. We combine unikernels with a full kernel and run them side by side using space partitioning. Unikernel provides scalability and parallel performance in manycoreos by minimizing kernel functionality in manycore systems. Full-kernel handles compatibility with existing Linux APIs (I/O, systemcalls, etc.) that a unikernel cannot handle.
+
+Since the core and memory resources are sufficient in manycore systems, time sharing, which is used to share resources, is no longer appropriate. Therefore, space sharing is defined to allocate resources to be used by applications. The application use the allocated resources without any kernel noise. By using space sharing techniques, kernel interference and waste of resource is minimized. Space sharing consists of two techniques as followed.
+*One core-One thread - A thread is assigned to the core to ensure that it is executed without interrupt until terminated.
+*One core-One memory - Specifies the memory area available for each core. When a thread that is running on a specific CPU requests memory, application use only the memory in that specified area. This can eliminate memory contention between cores.
+
+We are aware that this document may not convey all of Azalea OS's design in sufficient depth and may fall short of providing a guide to understanding the prototype. We welcome any feedback about the quality of this description, so that we can improve it. Your can use the github mechanisms to post feedback.
 
 Azalea-unikernel was developed by applying unikernel characteristics to Azalea-LWK. The Unikernel is only made up of the necessary libraries for execution, and the kernel and application use the same address space, so there is no additional cost for context switching. Azalea-unikernl improves processing performance, reduces the size of image by configuring image as library required for application to run, and boots fast by reflecting the advantages of Unikernel in multi-kernel OS.
 
@@ -27,6 +39,10 @@ Azalea-unikernel was developed by applying unikernel characteristics to Azalea-L
 Azalea-unikernel consists of libOS which is responsible for kernel functions, run-time libraries, and application programs. A server can run multiple Azalea-unikernels with the number of cores and memory. Linux is install in the part of the server, and acts as a driver that loads each kernel or supports communication between the other nodes.
 
 The testbed manycore systems consists of multiple Intel Xeon-phi for Azalea-unikernel, Xeon for FWK, and I/O devices such as storages and networks. The Xeon-phi consists of 7210p Kight Landing(KNL) processors and the Xeon has E5-2697v2 processors. Centos 7 is installed in FWK and driver.
+
+### I/O Offloading
+
+In the Azalea OS architecture, the filesystem would exist in the FWK of Xeon. When the I/O function such as creat, open, read, write, and close is required at the application in LWK, it is delivered to the FWK and its result is returned to the LWK.
 
 ## Getting Started
 
