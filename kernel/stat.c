@@ -18,6 +18,7 @@ static spinlock_t stat_lock;
 void stat_init(void)
 {
   g_stat_area = (STAT_AREA *) (CONFIG_SHARED_MEMORY + STAT_START_OFFSET); 
+  g_stat_area->plimit = 0;
 }
 
 /**
@@ -65,4 +66,8 @@ void set_cpu_load(int pid, QWORD core_load)
   g_stat_area->core_load[pid] = core_load;
 
   spinlock_unlock(&stat_lock);
+}
+
+inline int get_plimit(void){
+  return g_stat_area->plimit * 1000; //mw
 }

@@ -17,6 +17,7 @@ typedef struct {
 } Unikernel;
 
 typedef struct {
+  int plimit;                         // power limit (read-write).
   int core_used[MAX_CORE];            // core allocation info.
   int core_load[MAX_CORE];            // core load info.
   int memory_used[MAX_MEMORY];        // memory allocation info.
@@ -30,5 +31,5 @@ void set_mem_info(QWORD mem_size);
 void set_cpu_num(int core_num);
 void set_cpu_load(int pid, QWORD core_load);
 void get_cpu_numm();
-
+int get_plimit(void);
 #endif  /* __STAT_H__ */

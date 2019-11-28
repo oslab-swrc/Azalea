@@ -19,6 +19,7 @@
 #include "memory.h"
 #include "signal.h"
 #include "stat.h"
+#include "ipocap.h"
 
 extern void HALT() ;
 unsigned int shutdown_kernel = 0 ;
@@ -121,6 +122,12 @@ void thread_init(void)
     tcb->signal_handler = 0;
 
     tcb->acc_ltc = 0;
+
+    tcb->curr_energy_counter = read_energy_counter();
+    tcb->last_energy_counter = tcb->curr_energy_counter;
+    tcb->curr_energy_ts = __rdtsc();
+    tcb->last_energy_ts = tcb->curr_energy_ts;
+    tcb->capping_ratio = 0;  
 
     tcb->sched_list = &g_global_tcb_list;
     dl_list_init(&tcb->tcb_link);
@@ -268,7 +275,12 @@ void init_tcb(TCB * tcb, QWORD stack)
     tcb->remaining_time_slice = THREAD_DEFAULT_TIME_SLICE;
     tcb->remaining_time_quantum = THREAD_DEFAULT_TIME_QUANTUM;
 #endif
-
+    tcb->curr_energy_counter = read_energy_counter();
+    tcb->last_energy_counter = tcb->curr_energy_counter;
+    tcb->curr_energy_ts = __rdtsc();
+    tcb->last_energy_ts = tcb->curr_energy_ts;
+    tcb->capping_ratio = 0;
+    
     tcb->name = THREAD_INIT_NAME;
   }
 
@@ -1085,6 +1097,83 @@ void decrease_remaining_time_slice(long consumed_time_slice)
     lapic_send_eoi();
 }
 
+static struct cpuidle_state knl_cstates[] = {
+    {
+        .flags = MWAITX_DISABLE_CSTATES,
+        .exit_latency = 0,
+        .target_residency = 0 },
+    {
+        //.name = "C1",
+        //.desc = "MWAIT 0x00",
+        .flags = 0x00,
+        .exit_latency = 1,
+        .target_residency = 2 },
+    {
+        //.name = "C6",
+        //.desc = "MWAIT 0x10",
+        .flags = 0x10,
+        .exit_latency = 120,
+        .target_residency = 500 },
+    {
+        //deepest cstate
+        .flags = 0x10 }
+
+};
+static struct cpuidle_state * curr_arch = knl_cstates;
+
+static inline struct cpuidle_state * get_optimal_cstate(long msec) {
+    int idx=0;
+    struct cpuidle_state * cur, * next;
+    
+    do {
+        cur = &(curr_arch[idx]);
+        next = &(curr_arch[++idx]);
+        if (cur->flags == next->flags) //deepest cstate
+            break;
+        
+    } while ((next->exit_latency + next->target_residency) < msec);
+    
+    return cur;
+}
+
+static inline void inject_idle(DWORD msec) {
+    TCB *curr = get_current();
+    //struct cpuidle_state * cstate = get_optimal_cstate(msec);
+    __monitor((void *)&curr->signal_flag, 0, 0);
+    msec = (msec<1) ? 1:msec;
+    //lapic_start_timer_oneshot(msec-cstate->exit_latency);
+    lapic_start_timer_oneshot(msec);
+    __mwait(0x10, MWAITX_ECX_TIMER_ENABLE);
+}
+
+static inline long need_capping(DWORD energy_counter, DWORD tsc){
+  long energy_uj = g_rapl_energy_unit * energy_counter;
+  long limit_uj = get_plimit() * tsc_to_ms(tsc);
+  long static_uj = g_power_base_mw * tsc_to_ms(tsc);
+
+  TCB *curr = get_current();
+
+  long ratio;
+  if (limit_uj == 0){
+    curr->capping_ratio = 0;
+    return 0;
+  }
+  if (energy_uj <= static_uj){
+    return 0;
+  }
+
+  ratio = (energy_uj - limit_uj) * 100;
+  ratio /= (energy_uj - static_uj);
+
+//  if (curr->printed < 100) curr->printed++;
+//  else {
+//    cs_printf("ipocap[%d]: energy=%d, limit=%d, static=%d, ratio=%d\n",curr->id, energy_uj, limit_uj, static_uj, ratio);
+//    curr->printed = 0;
+//  }
+  
+  return ratio;
+}
+
 /**
  * Schedule
  */
@@ -1094,6 +1183,8 @@ BOOL schedule(QWORD intention)
   TCB *next = NULL, *prev = NULL;
   int cid = -1;
   long consumed_time_slice = 0;
+  DWORD energy_counter, energy_ts;
+  long cratio;
 
   curr = get_current();
   cid = curr->running_core;
@@ -1110,7 +1201,26 @@ BOOL schedule(QWORD intention)
   next = select_next_thread();
   // if there is no or one thread in runnable list, next == curr
   if (next == curr) {
+    update_energy_counter(curr);
+    energy_counter = consumed_energy_counter(curr);
+    energy_ts = consumed_energy_tsc(curr);
+  
+    cratio = need_capping(energy_counter, energy_ts);
+    if (cratio > 0){
+      curr->capping_ratio += cratio;
+    }
+    else if (cratio < -5){
+      curr->capping_ratio += (5 + cratio);
+      curr->capping_ratio = (curr->capping_ratio<0) ? 0: curr->capping_ratio;
+
+    }
+    
     refill_time_slice(curr);
+
+    if (curr->capping_ratio > 0){
+      inject_idle((curr->remaining_time_slice*curr->capping_ratio)/100);
+    }
+
     lapic_start_timer_oneshot(curr->remaining_time_slice);
 
     post_context_switch(curr);

@@ -9,6 +9,7 @@
 #include "az_types.h"
 #include "utility.h"
 #include "signal.h"
+#include "ipocap.h"
 
 #define NO_TCB_LOCK
 
@@ -160,6 +161,13 @@ typedef struct thread_control_block_struct {
   QWORD acc_ltc;
   core_set_t core_mask;
 
+  // ipocap
+  QWORD last_energy_ts;
+  QWORD curr_energy_ts;
+  DWORD last_energy_counter;
+  DWORD curr_energy_counter;
+  long capping_ratio;
+
   // Sched list
   struct thread_list *sched_list;
   struct dl_list tcb_link;
@@ -236,5 +244,31 @@ int sys_setprio(tid_t *id, int prio);
 void sys_exit(int arg);
 int sys_clone(tid_t *id, void *ep, void *argv);
 void sys_yield(void);
+
+static inline void update_energy_counter(TCB *curr){
+
+    curr->last_energy_counter  = curr->curr_energy_counter;
+    curr->last_energy_ts = curr->curr_energy_ts;
+    curr->curr_energy_ts = __rdtsc();
+    curr->curr_energy_counter = read_energy_counter();
+}
+
+static inline DWORD consumed_energy_counter(TCB * curr){
+    DWORD diff;
+    diff  = (curr->curr_energy_counter > curr->last_energy_counter)?
+            (curr->curr_energy_counter - curr->last_energy_counter):
+            (0xffffffff - curr->last_energy_counter + curr->curr_energy_counter);
+    
+    return diff;
+}
+
+static inline QWORD consumed_energy_tsc(TCB * curr){
+    QWORD diff;
+    diff  = (curr->curr_energy_ts > curr->last_energy_ts)?
+            (curr->curr_energy_ts - curr->last_energy_ts):
+            (0xffffffff - curr->last_energy_ts + curr->curr_energy_ts);
+    
+    return diff;
+}
 
 #endif  /* __THREAD_H__ */
