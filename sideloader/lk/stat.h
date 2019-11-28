@@ -1,6 +1,7 @@
 #ifndef __STAT_H__
 #define __STAT_H__
 
+#include "arch.h"
 #include "cmds.h"
 
 typedef struct {
@@ -15,6 +16,7 @@ typedef struct {
 } Unikernel;
 
 typedef struct {
+  int plimit;                         // power limit (read-write).
   int core_used[MAX_CORE];            // core allocation info.
   int core_load[MAX_CORE];            // core load info.
   int memory_used[MAX_MEMORY];        // memory allocation info.

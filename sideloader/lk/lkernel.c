@@ -471,6 +471,16 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
     printk (KERN_INFO "STAT copied\n");
     break;
+    
+  case LK_CMD_IPOCAP:
+  {
+    retu = copy_from_user(g_stat_addr, (const void __user *) arg, sizeof(long));
+    if (retu) {
+      printk (KERN_INFO "LK_CMD_IPOCAP: copy_from_user error\n");
+      return -EINVAL;
+    }
+  }
+    break;
 
   case LK_CMD_THREAD:
   {
