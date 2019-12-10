@@ -1,123 +1,118 @@
-#include <sys/lock.h>
 #include "console.h"
-#include "map.h"
-#include "memory.h"
-
 #include "offload_mmap.h"
+#include "offload_memory_config.h"
+#include "page.h"
+#include "utility.h"
+#include "multiprocessor.h"
 
-extern QWORD g_memory_start;
+int g_offload_initialization_flag;
+static channel_t *g_offload_channels;
+static int g_n_offload_channels;
+static int g_n_nodes;
+int g_node_id;
+
 
 /**
- * @brief Get physical address corresponding to virtial address
- * @param virtual_address virtual address
- * @return success physical address, fail FALSE
+ * @brief initialize io offload
+ * @return success (TRUE), fail (FALSE)
  */
-unsigned long get_pa(QWORD virtual_address)
+BOOL init_offload_channel()
 {
-  PML4T_ENTRY *pml4t_entry = NULL;
-  PDPT_ENTRY *pdpt_entry = NULL;
-  PD_ENTRY *pd_entry = NULL;
-  PT_ENTRY *pt_entry = NULL;
-  QWORD pgd = 0;
-  QWORD new_pt_page = 0;
-  QWORD new_page = 0;
-  int index = -1;
+	volatile QWORD offload_magic = 0;
 
-  // address  is NULL
-  if(virtual_address == 0)
-    return (0); 
+	channel_t *cur_channel;
+	int offload_channels_offset = 0;
 
-  // identical mapping in high half memory
-  if(virtual_address > CONFIG_HIGH_HALF_LIMIT) {
-#ifdef DEBUG
-  lk_print_xy(25, 1, "get_pa(ID) va:%Q pa:%Q", virtual_address, pa(virtual_address));
-#endif
-    return (pa(virtual_address)); 
-  }
+	QWORD n_ipages = 0;
+	QWORD n_opages = 0;
+	QWORD icq_base_va = 0;
+	QWORD ocq_base_va = 0;
+	QWORD offload_channel_info_va = 0;
+	QWORD offload_channel_base_va = 0;
+	QWORD *p_node_id = NULL;
+ 
+	g_offload_channels = (channel_t *) ((QWORD) OFFLOAD_CHANNEL_STRUCT_VA);
 
-  spinlock_lock(&map_lock);
+	// set io offload channel info va
+	offload_channel_info_va = (QWORD) (OFFLOAD_CHANNEL_INFO_VA);
+	offload_channel_base_va = (QWORD) (OFFLOAD_CHANNEL_BASE_VA);
 
-  //pgd = get_as(address_space_id)->pgd;
-  pgd = CONFIG_KERNEL_PAGETABLE_ADDRESS;
+	offload_magic = *((QWORD *) offload_channel_info_va);
+	// check offload channel is initialized or not
+	if (offload_magic != (QWORD) OFFLOAD_MAGIC) {
+                g_offload_initialization_flag = FALSE;
+                return (FALSE);
+        }
+        else {
+                g_offload_initialization_flag = TRUE;
+        }
 
-  pml4t_entry = (PML4T_ENTRY *) va(pgd);
+	g_n_offload_channels = * ((QWORD *)(offload_channel_info_va) + 1);
+	n_ipages = *((QWORD *)(offload_channel_info_va) + 2);
+	n_opages =  *((QWORD *)(offload_channel_info_va) + 3);
+	g_n_nodes = *((QWORD *)(offload_channel_info_va) + 4);
+	p_node_id = (QWORD *)(offload_channel_info_va + sizeof(QWORD) * 5);
+	g_node_id = (int) *p_node_id;
+	(*p_node_id)++;
 
-  index = (virtual_address & PAGE_PML4_MASK) >> PAGE_PML4_SHIFT;
+	// initialize offload channel
+	//for(offload_channels_offset = 0; offload_channels_offset < g_n_offload_channels; offload_channels_offset++) {
+	for(offload_channels_offset = g_node_id * (g_n_offload_channels / g_n_nodes); offload_channels_offset < (g_node_id + 1) * (g_n_offload_channels / g_n_nodes); offload_channels_offset++) {
 
+		icq_base_va = (QWORD) offload_channel_base_va + offload_channels_offset * (n_ipages + n_opages) * PAGE_SIZE_4K;
+		// map icq of ith channel
+		cur_channel = &g_offload_channels[offload_channels_offset];
 
-  if (pml4t_entry[index].entry == 0) {
-    new_pt_page = (QWORD) az_alloc(PAGE_SIZE_4K);
+		cur_channel->in = (struct circular_queue *) (icq_base_va);
+		if(g_node_id == 0) {
+			//lock init
+			mutex_init(&cur_channel->in->lock);
+		}
 
-    if (new_pt_page == (QWORD) NULL) {
-      spinlock_unlock(&map_lock);
-      return FALSE;
-    }
+		// map ocq of ith channel
+		ocq_base_va = (QWORD) icq_base_va + (n_ipages * PAGE_SIZE_4K);
+		cur_channel->out = (struct circular_queue *) (ocq_base_va);
+		if(g_node_id == 0) {
+			//lock init
+			mutex_init(&cur_channel->out->lock);
+		}
+	}
 
-    set_page_entry_data(&pml4t_entry[index], pa(new_pt_page), PAGE_FLAGS_DEFAULT | PAGE_FLAGS_US);
-  }
-
-  // PDPT entry
-  pdpt_entry = (PDPT_ENTRY *) va(pml4t_entry[index].entry & (~PAGE_ATTR_MASK));
-
-  index = (virtual_address & PAGE_PDPT_MASK) >> PAGE_PDPT_SHIFT;
-  if (pdpt_entry[index].entry == 0) {
-    new_pt_page = (QWORD) az_alloc(PAGE_SIZE_4K);
-
-    if (new_pt_page == (QWORD) NULL) {
-      spinlock_unlock(&map_lock);
-      return FALSE;
-    }
-
-    set_page_entry_data(&pdpt_entry[index], pa(new_pt_page), PAGE_FLAGS_DEFAULT | PAGE_FLAGS_US);
-  }
-
-  // PD entry
-  pd_entry = (PD_ENTRY *) va(pdpt_entry[index].entry & (~PAGE_ATTR_MASK));
-
-  index = (virtual_address & PAGE_PDE_MASK) >> PAGE_PDE_SHIFT;
-  if (pd_entry[index].entry == 0) {
-    new_pt_page = (QWORD) az_alloc(PAGE_SIZE_4K);
-
-    if (new_pt_page == (QWORD) NULL) {
-      spinlock_unlock(&map_lock);
-      return FALSE;
-    }
-
-    set_page_entry_data(&pd_entry[index], pa(new_pt_page), PAGE_FLAGS_DEFAULT | PAGE_FLAGS_US);
-  }
-  else {
-    // PAGE_SIZE_2M is used
-    if ((pd_entry[index].entry & PAGE_FLAGS_PS) == PAGE_FLAGS_PS) {
-      spinlock_unlock(&map_lock);
-#ifdef DEBUG
-      lk_print_xy(25, 2, "get_pa(2M) va:%Q pa:%Q", virtual_address, (pd_entry[index].entry & (~PAGE_ATTR_MASK)) + (virtual_address & PAGE_PTE_OFFSET_MASK));
-#endif
-      return ((pd_entry[index].entry & (~PAGE_ATTR_MASK)) + (virtual_address & PAGE_PTE_OFFSET_MASK));
-    }
-  }
-
-  // PT entry
-  pt_entry = (PT_ENTRY *) va(pd_entry[index].entry & (~PAGE_ATTR_MASK));
-  index = (virtual_address & PAGE_PTE_MASK) >> PAGE_PTE_SHIFT;
-
-  if (pt_entry[index].entry == 0) {
-    new_page = (QWORD) az_alloc(PAGE_SIZE_4K);
-
-    if (new_page == (QWORD) NULL) {
-      spinlock_unlock(&map_lock);
-      return FALSE;
-    }
-
-    //lk_print_xy(25, 4, "alloced(4K) va:%Q pa:%Q", new_page, pa(new_page));
-    set_page_entry_data(&pt_entry[index], pa(new_page), PAGE_FLAGS_DEFAULT | PAGE_FLAGS_US);
-  }
-
-  spinlock_unlock(&map_lock);
-
-#ifdef DEBUG
-  lk_print_xy(25, 3, "get_pa(4K) va:%Q pa:%Q", virtual_address, (pt_entry[index].entry & (~PAGE_ATTR_MASK)) + (virtual_address & PAGE_OFFSET_MASK));
-#endif
-  return ((pt_entry[index].entry & (~PAGE_ATTR_MASK)) + (virtual_address & PAGE_OFFSET_MASK));
+	return(TRUE);
 }
 
+/**
+ * @brief get offload channel
+ * channel: 0 ~ (OFFLOAD_MAX_CHANNEL-1)
+ * @param n_requested_channel channel number to use
+ * @return success (pointer to channel), fail (NULL)
+ */
+channel_t *get_offload_channel(int n_requested_channel)
+{
+  int offload_channels_offset_in_node = 0;
+  int offload_channels_size_per_node = 0;
+  int offload_channels_index = 0;
+
+  // offload channel is not initialized
+  if(g_offload_initialization_flag == FALSE)
+	return (NULL);
+
+#if 0
+  if(get_papic_id() >= g_n_offload_channels)
+    return (&(g_offload_channels[get_apic_id()]));
+
+#else
+  if(g_n_nodes != 0) 
+  	offload_channels_size_per_node = g_n_offload_channels / g_n_nodes;
+  else {
+  	lk_print_xy(0, 24, "Offload total node number is not set: node id %d", g_node_id);
+	return (NULL);
+  }
+
+  offload_channels_offset_in_node = (n_requested_channel == -1) ? get_apic_id() : n_requested_channel;
+  offload_channels_index = offload_channels_size_per_node * g_node_id + offload_channels_offset_in_node;
+
+  return (&(g_offload_channels[offload_channels_index]));
+#endif
+}
 

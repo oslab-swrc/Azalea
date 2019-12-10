@@ -1,15 +1,13 @@
 #ifndef __OFFLOAD_CHANNEL_H__
 #define __OFFLOAD_CHANNEL_H__
 
-#include "offload_memory_config.h"
+#include "console_memory_config.h"
 
 #define	PAGE_SIZE_4K	(0x1000)
 #define	PAGE_SIZE_2M	(0x200000)
 
-//#define CQ_ELE_PAGE_NUM	(130)			// 2 + 128 
-//#define CQ_ELE_SIZE		(130 * 4096)	// 8K + 512K
-#define CQ_ELE_PAGE_NUM		(2)				// 2 
-#define CQ_ELE_SIZE			(2 * 4096)		// 8K 
+#define CQ_ELE_PAGE_NUM (2)		// 2 
+#define CQ_ELE_SIZE	(2 * 4096)	// 8K 
 
 #define   OFFLOAD_LOCK_ENABLE_MAX_CHANNELS_NUM	300
 
