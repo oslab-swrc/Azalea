@@ -19,6 +19,7 @@
 #include "memory.h"
 #include "signal.h"
 #include "stat.h"
+#include "console_function.h"
 
 extern void HALT() ;
 unsigned int shutdown_kernel = 0 ;
@@ -40,6 +41,9 @@ DECLARE_PERCPU(TCB *, running_thread);
 
 struct thread_list g_global_tcb_list;
 struct thread_list g_migrating_list;
+
+atomic_t g_exit_thread_cnt;
+atomic_t g_thread_cnt;
 
 static inline BOOL core_is_allowed(TCB * t, int cid)
 {
@@ -280,7 +284,7 @@ void init_tcb(TCB * tcb, QWORD stack)
 void init_tcb_destroy(TCB * tcb)
 {
   // free the allocated stack memory
-  az_free((void *) (tcb->stack_base - CONFIG_TCB_SIZE));
+  az_free((void *) (tcb->stack_base - CONFIG_STACK_SIZE));
 
   init_tcb(tcb, 0);
   tcb->state = THREAD_STATE_NOTALLOC;  // XXX:
@@ -335,6 +339,9 @@ static void destroy_tcb(TCB *t)
   t->gen++;
   spinlock_unlock(&g_global_tcb_list.lock);
 #endif
+
+  atomic_inc(&g_exit_thread_cnt);
+  atomic_dec(&g_thread_cnt);
 
 #if 1
   atomic_inc(&tdcnt);
@@ -620,6 +627,9 @@ int create_thread(QWORD ip, QWORD argv, int core_mask)
   tcb_unlock(thr);
 
   put_tcb(thr);
+
+  // count thread create
+  atomic_inc(&g_thread_cnt);
 
   atomic_inc(&trcnt);
   lk_print_xy(50, 23, "tc: %q, td: %q, %q  ", trcnt.c, tdcnt.c, trcnt.c-tdcnt.c);
@@ -1183,7 +1193,7 @@ void start_idle_thread(int thread_type)
 
   setup_idle_thread();
 
-  // Store physical number of cpu in stat memory 
+  // Store physical number of cpu in stat memory
   set_cpu_num(get_papic_id());
 
   if (thread_type == THREAD_TYPE_BSP) {
@@ -1197,6 +1207,13 @@ void start_idle_thread(int thread_type)
   while (!shutdown_kernel) {
     // CPU IDLE
     lk_print_xy(30, 23, "%d, %x", cid, cnt++);
+    
+    // check all user thread done.
+    if(thread_type == THREAD_TYPE_BSP) {
+      if(g_thread_cnt.c == 0 && g_exit_thread_cnt.c > 0) {
+        cs_exit();
+      }
+    }
   }
 
   disable_interrupt() ;

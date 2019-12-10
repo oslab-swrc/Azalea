@@ -20,6 +20,7 @@
 #include "timer.h"
 #include "offload_fio.h"
 #include "offload_network.h"
+#include "console_function.h"
 
 static spinlock_t a_lock;
 /**
@@ -67,6 +68,7 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
 //  TCB *current = NULL;
 //  int cid = get_apic_id();
 
+  //lk_print_xy(0, yyloc++%YOFFSET, "system call ** %d", no);
   switch (no) {
   case SYSCALL_create_thread:
     ret_code = create_thread((QWORD) param1, (QWORD) param2, (int) param3);
@@ -129,7 +131,18 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
 #endif
     break;
   case SYSCALL_sys_write:
+#if 0
     ret_code = sys_off_write((int) param1, (void *) param2, (size_t) param3);
+#else
+    if ( param1 == 1 || param1 == 2 ) { //stdout, stderr
+      ret_code = cs_write((int) param1, (void *) param2, (size_t) param3);
+    }
+    else
+    {
+      ret_code = sys_off_write((int) param1, (void *) param2, (size_t) param3);
+    }
+#endif
+
 #ifdef DDBUG
     lk_print_xy(0, yyloc++%YOFFSET, "write system call **");
 #endif
