@@ -21,30 +21,30 @@ void send_console_message(struct circular_queue *ocq, int tid, int console_funct
 cq_element *ce = NULL;
 io_packet_t *opkt = NULL;
 
-#ifdef OFFLOAD_LOCK_ENABLE
-	mutex_lock(&ocq->lock);
-	while (cq_free_space(ocq) == 0);
+#ifdef CONSOLE_LOCK_ENABLE
+  mutex_pause_lock(&ocq->lock);
+  while (cq_free_space(ocq) == 0);
 #else
-	while (cq_free_space(ocq) == 0);
+  while (cq_free_space(ocq) == 0);
 #endif
-	// make packet header
-	ce = (ocq->data + ocq->head);
-	opkt = (io_packet_t *) ce;
+// make packet header
+  ce = (cq_element *) (ocq->data + ocq->head);
+  opkt = (io_packet_t *) ce;
 
-	opkt->magic = MAGIC;
-	opkt->tid = tid;
-	opkt->io_function_type = console_function_type;
-	opkt->param1 = param1;
-	opkt->param2 = param2;
-	opkt->param3 = param3;
-	opkt->param4 = param4;
-	opkt->param5 = param5;
-	opkt->param6 = param6;
+  opkt->magic = MAGIC;
+  opkt->tid = tid;
+  opkt->io_function_type = console_function_type;
+  opkt->param1 = param1;
+  opkt->param2 = param2;
+  opkt->param3 = param3;
+  opkt->param4 = param4;
+  opkt->param5 = param5;
+  opkt->param6 = param6;
 
-	ocq->head = (ocq->head + 1) % ocq->size;
+  ocq->head = (ocq->head + 1) % ocq->size;
 
 #ifdef CONSOLE_LOCK_ENABLE
-	mutex_unlock(&ocq->lock);
+  mutex_unlock(&ocq->lock);
 #endif
 }
 
@@ -64,29 +64,29 @@ QWORD ret = 0;
 retry_receive_sys_message:
 
 #ifdef CONSOLE_LOCK_ENABLE
-	mutex_lock(&icq->lock);
-	while (cq_avail_data(icq) == 0);
+  mutex_pause_lock(&icq->lock);
+  while (cq_avail_data(icq) == 0);
 #else
-	while (cq_avail_data(icq) == 0);
+  while (cq_avail_data(icq) == 0);
 #endif
-	ce = (icq->data + icq->tail);
-	ipkt= (io_packet_t *)(ce);
-	if((int) ipkt->tid == (int) tid && (int) ipkt->io_function_type == (int) console_function_type) {
-		ret = ipkt->ret;
-		icq->tail = (icq->tail + 1) % icq->size;
+  ce = (cq_element *) (icq->data + icq->tail);
+  ipkt= (io_packet_t *)(ce);
+  if((int) ipkt->tid == (int) tid && (int) ipkt->io_function_type == (int) console_function_type) {
+  //if(ipkt->tid == tid && (int) ipkt->io_function_type == (int) console_function_type) {
+    ret = ipkt->ret;
+    icq->tail = (icq->tail + 1) % icq->size;
 
 #ifdef CONSOLE_LOCK_ENABLE
-		mutex_unlock(&icq->lock);
+    mutex_unlock(&icq->lock);
 #endif
-	}
-	else {
+  }
+  else {
 #ifdef CONSOLE_LOCK_ENABLE
-		mutex_unlock(&icq->lock);
+    mutex_unlock(&icq->lock);
 #endif
-		//schedule(THREAD_INTENTION_READY);
-		goto retry_receive_sys_message;
-	}
+    lk_print("console: retry_receive_sys_message id: %d, thread id: %d\n", ipkt->tid, tid);
+    goto retry_receive_sys_message;
+  }
 
-	return ret;
+  return ret;
 }
-

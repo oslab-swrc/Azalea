@@ -8,6 +8,7 @@
 
 #define CQ_ELE_PAGE_NUM (2)		// 2 
 #define CQ_ELE_SIZE	(2 * 4096)	// 8K 
+//#define CQ_ELE_SIZE	(4096)	// 8K 
 
 #define   OFFLOAD_LOCK_ENABLE_MAX_CHANNELS_NUM	300
 
@@ -32,7 +33,7 @@ struct circular_queue {
   int tail;
   unsigned long size;
   //az_spinlock_t *lock;
-  az_spinlock_t lock  __attribute__((aligned(L_CACHE_LINE_SIZE)));
+  //az_spinlock_t lock  __attribute__((aligned(L_CACHE_LINE_SIZE)));
   cq_element data[0] __attribute__((aligned(4096)));
 };
 

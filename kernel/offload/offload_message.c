@@ -24,33 +24,40 @@ cq_element *ce = NULL;
 io_packet_t *opkt = NULL;
 int offload_tid = 0;
 
+  //lk_print_xy(0, 5, "send_offload_message(5): tid:%d type:%d \n", tid, offload_function_type);
 #ifdef OFFLOAD_LOCK_ENABLE
-	mutex_lock(&ocq->lock);
-	while (cq_free_space(ocq) == 0);
+  mutex_lock(&ocq->lock);
+  while (cq_free_space(ocq) == 0) {
+    //lk_print_xy(0, 6, "send_offload_message(6): tid:%d type:%d \n", tid, offload_function_type);
+    ;
+  }
+
+  //lk_print_xy(0, 7, "send_offload_message(7): tid:%d type:%d \n", tid, offload_function_type);
 #else
-	while (cq_free_space(ocq) == 0);
+  while (cq_free_space(ocq) == 0);
 #endif
-	offload_tid = g_ukid * 10000 + tid;
+  offload_tid = g_ukid * 10000 + tid;
 
-	// make packet header
-	ce = (ocq->data + ocq->head);
-	opkt = (io_packet_t *) ce;
+  // make packet header
+  ce = (cq_element *) (ocq->data + ocq->head);
+  opkt = (io_packet_t *) ce;
 
-	opkt->magic = OFFLOAD_MAGIC;
-	opkt->tid = offload_tid;
-	opkt->io_function_type = offload_function_type;
-	opkt->param1 = param1;
-	opkt->param2 = param2;
-	opkt->param3 = param3;
-	opkt->param4 = param4;
-	opkt->param5 = param5;
-	opkt->param6 = param6;
+  opkt->magic = OFFLOAD_MAGIC;
+  opkt->tid = offload_tid;
+  opkt->io_function_type = offload_function_type;
+  opkt->param1 = param1;
+  opkt->param2 = param2;
+  opkt->param3 = param3;
+  opkt->param4 = param4;
+  opkt->param5 = param5;
+  opkt->param6 = param6;
 
-	ocq->head = (ocq->head + 1) % ocq->size;
+  ocq->head = (ocq->head + 1) % ocq->size;
 
 #ifdef OFFLOAD_LOCK_ENABLE
-	mutex_unlock(&ocq->lock);
+  mutex_unlock(&ocq->lock);
 #endif
+  //lk_print_xy(0, 10, "send_offload_message: tid:%d type:%d \n", tid, offload_function_type);
 }
 
 /**
@@ -69,30 +76,30 @@ int offload_tid = 0;
 
 retry_receive_sys_message:
 #ifdef OFFLOAD_LOCK_ENABLE
-	mutex_lock(&icq->lock);
-	while (cq_avail_data(icq) == 0);
+  mutex_lock(&icq->lock);
+  while (cq_avail_data(icq) == 0);
 #else
-	while (cq_avail_data(icq) == 0);
+  while (cq_avail_data(icq) == 0);
 #endif
-	offload_tid = g_ukid * 10000 + tid;
-	ce = (icq->data + icq->tail);
-	ipkt= (io_packet_t *)(ce);
-	if((int) ipkt->tid == (int) offload_tid && (int) ipkt->io_function_type == (int) offload_function_type) {
-		ret = ipkt->ret;
-		icq->tail = (icq->tail + 1) % icq->size;
+  offload_tid = g_ukid * 10000 + tid;
+  ce = (cq_element *) (icq->data + icq->tail);
+  ipkt= (io_packet_t *)(ce);
+  if((int) ipkt->tid == (int) offload_tid && (int) ipkt->io_function_type == (int) offload_function_type) {
+    ret = ipkt->ret;
+    icq->tail = (icq->tail + 1) % icq->size;
 
 #ifdef OFFLOAD_LOCK_ENABLE
-		mutex_unlock(&icq->lock);
+    mutex_unlock(&icq->lock);
 #endif
-	}
-	else {
+  }
+  else {
 #ifdef OFFLOAD_LOCK_ENABLE
-		mutex_unlock(&icq->lock);
+    mutex_unlock(&icq->lock);
 #endif
-		//schedule(THREAD_INTENTION_READY);
-		goto retry_receive_sys_message;
-	}
+    //schedule(THREAD_INTENTION_READY);
+    goto retry_receive_sys_message;
+  }
 
-	return ret;
+  return ret;
 }
 

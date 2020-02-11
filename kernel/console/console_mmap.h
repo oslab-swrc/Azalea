@@ -2,8 +2,11 @@
 #define __CONSOLE_MMAP_H__
 
 #include "offload_channel.h"
+#include "memory_config.h"
+#include "az_types.h"
 
-#define	PAGE_PTE_OFFSET_MASK	(PAGE_PTE_MASK + PAGE_OFFSET_MASK)
+#define CONSOLE_CHANNEL_CQ_ELEMENT_NUM  (4)
+#define CONSOLE_MAGIC   (0x5D4C3B2A)
 
 BOOL init_console_channel(void);
 channel_t *get_console_channel(void);

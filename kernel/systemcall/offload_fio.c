@@ -15,6 +15,8 @@
 #include "utility.h"
 #include "thread.h"
 
+//#define DEBUG
+
 extern QWORD g_memory_start;
 
 
@@ -36,6 +38,10 @@ struct circular_queue *ocq = NULL;
 TCB *current = NULL;
 int mytid = -1;
 
+#ifdef DEBUG
+  lk_print("open system call: path=%s, flags=%d, mode=%d\n", path, oflag, mode);
+#endif
+
   // chech parameter
   if(path == NULL) {
 	return (-1);
@@ -48,6 +54,10 @@ int mytid = -1;
   }
   icq = ch->in;
   ocq = ch->out;
+#ifdef DEBUG
+  lk_print("open system call: ocq va=%q, pa=%q, \n", (QWORD) ocq, get_pa((QWORD)ocq));
+  lk_print("open system call: icq va=%q, pa=%q, \n", (QWORD) icq, get_pa((QWORD)icq));
+#endif
 
   current = get_current();
   mytid = current->id;
@@ -75,6 +85,10 @@ struct circular_queue *ocq = NULL;
 
 TCB *current = NULL;
 QWORD mytid = -1;
+
+#ifdef DEBUG
+  lk_print("\ncreat system call: path=%s, mode=%d\n", path, mode);
+#endif
 
   // chech parameter
   if(path == NULL) {

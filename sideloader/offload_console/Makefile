@@ -6,8 +6,9 @@ endif
 
 UKDIR = ../..
 
-INCS = -I$(UKDIR)/include/$(TARGET) -I$(UKDIR)/include
-CFLAGS = -Wall -D_GNU_SOURCE -g  
+#INCS = -I$(UKDIR)/include/$(TARGET) -I$(UKDIR)/include
+INCS = -I$(UKDIR)/include/$(TARGET) 
+CFLAGS = -Wall -D_GNU_SOURCE -g -O0 
 
 .DEFAULT_GOAL := all
 

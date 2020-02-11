@@ -4,7 +4,12 @@
 #include "memory.h"
 #include "offload_page.h"
 
+#define	shared_memory_pa(v)	(((QWORD)v)-CONFIG_SHARED_MEMORY+(g_shared_memory))
+
 extern QWORD g_memory_start;
+extern QWORD g_shared_memory;
+
+//#define DEBUG
 
 /**
  * @brief Get physical address corresponding to virtial address
@@ -28,10 +33,18 @@ unsigned long get_pa(QWORD virtual_address)
 
   // identical mapping in high half memory
   if(virtual_address > CONFIG_HIGH_HALF_LIMIT) {
+    if(virtual_address < CONFIG_PAGE_OFFSET) { // shared memory
 #ifdef DEBUG
-  lk_print_xy(25, 1, "get_pa(ID) va:%Q pa:%Q", virtual_address, pa(virtual_address));
+      lk_print_xy(0, 1, "get_pa(ID) va:%Q pa:%Q", virtual_address, shared_memory_pa(virtual_address));
 #endif
-    return (pa(virtual_address)); 
+      return (shared_memory_pa(virtual_address));
+    }
+    else { // kernel memory
+#ifdef DEBUG
+      lk_print_xy(0, 1, "get_pa(ID) va:%Q pa:%Q", virtual_address, pa(virtual_address));
+#endif
+      return (pa(virtual_address));
+    }
   }
 
   spinlock_lock(&map_lock);
@@ -89,7 +102,8 @@ unsigned long get_pa(QWORD virtual_address)
     if ((pd_entry[index].entry & PAGE_FLAGS_PS) == PAGE_FLAGS_PS) {
       spinlock_unlock(&map_lock);
 #ifdef DEBUG
-      lk_print_xy(25, 2, "get_pa(2M) va:%Q pa:%Q", virtual_address, (pd_entry[index].entry & (~PAGE_ATTR_MASK)) + (virtual_address & PAGE_PTE_OFFSET_MASK));
+      //lk_print_xy(25, 2, "get_pa(2M) va:%Q pa:%Q", virtual_address, (pd_entry[index].entry & (~PAGE_ATTR_MASK)) + (virtual_address & PAGE_PTE_OFFSET_MASK));
+      lk_print_xy(0, 9, "get_pa(2M) va:%Q pa:%Q", virtual_address, (pd_entry[index].entry & (~PAGE_ATTR_MASK)) + (virtual_address & PAGE_PTE_OFFSET_MASK));
 #endif
       return ((pd_entry[index].entry & (~PAGE_ATTR_MASK)) + (virtual_address & PAGE_PTE_OFFSET_MASK));
     }
@@ -114,7 +128,9 @@ unsigned long get_pa(QWORD virtual_address)
   spinlock_unlock(&map_lock);
 
 #ifdef DEBUG
-  lk_print_xy(25, 3, "get_pa(4K) va:%Q pa:%Q", virtual_address, (pt_entry[index].entry & (~PAGE_ATTR_MASK)) + (virtual_address & PAGE_OFFSET_MASK));
+  //lk_print_xy(25, 3, "get_pa(4K) va:%Q pa:%Q", virtual_address, (pt_entry[index].entry & (~PAGE_ATTR_MASK)) + (virtual_address & PAGE_OFFSET_MASK));
+  lk_print_xy(0, 10, "get_pa(4K) va:%Q pa:%Q  ", virtual_address, (pt_entry[index].entry & (~PAGE_ATTR_MASK)) + (virtual_address & PAGE_OFFSET_MASK));
+  lk_print_xy(0, 11, "get_pa(4K) entry:%Q +~MASK:%Q va+MASK:%Q  ", pt_entry[index].entry, pt_entry[index].entry & (~PAGE_ATTR_MASK), virtual_address & PAGE_OFFSET_MASK);
 #endif
   return ((pt_entry[index].entry & (~PAGE_ATTR_MASK)) + (virtual_address & PAGE_OFFSET_MASK));
 }
@@ -174,32 +190,32 @@ int i = 0;
 
   /* scan each page to find physically contiguous regions */
   for (i = 0; i < nr_pages; ++i) {
-	/* get physcical addresses */
-	offset_in_page = scan_buf & PAGE_OFFSET_MASK;
-	page_addr = get_pa(scan_buf) - offset_in_page;
+    /* get physcical addresses */
+    offset_in_page = scan_buf & PAGE_OFFSET_MASK;
+    page_addr = get_pa(scan_buf) - offset_in_page;
 
-	/* emmit iov for a physically non-contiguous region */
-	if ((unsigned long) page_addr != (unsigned long) (prev_page_addr + PAGE_SIZE_4K)) {
+    /* emmit iov for a physically non-contiguous region */
+    if ((unsigned long) page_addr != (unsigned long) (prev_page_addr + PAGE_SIZE_4K)) {
 
-	  iov[*iovcnt].iov_base = (void *) read_page_addr;
-	  iov[*iovcnt].iov_len = (size_t) read_page_len;
-	  (*iovcnt)++;
+      iov[*iovcnt].iov_base = (void *) read_page_addr;
+      iov[*iovcnt].iov_len = (size_t) read_page_len;
+      (*iovcnt)++;
 
-	  /* reset region info. */
-	  read_page_len = 0;
-	  read_page_addr = get_pa(scan_buf);
-	}
+      /* reset region info. */
+      read_page_len = 0;
+      read_page_addr = get_pa(scan_buf);
+    }
 
-	/* expand this region */
-	page_len = PAGE_SIZE_4K - offset_in_page; //rest of page;
-	if (page_len > scan_buf_len)
-	  page_len = scan_buf_len;
+    /* expand this region */
+    page_len = PAGE_SIZE_4K - offset_in_page; //rest of page;
+    if (page_len > scan_buf_len)
+      page_len = scan_buf_len;
 
-	read_page_len += page_len;
-	scan_buf += page_len;
-	scan_buf_len -= page_len;
-	prev_page_addr = page_addr;
-  }
+      read_page_len += page_len;
+      scan_buf += page_len;
+      scan_buf_len -= page_len;
+      prev_page_addr = page_addr;
+    }
 
   iov[*iovcnt].iov_base = (void *) read_page_addr;
   iov[*iovcnt].iov_len = (size_t) read_page_len;

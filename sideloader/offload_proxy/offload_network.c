@@ -45,7 +45,7 @@ void sys_off_gethostname(struct channel_struct *ch)
   // Execute gethostname systemcall
   ret = gethostname(name, len); 
   if(ret == -1)
-	fprintf(stdout, "%s\n", strerror(errno));
+	fprintf(stderr, "%s\n", strerror(errno));
 
   // Sent to the result to the kernel
   send_offload_message(out_cq, tid, offload_function_type, (int) ret);
@@ -152,7 +152,7 @@ void sys_off_getsockname(struct channel_struct *ch)
   // Execute getsockname systemcall
   iret = getsockname(sockfd, addr, addrlen);
   if(iret == -1)
-    fprintf(stdout, "%s\n", strerror(errno));
+    fprintf(stderr, "%s\n", strerror(errno));
 
   // Sent to the result to the kernel
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
@@ -193,7 +193,7 @@ void sys_off_socket(struct channel_struct *ch)
   // Execute socket systemcall
   iret = socket(domain, type, protocol);
   if(iret == -1)
-    fprintf(stdout, "%s\n", strerror(errno));
+    fprintf(stderr, "%s\n", strerror(errno));
 
   // Sent to the result to the kernel
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
@@ -234,7 +234,7 @@ void sys_off_bind(struct channel_struct *ch)
   // Execute bind systemcall
   iret = bind(sockfd, addr, addrlen);
   if(iret == -1)
-    fprintf(stdout, "%s\n", strerror(errno));
+    fprintf(stderr, "%s\n", strerror(errno));
 
   // Sent to the result to the kernel
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
@@ -273,7 +273,7 @@ void sys_off_listen(struct channel_struct *ch)
   // Execute listen systemcall
   iret = listen(sockfd, backlog);
   if(iret == -1)
-    fprintf(stdout, "%s\n", strerror(errno));
+    fprintf(stderr, "%s\n", strerror(errno));
 
   // Sent to the result to the kernel
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
@@ -314,7 +314,7 @@ void sys_off_connect(struct channel_struct *ch)
   // Execute connect systemcall
   iret = connect(sockfd, addr, addrlen);
   if(iret == -1)
-    fprintf(stdout, "%s\n", strerror(errno));
+    fprintf(stderr, "%s\n", strerror(errno));
 
   // Sent to the result to the kernel
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
@@ -355,7 +355,7 @@ void sys_off_accept(struct channel_struct *ch)
   // Execute accept systemcall
   iret = accept(sockfd, addr, addrlen);
   if(iret == -1)
-      fprintf(stdout, "%s\n", strerror(errno));
+      fprintf(stderr, "%s\n", strerror(errno));
 
   // Sent to the result to the kernel
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);

@@ -15,6 +15,8 @@ cq_element *ce = NULL;
 io_packet_t *out_pkt = NULL;
 
 	// make packet header
+	while (cq_free_space(out_cq) == 0);
+
 	ce = (out_cq->data + out_cq->head);
 	out_pkt = (io_packet_t *) ce;
 
