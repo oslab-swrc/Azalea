@@ -6,4 +6,4 @@
 BOOL init_offload_channel();
 channel_t *get_offload_channel(int n_requested_channel);
 
-#endif
+#endif //__OFFLOAD_MMAP_H__

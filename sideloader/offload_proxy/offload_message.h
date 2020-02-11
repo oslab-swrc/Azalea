@@ -5,7 +5,6 @@
 
 #include "offload_channel.h"
 
-//#define PACKET_DATA_SIZE  (128 * 4096)
 #define IO_PATH_MAX	  (4096)
 #define MAGIC		  (0x4D3C2B1A)
 
@@ -30,4 +29,4 @@ typedef struct io_packet_struct {
 
 void send_offload_message(struct circular_queue *out_cq, int tid, int offload_function_type, unsigned long  ret);
 
-#endif
+#endif //__OFFLOAD_MESSAGE_H__

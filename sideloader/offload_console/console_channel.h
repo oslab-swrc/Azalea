@@ -15,7 +15,7 @@
 
 typedef struct az_spinlock_struct {
   volatile unsigned long lock;
-} az_spinlock_t;// __attribute__ ((aligned (8)));
+} az_spinlock_t;
 
 static inline void az_spinlock_init(az_spinlock_t *lock)
 {
@@ -31,8 +31,7 @@ struct circular_queue {
   int head;
   int tail;
   unsigned long size;
-  //az_spinlock_t *lock;
-  az_spinlock_t lock  __attribute__((aligned(L_CACHE_LINE_SIZE)));
+  //az_spinlock_t lock  __attribute__((aligned(L_CACHE_LINE_SIZE)));
   cq_element data[0] __attribute__((aligned(4096)));
 };
 
@@ -56,4 +55,4 @@ typedef struct channel_struct {
 // Channel function
 void init_channel(channel_t *ioc);
 
-#endif
+#endif //__OFFLOAD_CHANNEL_H__

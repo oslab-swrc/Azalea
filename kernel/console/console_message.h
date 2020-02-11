@@ -31,4 +31,4 @@ typedef struct io_packet_struct {
 void send_console_message(struct circular_queue *ocq, int tid, int console_function_type, QWORD param1, QWORD param2, QWORD param3, QWORD param4, QWORD param5, QWORD param6);
 QWORD receive_console_message(struct circular_queue *icq, int tid, int console_function_type);
 
-#endif
+#endif //__CONSOLE_MESSAGE_H__

@@ -12,4 +12,4 @@ unsigned long get_va(unsigned long pa);
 unsigned long get_pa_base(void);
 unsigned long get_va_base(void);
 
-#endif
+#endif //__OFFLOAD_MMAP_H__

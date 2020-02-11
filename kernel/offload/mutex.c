@@ -52,6 +52,18 @@ int mutex_lock(ticket_mutex_t *lock)
   return (0);
 }
 
+int mutex_pause_lock(ticket_mutex_t *lock)
+{
+
+  int t = __sync_fetch_and_add(&lock->u.s.request, 1);
+
+  while (lock->u.s.grant != t) {
+    __asm volatile ("pause" ::: "memory");
+  }
+
+  return (0);
+}
+
 int mutex_unlock(ticket_mutex_t *lock)
 {
   // COMPILER_BARRIER

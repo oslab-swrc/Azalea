@@ -5,6 +5,7 @@
 #include "console.h"
 #include "page.h"
 #include "thread.h"
+#include "timer.h"
 
 #include "offload_page.h"
 #include "offload_channel.h"
@@ -13,18 +14,23 @@
 #include "console_mmap.h"
 #include "console_message.h"
 
+extern BOOL g_console_proxy_flag;
+extern QWORD *g_console_magic;
+
 /**
  * @brief console print for boot screen
  * @param void
  * @return none
  */
-void cs_boot_msg_print(int yloc) {
+int cs_boot_msg_print(int yloc) {
 int x = 0, y = 0;
 char *screen = NULL;
 char line[CONSOLE_WIDTH+3];
 
+  if(g_console_proxy_flag == FALSE)
+    return (-1);
+
   screen = (char *) get_vcon_addr();
-  cs_puts("\n\r");
   for (y = 0; y < yloc; y++) {
     for (x = 0; x < CONSOLE_WIDTH; x++) {
       line[x] = *(screen + y*CONSOLE_WIDTH + x);
@@ -34,6 +40,8 @@ char line[CONSOLE_WIDTH+3];
     line[CONSOLE_WIDTH+2] = '\0';
     cs_write(1, line, lk_strlen(line));
   }
+
+  return (0);
 }
 
 
@@ -58,6 +66,9 @@ ssize_t ssret = 0;
 struct iovec iov[MAX_IOV_NUM];
 int iovcnt = 0;
 
+  if(g_console_proxy_flag == FALSE)
+    return (-1);
+
   if(count <= 0) return (-1);
 
   ch = get_console_channel();
@@ -67,7 +78,12 @@ int iovcnt = 0;
   ocq = ch->out;
 
   current = get_current();
-  mytid = current->id;
+  if(current == NULL) {
+    mytid = -1;
+  }
+  else {
+    mytid = current->id;
+  }
 
   get_iovec(buf, count, iov, &iovcnt);
   send_console_message(ocq, mytid, CONSOLE_WRITE, fd, get_pa((QWORD) iov), iovcnt, 0, 0, 0);
@@ -99,6 +115,9 @@ va_list ap;
 char buf[1024];
 int len = 0;
 
+  if(g_console_proxy_flag == FALSE)
+    return (-1);
+
   lk_memset(buf, 0, sizeof(char) * 1024);
 
   va_start(ap, parameter);
@@ -112,7 +131,12 @@ int len = 0;
   icq = ch->in;
 
   current = get_current();
-  mytid = current->id;
+  if(current == NULL) {
+    mytid = -1;
+  }
+  else {
+    mytid = current->id;
+  }
 
   get_iovec(buf, len, iov, &iovcnt);
   send_console_message(ocq, mytid, CONSOLE_PRINT, get_pa((QWORD) iov), iovcnt, 0, 0, 0, 0);
@@ -142,6 +166,9 @@ int iret = 0;
 struct iovec iov[MAX_IOV_NUM];
 int iovcnt = 0;
 
+  if(g_console_proxy_flag == FALSE)
+    return (-1);
+
   len = lk_strlen(buf);
 
   if(len <= 0) return (-1);
@@ -153,7 +180,12 @@ int iovcnt = 0;
   icq = ch->in;
 
   current = get_current();
-  mytid = current->id;
+  if(current == NULL) {
+    mytid = -1;
+  }
+  else {
+    mytid = current->id;
+  }
 
   get_iovec(buf, len, iov, &iovcnt);
   send_console_message(ocq, mytid, CONSOLE_PRINT, get_pa((QWORD) iov), iovcnt, 0, 0, 0, 0);
@@ -178,6 +210,9 @@ QWORD mytid = -1;
 
 int iret = 0;
 
+  if(g_console_proxy_flag == FALSE)
+    return (-1);
+
   ch = get_console_channel();
   if(ch == NULL) return (-1);
 
@@ -185,10 +220,19 @@ int iret = 0;
   icq = ch->in;
 
   current = get_current();
-  mytid = current->id;
+  if(current == NULL) {
+    mytid = -1;
+  }
+  else {
+    mytid = current->id;
+  }
 
   send_console_message(ocq, mytid, CONSOLE_EXIT, 0, 0, 0, 0, 0, 0);
   iret = receive_console_message(icq, mytid, CONSOLE_EXIT);
+
+  if(g_console_magic != NULL) {
+    *g_console_magic = 0;
+  }
 
   return (iret);
 }

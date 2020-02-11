@@ -356,13 +356,12 @@ int main(int argc, char *argv[])
       curr_ch++;
   }
 
-#if 1
   // wait for offload_local_proxy
   while(1) {
     if(atomic_kids == g_n_channels) 
      break;
   }  
-#endif
+
   usleep(1000);
 
 #if 0
@@ -407,8 +406,6 @@ int main(int argc, char *argv[])
     pthread_cond_destroy(&count_threshold_cv[i]);
   }
   // end of logic
-
-//__unregister:
 
   if (munmap_channels(offload_channels, g_n_channels) < 0)
       err++;
