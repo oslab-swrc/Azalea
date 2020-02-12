@@ -35,9 +35,10 @@
 #define PAGE_TABLESIZE		0x1000
 #define PAGE_MAX_ENTRY_COUNT	512
 
-#define PAGE_DEFAULT_SIZE	0x1000
-#define PAGE_SIZE_4K		0x1000
-#define PAGE_SIZE_2M		0x200000
+#define PAGE_DEFAULT_SIZE   0x1000
+#define PAGE_SIZE_4K        0x1000
+#define PAGE_SIZE_2M        0x200000
+#define PAGE_SIZE_1G        0x40000000
 
 #define PAGE_OFFSET		(CONFIG_PAGE_OFFSET)
 
@@ -46,9 +47,6 @@
 
 #define va(p)	(((QWORD)p)+PAGE_OFFSET-(g_memory_start))
 #define pa(v)	(((QWORD)v)-PAGE_OFFSET+(g_memory_start))
-
-#define va_apic(p) (((QWORD)p)+CONFIG_HIGH_HALF_LIMIT)
-#define pa_apic(v) (((QWORD)v)-CONFIG_HIGH_HALF_LIMIT)
 
 #pragma pack(push, 1)
 
@@ -61,7 +59,6 @@ typedef struct page_table_entry_struct {
 // Functions
 
 void kernel_pagetables_init(QWORD address);
-void adjust_pagetables(QWORD address);
 void remove_low_identical_mapping(QWORD pgd);
 void set_page_entry_data(PT_ENTRY *entry, QWORD base_address, QWORD flags);
 
