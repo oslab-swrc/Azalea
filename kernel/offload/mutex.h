@@ -29,6 +29,7 @@ ticket_mutex_t *mutex_create(ticket_mutex_t *lock);
 int mutex_delete(ticket_mutex_t *lock);
 int mutex_init(ticket_mutex_t *lock);
 int mutex_lock(ticket_mutex_t *lock);
+int mutex_pause_lock(ticket_mutex_t *lock);
 int mutex_unlock(ticket_mutex_t *lock);
 
 #endif  /*__MUTEX_H__*/

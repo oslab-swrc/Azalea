@@ -6,8 +6,6 @@
 #define	PAGE_SIZE_4K	(0x1000)
 #define	PAGE_SIZE_2M	(0x200000)
 
-//#define CQ_ELE_PAGE_NUM	(130)			// 2 + 128 
-//#define CQ_ELE_SIZE		(130 * 4096)	// 8K + 512K
 #define CQ_ELE_PAGE_NUM		(2)				// 2 
 #define CQ_ELE_SIZE			(2 * 4096)		// 8K 
 
@@ -17,7 +15,7 @@
 
 typedef struct az_spinlock_struct {
   volatile unsigned long lock;
-} az_spinlock_t;// __attribute__ ((aligned (8)));
+} az_spinlock_t;
 
 static inline void az_spinlock_init(az_spinlock_t *lock)
 {
@@ -33,8 +31,8 @@ struct circular_queue {
   int head;
   int tail;
   unsigned long size;
-  //az_spinlock_t *lock;
-  az_spinlock_t lock  __attribute__((aligned(L_CACHE_LINE_SIZE)));
+  char padding[64] __attribute__((aligned(L_CACHE_LINE_SIZE)));
+  //az_spinlock_t lock  __attribute__((aligned(L_CACHE_LINE_SIZE)));
   cq_element data[0] __attribute__((aligned(4096)));
 };
 
@@ -58,4 +56,4 @@ typedef struct channel_struct {
 // Channel function
 void init_channel(channel_t *ioc);
 
-#endif
+#endif //__OFFLOAD_CHANNEL_H__

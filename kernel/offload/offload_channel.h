@@ -19,6 +19,7 @@ struct circular_queue {
   int head;
   int tail;
   unsigned long size;
+  char padding[64] __attribute__((aligned(L_CACHE_LINE_SIZE))); 
   ticket_mutex_t lock __attribute__((aligned(L_CACHE_LINE_SIZE)));
 
   cq_element data[0] __attribute__((aligned(4096)));

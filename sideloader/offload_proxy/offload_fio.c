@@ -12,6 +12,8 @@
 #include "offload_message.h"
 #include "offload_mmap.h"
 
+//#define DEBUG
+
 /**
  * @brief execute open system call
  * @param channel 
@@ -44,6 +46,7 @@ void sys_off_open(struct channel_struct *ch)
   mode = (mode_t) in_pkt->param3;
 
 #ifdef DEBUG
+  printf("\nopen system call(pa): path=%lx, flags=%d, mode=%d", in_pkt->param1, (int) in_pkt->param2, (int) in_pkt->param3);
   printf("\nopen system call: path=%s, flags=%d, mode=%d", path, oflag, mode);
 #endif
 
@@ -59,7 +62,7 @@ void sys_off_open(struct channel_struct *ch)
   }
 
   if(iret == -1)
-	fprintf(stdout, "FIO OPEN: %s, %s\n", strerror(errno), path);
+	fprintf(stderr, "FIO OPEN: %s, %s\n", strerror(errno), path);
 
   // retrun ret
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
@@ -105,7 +108,7 @@ void sys_off_creat(struct channel_struct *ch)
   iret = creat(path, mode);
 
   if(iret == -1)
-	fprintf(stdout, "FIO CREAT: %s, %s\n", strerror(errno), path);
+	fprintf(stderr, "FIO CREAT: %s, %s\n", strerror(errno), path);
 
   // retrun ret
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
@@ -192,7 +195,7 @@ void sys_off_read(struct channel_struct *ch)
 
   // check error
   if(sret  == -1)
-	fprintf(stdout, "FIO READ: %s, %d\n", strerror(errno), fd);
+	fprintf(stderr, "FIO READ: %s, %d\n", strerror(errno), fd);
 
   // retrun ret
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) sret);
@@ -237,7 +240,7 @@ ssize_t do_sys_off_write_v(int fd, unsigned long iov_pa, int iovcnt)
 	  iov++;
 	}
 
-	//fprintf(stdout, "\nwrite : fd=%d write bytes=%d", fd, writebytes);
+	//fprintf(stderr, "\nwrite : fd=%d write bytes=%d", fd, writebytes);
 	return writebytes;
 }
 
@@ -282,7 +285,7 @@ void sys_off_write(struct channel_struct *ch)
 
   // check error
   if(sret == -1)
-	fprintf(stdout, "FIO WRITE: %s, %d\n", strerror(errno), fd);
+	fprintf(stderr, "FIO WRITE: %s, %d\n", strerror(errno), fd);
 
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) sret);
 }
@@ -323,7 +326,7 @@ void sys_off_close(struct channel_struct *ch)
 
   // check error
   if(iret == -1)
-	fprintf(stdout, "FIO CLOSE: %s, %d\n", strerror(errno), fd);
+	fprintf(stderr, "FIO CLOSE: %s, %d\n", strerror(errno), fd);
 
   // retrun ret
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
@@ -370,7 +373,7 @@ void sys_off_lseek(struct channel_struct *ch)
 
   // check error
   if(oret == -1)
-        fprintf(stdout, "FIO LSEEK: %s, %d\n", strerror(errno), fd);
+        fprintf(stderr, "FIO LSEEK: %s, %d\n", strerror(errno), fd);
 
   // retrun ret
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) oret);
@@ -415,7 +418,7 @@ void sys_off_link(struct channel_struct *ch)
 
   // check error
   if(iret == -1)
-    fprintf(stdout, "FIO LINK: %s, %s %s\n", strerror(errno), oldpath, newpath);
+    fprintf(stderr, "FIO LINK: %s, %s %s\n", strerror(errno), oldpath, newpath);
 
   // retrun ret
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
@@ -458,7 +461,7 @@ void sys_off_unlink(struct channel_struct *ch)
 
   // check error
   if(iret == -1)
-    fprintf(stdout, "FIO UNLINK: %s, %s\n", strerror(errno), path);
+    fprintf(stderr, "FIO UNLINK: %s, %s\n", strerror(errno), path);
 
   // retrun ret
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
@@ -501,7 +504,7 @@ void sys_off_stat(struct channel_struct *ch)
 
   // check error
   if(iret == -1)
-    fprintf(stdout, "FIO STAT: %s, %s\n", strerror(errno), pathname);
+    fprintf(stderr, "FIO STAT: %s, %s\n", strerror(errno), pathname);
 
   // retrun ret
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
@@ -544,7 +547,7 @@ void sys3_off_getcwd(struct channel_struct *ch)
 
   // check error
   if(pret == NULL)
-    fprintf(stdout, "FIO GETCWd: %s, %s\n", strerror(errno), buf);
+    fprintf(stderr, "FIO GETCWd: %s, %s\n", strerror(errno), buf);
 
   // retrun ret
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) pret);
@@ -585,7 +588,7 @@ void sys3_off_system(struct channel_struct *ch)
 
   // check error
   if(iret == -1)
-    fprintf(stdout, "FIO SYSTEM: %s, %s\n", strerror(errno), command);
+    fprintf(stderr, "FIO SYSTEM: %s, %s\n", strerror(errno), command);
 
   // retrun ret
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
@@ -626,7 +629,7 @@ void sys_off_chdir(struct channel_struct *ch)
 
   // check error
   if(iret == -1)
-    fprintf(stdout, "FIO CHDIR: %s, %s\n", strerror(errno), path);
+    fprintf(stderr, "FIO CHDIR: %s, %s\n", strerror(errno), path);
 
   // retrun ret
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
@@ -667,7 +670,7 @@ void sys3_off_opendir(struct channel_struct *ch)
 
   // check error
   if(pret == NULL)
-    fprintf(stdout, "FIO OPENDIR: %s, NULL\n", strerror(errno));
+    fprintf(stderr, "FIO OPENDIR: %s, NULL\n", strerror(errno));
 
   // retrun ret
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) pret);
@@ -709,7 +712,7 @@ void sys3_off_closedir(struct channel_struct *ch)
 
   // check error
   if(iret == -1)
-    fprintf(stdout, "FIO CLOSEDIR: %s\n", strerror(errno));
+    fprintf(stderr, "FIO CLOSEDIR: %s\n", strerror(errno));
 
   // retrun ret
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
@@ -753,7 +756,7 @@ void sys3_off_readdir(struct channel_struct *ch)
   //printf("readdir(l): readdir: direntp: %lx \n", pret);
 
   if(pret == NULL && errno != 0) {
-    fprintf(stdout, "FIO READDIR: %s\n", strerror(errno));
+    fprintf(stderr, "FIO READDIR: %s\n", strerror(errno));
     pret = (struct dirent *) -1;
   }
 

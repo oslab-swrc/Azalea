@@ -9,6 +9,11 @@
 
 // all unikernels memory start address
 unsigned long g_mmap_unikernels_mem_base_va = 0;
+unsigned long g_kernels_mem_base_pa = 0;
+
+// shared memory start address
+unsigned long g_mmap_shared_mem_base_va = 0;
+unsigned long g_shared_mem_base_pa = 0;
 
 // offload channel info address
 unsigned long g_offload_channels_info_va = 0;
@@ -71,7 +76,7 @@ int munmap_channels(channel_t *offload_channels, int n_offload_channels)
  * @param ipages  whole page number of in channels
  * @return success (1), fail (0)
  */
-int mmap_channels(channel_t *offload_channels, int n_nodes, int n_offload_channels, int opages, int ipages)
+int mmap_channels(channel_t *offload_channels, int n_unikernels, int n_offload_channels, int opages, int ipages)
 {
   int offload_channels_offset = 0;
 
@@ -86,7 +91,6 @@ int mmap_channels(channel_t *offload_channels, int n_nodes, int n_offload_channe
   unsigned long out_cq_base_pa_len = 0;
 
   unsigned long offload_channels_info_va = 0;
-  //unsigned long offload_channels_info_pa = 0;
   unsigned long *offload_channels_info = NULL;
 
   offload_fd = open("/dev/offload", O_RDWR) ;
@@ -96,7 +100,14 @@ int mmap_channels(channel_t *offload_channels, int n_nodes, int n_offload_channe
     return 0;
   }
 
-  offload_channels_info_va = (unsigned long) mmap(NULL, (size_t) PAGE_SIZE_4K, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, (off_t) OFFLOAD_CHANNEL_INFO_PA);
+#ifdef DEBUG
+  printf("channel info pa    %lx\n", (unsigned long) OFFLOAD_CHANNEL_INFO_PA);
+  printf("channel base pa    %lx\n", (unsigned long) OFFLOAD_CHANNEL_BASE_PA);
+  printf("share memory start %lx\n", ((unsigned long) (UNIKERNEL_START - SHARED_MEMORY_SIZE + CHANNEL_START_OFFSET) << 30));
+  printf("share memory end   %lx\n", ((unsigned long) (UNIKERNEL_START - SHARED_MEMORY_SIZE + CHANNEL_START_OFFSET) << 30) + (unsigned long) 0x40000000);
+#endif
+
+  offload_channels_info_va = (unsigned long) mmap(NULL, (size_t) PAGE_SIZE_4K, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, (unsigned long) OFFLOAD_CHANNEL_INFO_PA);
   g_offload_channels_info_va = (unsigned long) offload_channels_info_va;
 
   // set channel information
@@ -105,14 +116,17 @@ int mmap_channels(channel_t *offload_channels, int n_nodes, int n_offload_channe
   *(offload_channels_info++) = (unsigned long) n_offload_channels;
   *(offload_channels_info++) = (unsigned long) opages;
   *(offload_channels_info++) = (unsigned long) ipages;
-  *(offload_channels_info++) = (unsigned long) n_nodes;
+  *(offload_channels_info++) = (unsigned long) n_unikernels;
   offload_channels_info++; // skip node id 
   //*(offload_channels_info) = (unsigned long) 0; // node id initialization
 
   for(offload_channels_offset = 0; offload_channels_offset < n_offload_channels; offload_channels_offset++) {
     // mmap ocq of ith channel
-    out_cq_base_pa = (unsigned long) OFFLOAD_CHANNEL_BASE_PA + offload_channels_offset * (opages + ipages) * PAGE_SIZE_4K;
-    out_cq_base_pa_len = (unsigned long) (opages * PAGE_SIZE_4K);
+    out_cq_base_pa = (unsigned long) OFFLOAD_CHANNEL_BASE_PA + (unsigned long) offload_channels_offset * (unsigned long) (opages + ipages) * (unsigned long) PAGE_SIZE_4K;
+#ifdef DEBUG
+    printf("%02dth channel out_cq pa %lx ", offload_channels_offset, out_cq_base_pa);
+#endif
+    out_cq_base_pa_len = (unsigned long) opages * (unsigned long) PAGE_SIZE_4K;
     out_cq_base = (unsigned long) mmap(NULL, out_cq_base_pa_len, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, out_cq_base_pa);
 
     if(out_cq_base == (unsigned long) MAP_FAILED ) {
@@ -129,9 +143,15 @@ int mmap_channels(channel_t *offload_channels, int n_nodes, int n_offload_channe
     //init cq
     cq_init(offload_channels[offload_channels_offset].out_cq, (opages - 1) / CQ_ELE_PAGE_NUM);
 
+    // mutex init will be done in unikernel
+    /*mutex_init(offload_channels[offload_channels_offset].out_cq);*/
+
     // mmap icq of ith channel
-    in_cq_base_pa = (unsigned long) out_cq_base_pa + (opages * PAGE_SIZE_4K);
-    in_cq_base_pa_len = (unsigned long) (ipages * PAGE_SIZE_4K);
+    in_cq_base_pa = (unsigned long) out_cq_base_pa + (unsigned long) (opages * PAGE_SIZE_4K);
+#ifdef DEBUG
+    printf("channel  in_cq pa %lx\n", in_cq_base_pa);
+#endif
+    in_cq_base_pa_len = (unsigned long) ipages * (unsigned long) PAGE_SIZE_4K;
     in_cq_base = (unsigned long) mmap(NULL, in_cq_base_pa_len, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, in_cq_base_pa);
 
     if(in_cq_base == (unsigned long) MAP_FAILED ) {
@@ -148,6 +168,9 @@ int mmap_channels(channel_t *offload_channels, int n_nodes, int n_offload_channe
 
     //init cq
     cq_init(offload_channels[offload_channels_offset].in_cq, (ipages - 1) / CQ_ELE_PAGE_NUM);
+
+    // mutex init will be done in unikernel
+    /*mutex_init(offload_channels[offload_channels_offset].in_cq);*/
   }
 
   //set OFFLOAD_MAGIC
@@ -164,10 +187,11 @@ int mmap_channels(channel_t *offload_channels, int n_nodes, int n_offload_channe
  * @brief mmap unikernels' whole memory
  * @return success (0), fail (1)
  */
-unsigned long mmap_unikernels_memory(int n_nodes)
+unsigned long mmap_unikernels_memory(int n_unikernels)
 {
-  unsigned long kernels_mem_base_pa = 0;
   unsigned long kernels_mem_base_pa_len = 0;
+
+  unsigned long shared_mem_base_pa_len = 0;
 
   int offload_fd = 0;
 
@@ -178,10 +202,10 @@ unsigned long mmap_unikernels_memory(int n_nodes)
     return 1;
   }
 
-  kernels_mem_base_pa = (unsigned long) UNIKERNELS_MEM_BASE_PA; 
-  kernels_mem_base_pa_len = (unsigned long) (MEMORYS_PER_NODE * n_nodes * 1024UL*1024UL*1024UL); 
+  g_kernels_mem_base_pa = (unsigned long) UNIKERNELS_MEM_BASE_PA; 
+  kernels_mem_base_pa_len = ((unsigned long) (MEMORYS_PER_NODE * n_unikernels)) << 30; 
 
-  g_mmap_unikernels_mem_base_va = (unsigned long) mmap(NULL, kernels_mem_base_pa_len, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, kernels_mem_base_pa);
+  g_mmap_unikernels_mem_base_va = (unsigned long) mmap(NULL, kernels_mem_base_pa_len, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, g_kernels_mem_base_pa);
 
   if ( g_mmap_unikernels_mem_base_va == (unsigned long) MAP_FAILED ) {
     printf("mmap failed.\n") ;
@@ -190,7 +214,19 @@ unsigned long mmap_unikernels_memory(int n_nodes)
     return (0);
   }
 
-  printf("mmap = virtual address: 0x%lx physical address begin: 0x%lx end: 0x%lx\n", g_mmap_unikernels_mem_base_va, kernels_mem_base_pa, kernels_mem_base_pa + kernels_mem_base_pa_len) ;
+  g_shared_mem_base_pa = (unsigned long) SHARED_MEM_BASE_PA; 
+  shared_mem_base_pa_len = ((unsigned long) (SHARED_MEMORY_SIZE)) << 30; 
+
+  g_mmap_shared_mem_base_va = (unsigned long) mmap(NULL, shared_mem_base_pa_len, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, g_shared_mem_base_pa);
+
+  if ( g_mmap_shared_mem_base_va == (unsigned long) MAP_FAILED ) {
+    printf("mmap failed.\n") ;
+    close(offload_fd) ;
+
+    return (0);
+  }
+
+  printf("mmap = virtual address: 0x%lx physical address begin: 0x%lx end: 0x%lx\n", g_mmap_unikernels_mem_base_va, g_kernels_mem_base_pa, g_kernels_mem_base_pa + kernels_mem_base_pa_len) ;
 
   close(offload_fd) ;
 
@@ -209,9 +245,14 @@ unsigned long get_va(unsigned long pa)
   if(pa == 0)
     return 0;
 
-  offset = (unsigned long) pa - UNIKERNELS_MEM_BASE_PA;
-
-  return (g_mmap_unikernels_mem_base_va + offset);
+  if(pa >= UNIKERNELS_MEM_BASE_PA) {
+    offset = (unsigned long) pa - g_kernels_mem_base_pa;
+    return (g_mmap_unikernels_mem_base_va + offset);
+  }
+  else {
+    offset = (unsigned long) pa - (g_shared_mem_base_pa);
+    return (g_mmap_shared_mem_base_va + offset);
+  }
 }
 
 
@@ -221,7 +262,7 @@ unsigned long get_va(unsigned long pa)
  */
 unsigned long get_pa_base() 
 {
-  return (UNIKERNELS_MEM_BASE_PA);
+  return ((unsigned long) UNIKERNELS_MEM_BASE_PA);
 }
 
 /**

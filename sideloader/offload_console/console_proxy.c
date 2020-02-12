@@ -17,10 +17,11 @@
 #define PAGE_SHIFT (12)
 #define PAGE_SIZE (1 << PAGE_SHIFT)
 
-#define	N_CHANNEL_PER_NODE	1
+#define	N_CHANNEL	10
 
 //mmapped unikernels' start memory address, unikernels's start physical address = 48G
 extern unsigned long g_mmap_unikernel_mem_base_va;
+extern unsigned long g_console_channels_info_va;
 
 struct thread_channel_information {
    channel_t *ch;	
@@ -31,7 +32,7 @@ int g_console_channel_runnable;
 int g_n_channels;
 int g_n_threads;
 int g_n_nodes;
-int g_node_id;
+int start_index;
 
 /**
  * @brief console local proxy thread
@@ -87,7 +88,7 @@ void *console_proxy(void *arg)
 /**
  * @brief wait command and do command
  * @param  channel
- * @return none
+  @return none
  */
 void cmd(channel_t *cs)
 {
@@ -95,26 +96,24 @@ void cmd(channel_t *cs)
   struct circular_queue *icq;
 
   int loop = 1;
-  int i = 0;
+  unsigned long *console_channels_info = NULL;
 
-  //printf("> ");
-  //fflush(stdout);
 
   while (loop) {
     switch (getchar()) {
     // show queue status
     case 'q':
-      for (i = 0; i < g_n_channels; i++) {
-		ocq = (cs + i)->out_cq;
-		icq = (cs + i)->in_cq;
-        printf("queue state(%03d): ptu: h:%d t:%d utp: h:%d t:%d\n", i, ocq->head, ocq->tail, icq->head, icq->tail);
-      }
+	ocq = (cs + start_index)->out_cq;
+	icq = (cs + start_index)->in_cq;
+        printf("queue state(%03d): ptu: h:%d t:%d utp: h:%d t:%d\n", start_index, ocq->head, ocq->tail, icq->head, icq->tail);
       break;
 
     // stop console_local_proxy which manages the channels on scif region
     case 'x':
       g_console_channel_runnable = 0;
-	  loop = 0;
+      console_channels_info = ((unsigned long *) g_console_channels_info_va) + start_index;
+      *(console_channels_info) = (unsigned long) 0;
+      loop = 0;
       break;
 
     case '\n':
@@ -126,6 +125,7 @@ void cmd(channel_t *cs)
       break;
     }
   }
+  usleep(10);
 }
 
 
@@ -137,7 +137,7 @@ void cmd(channel_t *cs)
  */
 int main(int argc, char *argv[])
 {
-  channel_t console_channel;
+  channel_t *console_channels;
   struct thread_channel_information thread_arg;
   unsigned long ocq_elements, icq_elements;
   unsigned long opages, ipages;
@@ -151,15 +151,15 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
-  g_node_id = atol(argv[2]);
+  start_index = atol(argv[2]);
 
   ocq_elements = CONSOLE_CHANNEL_CQ_ELEMENT_NUM;
   icq_elements = CONSOLE_CHANNEL_CQ_ELEMENT_NUM;
   opages = ocq_elements * CQ_ELE_PAGE_NUM + 1; // payload = CQ_ELE_PAGE_NUM pages, metadata = 1 page
   ipages = icq_elements * CQ_ELE_PAGE_NUM + 1;
-  g_n_channels = N_CHANNEL_PER_NODE;
+  g_n_channels = N_CHANNEL;
 
-  err = mmap_unikernel_memory(g_node_id);
+  err = mmap_unikernel_memory(start_index);
 
   if(err)
           goto __exit;
@@ -170,9 +170,15 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
+  console_channels = (channel_t *) malloc(g_n_channels * sizeof(channel_t));
+  if (console_channels == NULL) {
+    printf("failed to allocate memory\n");
+    exit(1);
+  }
 
-  init_channel(&console_channel);
-  if (!mmap_console_channel(&console_channel, g_node_id, g_n_channels, opages, ipages))
+
+  init_channel(console_channels);
+  if (!mmap_console_channel(console_channels, start_index, g_n_channels, opages, ipages))
       err++;
 
   if (err)
@@ -181,21 +187,24 @@ int main(int argc, char *argv[])
   g_console_channel_runnable = 1;
 
   // console proxy threadt
-  thread_arg.ch = (channel_t *)(&console_channel);
+  thread_arg.ch = (channel_t *)(&console_channels[start_index]);
   thread_arg.n_ch = 1;
   pthread_create(&console_thread, NULL, console_proxy, &thread_arg);
 
   // begin of logic
-  //cmd(&console_channel);
+  cmd(&console_channels[start_index]);
 
   for (i = 0; i < 1; i++) {
     pthread_join(console_thread, (void **)&status);
   }
   // end of logic
 
-//__unregister:
+  if(console_channels[start_index].out_cq != NULL)
+    if (munmap_console_channel(console_channels[start_index].out_cq, console_channels[start_index].out_cq_len) < 0)
+      err++;
 
-  if (munmap_console_channel(&console_channel) < 0)
+  if(console_channels[start_index].in_cq != NULL)
+    if (munmap_console_channel(console_channels[start_index].in_cq, console_channels[start_index].in_cq_len) < 0)
       err++;
 
   if (err) {
@@ -207,15 +216,13 @@ int main(int argc, char *argv[])
 
 __end:
 
-//__free_console_threads:
-
   if (errno == 0)
     printf("\n");
   else
     printf("======== Program Failed ========\n");
 
   if(g_mmap_unikernel_mem_base_va != 0)
-    munmap((void *) g_mmap_unikernel_mem_base_va, MEMORYS_PER_NODE * 1024UL*1024UL*1024UL); 
+    munmap((void *) g_mmap_unikernel_mem_base_va, (unsigned long) MEMORYS_PER_NODE << 30); 
 
 __exit:
 

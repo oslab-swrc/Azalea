@@ -1,3 +1,4 @@
+#include <curses.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -35,7 +36,7 @@ ssize_t do_console_off_write_v(int fd, unsigned long iov_pa, int iovcnt)
         for(i = 0; i < iovcnt; i++) {
           iov_base_va = get_va((unsigned long) iov[i].iov_base);
           count = write(fd, (void *) iov_base_va, (size_t) iov[i].iov_len);
-	      fflush(stdout);
+	      fflush(stderr);
 
           if(count == -1) {
                 return -1;
@@ -56,7 +57,7 @@ ssize_t do_console_off_write_v(int fd, unsigned long iov_pa, int iovcnt)
 /**
  * @brief execute write console call
  * write()  writes  up  to  count bytes from the buffer pointed buf
- * to the file referred to by the file descriptor fd(stdout, stderr).
+ * to the file referred to by the file descriptor fd(stderr, stderr).
  * @param channel
  * @return none
  */
@@ -94,7 +95,7 @@ void console_off_write(struct channel_struct *ch)
 
   // check error
   if(sret == -1)
-    fprintf(stdout, "CONSOLE WRITE: %s, %d\n", strerror(errno), fd);
+    fprintf(stderr, "CONSOLE WRITE: %s, %d\n", strerror(errno), fd);
   
   send_console_message(out_cq, tid, console_function_type, (unsigned long) sret);
 }
@@ -123,7 +124,7 @@ int do_print_v(unsigned long iov_pa, int iovcnt)
 	  if(iov_base_va != 0) 
 	    printf("%s", (char *) iov_base_va);
 	}
-	fflush(stdout);
+	fflush(stderr);
 
 	return (0);
 }
@@ -166,7 +167,7 @@ void console_print(struct channel_struct *ch)
 
   // check error
   if(iret == -1)
-	fprintf(stdout, "PRINT: %s\n", strerror(errno));
+	fprintf(stderr, "PRINT: %s\n", strerror(errno));
 
   send_console_message(out_cq, tid, console_function_type, (unsigned long) iret);
 }
@@ -203,8 +204,8 @@ void console_getch(struct channel_struct *ch)
   cret = getchar();
 
   // check error
-  //if(cret == ERR)
-  //  fprintf(stdout, "GETCH: %s\n", strerror(errno));
+  if(cret == ERR)
+    fprintf(stderr, "GETCH: %s\n", strerror(errno));
 
   send_console_message(out_cq, tid, console_function_type, (unsigned long) cret);
 }

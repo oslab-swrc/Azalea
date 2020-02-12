@@ -14,15 +14,17 @@ void send_offload_message(struct circular_queue *out_cq, int tid, int offload_fu
 cq_element *ce = NULL;
 io_packet_t *out_pkt = NULL;
 
-	// make packet header
-	ce = (out_cq->data + out_cq->head);
-	out_pkt = (io_packet_t *) ce;
+  while (cq_free_space(out_cq) == 0);
 
-	out_pkt->magic = MAGIC;
-	out_pkt->tid = tid;
-	out_pkt->io_function_type = offload_function_type;
-	out_pkt->ret = ret;
+  // make packet header
+  ce = (out_cq->data + out_cq->head);
+  out_pkt = (io_packet_t *) ce;
 
-	out_cq->head = (out_cq->head + 1) % out_cq->size;
+  out_pkt->magic = MAGIC;
+  out_pkt->tid = tid;
+  out_pkt->io_function_type = offload_function_type;
+  out_pkt->ret = ret;
+
+  out_cq->head = (out_cq->head + 1) % out_cq->size;
 }
 

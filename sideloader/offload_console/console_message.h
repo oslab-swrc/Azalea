@@ -29,4 +29,4 @@ typedef struct io_packet_struct {
 
 void send_console_message(struct circular_queue *out_cq, int tid, int console_function_type, unsigned long  ret);
 
-#endif
+#endif //__CONSOLE_MESSAGE_H__
