@@ -90,10 +90,10 @@ void Main(int boot_mode)
   stat_init();
   lk_print_xy(xloc, yloc++, "Pass");
 
-#if 0
+#if DEBUG
   lk_print_xy(0, yloc, "Memory check.................................[    ]");
-  if (check_memory(1*1024) == FALSE)
-    while(1) ;
+  if (az_check_memory() == FALSE)
+    debug_halt((char *)__func__, __LINE__);
   lk_print_xy(xloc, yloc++, "Pass");
 #endif
 

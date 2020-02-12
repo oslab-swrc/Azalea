@@ -26,8 +26,7 @@ void lk_delay(long d1, long d2);
 void lk_srand(unsigned int seed);
 int lk_rand();
 
-void lk_memory_test();
-BOOL check_memory(QWORD size);
+BOOL az_check_memory();
 
 void measure_processor_speed(void);
 void show_date_and_time(void);

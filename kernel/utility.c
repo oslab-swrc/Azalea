@@ -8,6 +8,9 @@
 
 #include <stdarg.h>
 
+extern QWORD g_memory_start;
+extern QWORD g_memory_end;
+
 /**
  *  Fill input data into the memory
  */
@@ -359,88 +362,34 @@ int lk_rand()
 }
 
 /**
- * Memory test
+ * @brief Check error on free memory area
+ * @return On success, TRUE is returned. On error, FALSE is returned
  */
-void lk_memory_test()
-{
-#if 0
-  QWORD fault_addr = 0;
-  long *p = NULL;
-  QWORD start_addr = CONFIG_FREE_MEM_START;
-  QWORD end_addr = CONFIG_FREE_MEM_END;
-  QWORD ori = 0;
-
-  fault_addr = start_addr;
-
-  while(1) {
-    p = (long *) fault_addr;
-    ori = *p;
-    *p = 0x12345678;
-    *p = ori;
-
-    fault_addr += 0x1000;
-
-    if(fault_addr == end_addr) {
-      break;
-    }
-
-    lk_print_xy(30, mtyloc.c % 14 + 3, "mem: %q, %q", fault_addr, *p);
-    atomic_inc(&mtyloc);
-  }
-#endif
-}
-
-#if 0
-static int yyloc = 4;
-#endif
-/**
- *  BASE_#@+PAGETABLE 이상의 위치부터 램 크기를 체크
- */
-BOOL check_memory(QWORD size)
+BOOL az_check_memory()
 {
   QWORD* curr;
   QWORD prev;
-  int i;
 
-  // MEMORY_START+PAGETABLE부터 4Mbyte단위로 검사 시작
-  //curr = (QWORD*) va(CONFIG_KERNEL_PAGETABLE_ADDRESS);
-  curr = (QWORD*) 0xFFFF8000C6400000;
+  //Start of check in 4Mbyte unit from free memory + 1GB
+  curr = (QWORD*) va(g_memory_start + (1 << 30));
 
-  for (i=0; i<size/4; i++) { 
-#if 0
-{
-    char tmp[1024];
-
-    hex_to_str((QWORD) curr, tmp); 
-    prints_xy(30, yyloc, tmp);
-
-    int_to_str(i, tmp);
-    prints_xy(20, yyloc++, tmp);
-
-    if (yyloc == 30) yyloc = 5;
-}
-#endif
-
-    // 이전에 메모리에 있던 값을 저장
+  while((QWORD) curr < va(g_memory_end)) {
+    // Store the previously memory value
     prev = *curr;
-    // 0x12345678을 써서 읽었을 때 문제가 없는 곳까지를 유효한 메모리
-    // 영역으로 인정
+    // Recognized as a valid memory area until no problem when save and read same value
     *curr = 0x12345678;
     if (*curr != 0x12345678) {
-      break;
+      return FALSE;
     }
-    // 이전 메모리 값으로 복원
+
+    // Restore to previous memory value
     *curr = prev;
 
-    // 다음 4Mbyte 위치로 이동
-    curr += ( 0x400000 / 4 );
+    // Move to next 4MB memory 
+    curr += ( 4 << 20 );
   }
-  // 체크가 성공한 어드레스를 1Mbyte로 나누어 Mbyte 단위로 계산
-//  gs_qwTotalRAMMBSize = ( QWORD ) curr / 0x100000;
-  if (i == (size/4))
-    return TRUE;
-  else
-    return FALSE;
+
+  return TRUE;
 }
 
 /**
