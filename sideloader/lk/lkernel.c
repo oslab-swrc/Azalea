@@ -246,9 +246,10 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     // Ioremap for vcon memory
     g_vcon = ioremap(memory_shared_addr + VCON_START_OFFSET, PAGE_4K * MAX_UNIKERNEL);
     if (g_vcon == NULL) {
-      printk (KERN_INFO "g_vcon ioremap error\n");
+      printk (KERN_INFO "LK_PARAM: g_vcon ioremap error\n");
       return -EINVAL;
     }
+    memset(g_vcon, 0, PAGE_4K * MAX_UNIKERNEL);
     printk (KERN_INFO "LK_PARAM: g_vcon ioremap success!!\n");
 
     // Ioremap for stat memory
@@ -257,25 +258,28 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
       printk (KERN_INFO "g_stat ioremap error\n");
       return -EINVAL;
     }
+    memset(g_stat, 0, sizeof (STAT_AREA));
     printk (KERN_INFO "LK_PARAM: g_stat ioremap success!!\n");
     g_stat_addr = (STAT_AREA *) g_stat;
 
     // Ioremap for shell storage memory
     g_shell_storage = ioremap(memory_shared_addr + SHELL_STORAGE_START_OFFSET, sizeof(SHELL_STORAGE_AREA));
-    if (g_stat == NULL) {
-      printk (KERN_INFO "g_shell_storage ioremap error\n");
+    if (g_shell_storage == NULL) {
+      printk (KERN_INFO "LK_PARAM: g_shell_storage ioremap error\n");
       return -EINVAL;
     }
-    printk (KERN_INFO "LK_PARAM: g_shell_storage ioremap success!!\n");
+    memset(g_shell_storage, 0, sizeof(SHELL_STORAGE_AREA));
+    printk (KERN_INFO "LK_PARAM: g_shell_storage ioremap success!!: %lx\n", (unsigned long) &g_shell_storage);
     g_shell_addr = (SHELL_STORAGE_AREA *) g_shell_storage;
 
     // Ioremap for log memory
     g_log = ioremap(memory_shared_addr + LOG_START_OFFSET + LOG_LENGTH, LOG_SIZE);
     if (g_log == NULL) {
-      printk (KERN_INFO "g_log ioremap error\n");
+      printk (KERN_INFO "LK_PARAM: g_log ioremap error\n");
       return -EINVAL;
     }
-    printk (KERN_INFO "LK_PARAM: g_log ioremap success!!\n");
+    memset(g_log, 0, LOG_SIZE);
+    printk (KERN_INFO "LK_PARAM: g_log ioremap success!!: %lx\n", (unsigned long) g_log);
 
   }
     break;
