@@ -77,10 +77,7 @@ void Main(int boot_mode)
   kernel_pagetables_init(CONFIG_KERNEL_PAGETABLE_ADDRESS);
   lk_print_xy(0, yloc++, "Init Kernel Page Tables .....................[Pass]");
   store_init_stat(INIT_PAGETABLE_STAT);
-  yloc++;
 
-
-  lk_print_xy(0, yloc++, "Switch to IA-32e mode success!!");
   lk_print_xy(0, yloc++, "IA-32e C language kernel started.............[Pass]");
   lk_print_xy(2, yloc++, "ID: %d, VCON: 0x%q", g_ukid, g_vcon_addr);
   lk_print_xy(2, yloc++, "CPU_NUM: %d", g_cpu_start);
@@ -93,22 +90,17 @@ void Main(int boot_mode)
   stat_init();
   lk_print_xy(xloc, yloc++, "Pass");
 
-#if 0
+#if DEBUG
   lk_print_xy(0, yloc, "Memory check.................................[    ]");
-  if (check_memory(1*1024) == FALSE)
-    while(1) ;
+  if (az_check_memory() == FALSE)
+    debug_halt((char *)__func__, __LINE__);
   lk_print_xy(xloc, yloc++, "Pass");
 #endif
 
   lk_print_xy(0, yloc, "Init Free Memory Management .................[    ]");
   free_mem_init();
   lk_print_xy(xloc, yloc++, "Pass");
-//  lk_print_xy(3, yloc++, "Start:%q, END:%q", g_memory_start, g_memory_end);
   store_init_stat(INIT_MEMORY_STAT);
-
-  lk_print_xy(0, yloc, "Adjust Kernel Page Table.....................[    ]");
-  adjust_pagetables(CONFIG_KERNEL_PAGETABLE_ADDRESS);
-  lk_print_xy(xloc, yloc++, "Pass");
 
   lk_print_xy(0, yloc, "Init Shell storage ..........................[    ]");
   shell_storage_area_init();		// Initialize shell storage area
@@ -121,7 +113,6 @@ void Main(int boot_mode)
   store_init_stat(INIT_GDT_SWITCH_IA32E_STAT);
 
   lk_print_xy(0, yloc, "Load TSS ....................................[    ]");
-//  load_tr(GDT_TSS + (get_apic_id() * sizeof(GDT_ENTRY16)));      // 1 = get_apic_id() ; 
   load_tr(GDT_TSS);      // 1 = get_apic_id() ; 
   lk_print_xy(xloc, yloc++, "Pass");
   store_init_stat(INIT_LOAD_TSS_STAT);
