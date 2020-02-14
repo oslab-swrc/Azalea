@@ -44,8 +44,7 @@ void free_mem_init(void)
   // Initialize the block list index areas to 0xFF
   g_free_memory.block_index = (BYTE*) free_mem_start;
 
-  for (i=0; i<g_free_memory.smallest_block; i++)
-    g_free_memory.block_index[i] = 0xFF;
+  lk_memset(g_free_memory.block_index, 0xFF, g_free_memory.smallest_block * sizeof(BYTE));
 
   // the base address of the bitmap
   g_free_memory.bitmap = (BITMAP*) (free_mem_start + (sizeof(BYTE) * g_free_memory.smallest_block));

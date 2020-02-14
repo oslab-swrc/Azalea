@@ -91,7 +91,7 @@ void sched_init(void)
 void thread_init(void)
 {
   int i = 0;
-  TCB *tcb = NULL;
+  void *t_tcb = NULL;
 
   thread_list_init(&g_global_tcb_list);
 
@@ -101,12 +101,16 @@ void thread_init(void)
     g_running_thread_list[i] = NULL;
   }
 
+  t_tcb = az_alloc(PAGE_SIZE_4K*CONFIG_NUM_THREAD);
+  if(t_tcb == NULL)
+    debug_halt((char *) __func__, __LINE__);
+
   // Initialize TCBs
   for (i = 0; i < CONFIG_NUM_THREAD; i++) {
-    tcb = (TCB *) az_alloc(PAGE_SIZE_4K);
-    if(tcb == NULL)
-      debug_halt((char *) __func__, __LINE__);
+    TCB *tcb;
+    void *tcb_temp = t_tcb + (PAGE_SIZE_4K * i);
 
+    tcb = (TCB *) tcb_temp;
     tcb->state = THREAD_STATE_NOTALLOC;
     tcb->id = MAX_PROCESSOR_COUNT + i;
     tcb->gen = 0;
