@@ -23,34 +23,38 @@
  */
 ssize_t do_console_off_write_v(int fd, unsigned long iov_pa, int iovcnt)
 {
-        ssize_t writebytes = 0;
-        ssize_t count = 0;
+  ssize_t writebytes = 0;
+  ssize_t count = 0;
 
-        struct iovec *iov = NULL;
-        unsigned long iov_base_va = 0;
+  struct iovec *iov = NULL;
+  unsigned long iov_base_va = 0;
 
-        int i = 0;
+  int i = 0;
 
-        iov = (struct iovec *) get_va(iov_pa);
+  iov = (struct iovec *) get_va(iov_pa);
 
-        for(i = 0; i < iovcnt; i++) {
-          iov_base_va = get_va((unsigned long) iov[i].iov_base);
-          count = write(fd, (void *) iov_base_va, (size_t) iov[i].iov_len);
-	      fflush(stderr);
+  for(i = 0; i < iovcnt; i++) {
+    iov_base_va = get_va((unsigned long) iov[i].iov_base);
+    count = write(fd, (void *) iov_base_va, (size_t) iov[i].iov_len);
 
-          if(count == -1) {
-                return -1;
-          }
+    if(count == -1) {
+      return -1;
+    }
 
-          if(count < iov[i].iov_len) {
-            writebytes += count;
-            return writebytes;
-          }
+    if(fd == 1)
+      fflush(stdout);
+    else if(fd == 2)
+      fflush(stderr);
 
-          writebytes += count;
-        }
+    if(count < iov[i].iov_len) {
+      writebytes += count;
+      return writebytes;
+    }
 
-        return writebytes;
+    writebytes += count;
+  }
+
+  return writebytes;
 }
 
 
@@ -123,8 +127,8 @@ int do_print_v(unsigned long iov_pa, int iovcnt)
 	  iov_base_va = get_va((unsigned long) iov[i].iov_base);
 	  if(iov_base_va != 0) 
 	    printf("%s", (char *) iov_base_va);
+	    fflush(stdout);
 	}
-	fflush(stderr);
 
 	return (0);
 }

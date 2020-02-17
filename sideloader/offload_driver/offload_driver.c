@@ -67,6 +67,7 @@ static int offload_mmap(struct file *filp, struct vm_area_struct *vma)
   unsigned long vma_size = vma->vm_end - vma->vm_start;
   unsigned long long offset = vma->vm_pgoff << PAGE_SHIFT;
 
+#if 1
   vma->vm_flags |= VM_IO;  
   vma->vm_flags |= (VM_DONTEXPAND | VM_DONTDUMP);
 
@@ -74,6 +75,7 @@ static int offload_mmap(struct file *filp, struct vm_area_struct *vma)
   vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot); 
 #else
   vma->vm_page_prot = pgprot_writecombine(vma->vm_page_prot);
+#endif
 #endif
 
   if(remap_pfn_range(vma, vma->vm_start, offset >> PAGE_SHIFT, vma_size, vma->vm_page_prot) < 0) {
