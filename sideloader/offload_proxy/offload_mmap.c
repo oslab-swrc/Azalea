@@ -11,12 +11,12 @@
 unsigned long g_mmap_unikernels_mem_base_va = 0;
 unsigned long g_kernels_mem_base_pa = 0;
 
-// shared memory start address
-unsigned long g_mmap_shared_mem_base_va = 0;
-unsigned long g_shared_mem_base_pa = 0;
+// channel memory start address
+unsigned long g_mmap_channel_mem_base_va = 0;
+unsigned long g_channel_mem_base_pa = 0;
 
 // offload channel info address
-unsigned long g_offload_channels_info_va = 0;
+unsigned long g_mmap_offload_channels_info_va = 0;
 
 #define OFFLOAD_LOCK_ENABLE
 
@@ -48,7 +48,7 @@ int munmap_channels(channel_t *offload_channels, int n_offload_channels)
   }
 
   // munmap channel informaiton
-  if(munmap((void *) g_offload_channels_info_va, (size_t) PAGE_SIZE_4K) < 0) {
+  if(munmap((void *) g_mmap_offload_channels_info_va, (size_t) PAGE_SIZE_4K) < 0) {
     printf("munmap failed.\n");
     err++;
   }
@@ -90,10 +90,9 @@ int mmap_channels(channel_t *offload_channels, int n_unikernels, int n_offload_c
   unsigned long out_cq_base_pa = 0;
   unsigned long out_cq_base_pa_len = 0;
 
-  unsigned long offload_channels_info_va = 0;
   unsigned long *offload_channels_info = NULL;
 
-  offload_fd = open("/dev/offload", O_RDWR) ;
+  offload_fd = open("/dev/lk", O_RDWR) ;
   if (offload_fd < 0) {
     printf("/dev/offload open error\n") ;
 
@@ -107,11 +106,10 @@ int mmap_channels(channel_t *offload_channels, int n_unikernels, int n_offload_c
   printf("share memory end   %lx\n", ((unsigned long) (UNIKERNEL_START - SHARED_MEMORY_SIZE + CHANNEL_START_OFFSET) << 30) + (unsigned long) 0x40000000);
 #endif
 
-  offload_channels_info_va = (unsigned long) mmap(NULL, (size_t) PAGE_SIZE_4K, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, (unsigned long) OFFLOAD_CHANNEL_INFO_PA);
-  g_offload_channels_info_va = (unsigned long) offload_channels_info_va;
+  g_mmap_offload_channels_info_va = (unsigned long) mmap(NULL, (size_t) PAGE_SIZE_4K, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, (unsigned long) OFFLOAD_CHANNEL_INFO_PA);
 
   // set channel information
-  offload_channels_info = (unsigned long *) offload_channels_info_va;
+  offload_channels_info = (unsigned long *) g_mmap_offload_channels_info_va;
   *(offload_channels_info++) = (unsigned long) 0;
   *(offload_channels_info++) = (unsigned long) n_offload_channels;
   *(offload_channels_info++) = (unsigned long) opages;
@@ -174,7 +172,7 @@ int mmap_channels(channel_t *offload_channels, int n_unikernels, int n_offload_c
   }
 
   //set OFFLOAD_MAGIC
-  offload_channels_info = (unsigned long *) offload_channels_info_va;
+  offload_channels_info = (unsigned long *) g_mmap_offload_channels_info_va;
   *(offload_channels_info) = (unsigned long) OFFLOAD_MAGIC;
 
   close(offload_fd);
@@ -190,12 +188,11 @@ int mmap_channels(channel_t *offload_channels, int n_unikernels, int n_offload_c
 unsigned long mmap_unikernels_memory(int n_unikernels)
 {
   unsigned long kernels_mem_base_pa_len = 0;
-
-  unsigned long shared_mem_base_pa_len = 0;
+  unsigned long channel_mem_base_pa_len = 0;
 
   int offload_fd = 0;
 
-  offload_fd = open("/dev/offload", O_RDWR | O_SYNC) ;
+  offload_fd = open("/dev/lk", O_RDWR | O_SYNC) ;
   if ( offload_fd < 0 ) {
     printf("/dev/offload open error\n") ;
 
@@ -214,12 +211,12 @@ unsigned long mmap_unikernels_memory(int n_unikernels)
     return (0);
   }
 
-  g_shared_mem_base_pa = (unsigned long) SHARED_MEM_BASE_PA; 
-  shared_mem_base_pa_len = ((unsigned long) (SHARED_MEMORY_SIZE)) << 30; 
+  g_channel_mem_base_pa = (unsigned long) CONFIG_CHANNEL_PA; 
+  channel_mem_base_pa_len = ((unsigned long) (CHANNEL_SIZE)) << 30; 
 
-  g_mmap_shared_mem_base_va = (unsigned long) mmap(NULL, shared_mem_base_pa_len, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, g_shared_mem_base_pa);
+  g_mmap_channel_mem_base_va = (unsigned long) mmap(NULL, channel_mem_base_pa_len, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, g_channel_mem_base_pa);
 
-  if ( g_mmap_shared_mem_base_va == (unsigned long) MAP_FAILED ) {
+  if ( g_mmap_channel_mem_base_va == (unsigned long) MAP_FAILED ) {
     printf("mmap failed.\n") ;
     close(offload_fd) ;
 
@@ -250,8 +247,8 @@ unsigned long get_va(unsigned long pa)
     return (g_mmap_unikernels_mem_base_va + offset);
   }
   else {
-    offset = (unsigned long) pa - (g_shared_mem_base_pa);
-    return (g_mmap_shared_mem_base_va + offset);
+    offset = (unsigned long) pa - (g_channel_mem_base_pa);
+    return (g_mmap_channel_mem_base_va + offset);
   }
 }
 
