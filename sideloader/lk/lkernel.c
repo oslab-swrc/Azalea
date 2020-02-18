@@ -280,7 +280,6 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     }
     memset(g_log, 0, LOG_SIZE);
     printk (KERN_INFO "LK_PARAM: g_log ioremap success!!: %lx\n", (unsigned long) g_log);
-
   }
     break;
 
@@ -308,7 +307,10 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
   {
   // LK_LOADING: Copy image file into the memory separated into bootloader, kernel, and application
     int ukid;
-    char *addr = NULL, *bladdr = NULL, *lkbin = NULL;
+#if 0
+    char *addr = NULL;
+#endif
+    char *bladdr = NULL, *lkbin = NULL;
 
     // copy image file into the lkbin variable
     lkbin = vmalloc((g_total) * SECTOR);
@@ -371,6 +373,7 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     printk(KERN_INFO "LK_LOADING: MEMORY_START: %d GB, MEMORY_END: %d GB\n", (int) memory_start, (int) memory_end);
     printk(KERN_INFO "LK_LOADING: g_pml_addr %lx, apic_addr %lx\n", (unsigned long) g_pml_addr, (unsigned long) APIC_DEFAULT_PHYS_BASE);
 
+#if 0
     // Kernel
     addr = ioremap_nocache(memory_start_addr + KERNEL_ADDR, (g_total - g_kernel32) * SECTOR);
 
@@ -404,6 +407,8 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
            (g_kernel32+g_kernel64) * SECTOR, (g_total - g_kernel32 - g_kernel64) * SECTOR, addr);
 
     iounmap(addr);
+#endif 
+
     vfree(lkbin);
   }
     break;
@@ -659,6 +664,7 @@ static int lk_mmap(struct file *filp, struct vm_area_struct *vma)
   size_t vma_size = vma->vm_end - vma->vm_start;
   unsigned long long offset = vma->vm_pgoff << PAGE_SHIFT;
 
+#if 0
   vma->vm_flags |= VM_IO; // 
   vma->vm_flags |= (VM_DONTEXPAND | VM_DONTDUMP);
 
@@ -666,6 +672,8 @@ static int lk_mmap(struct file *filp, struct vm_area_struct *vma)
 
   vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot); 
   printk(KERN_INFO "off=%llx\n", (unsigned long long) vma->vm_pgoff); 
+#endif
+
   remap_pfn_range(vma, vma->vm_start, offset >> PAGE_SHIFT, vma_size, vma->vm_page_prot); 
 
   printk("2. remap start : %llx, off: %llx\n", (u64) vma->vm_start, (u64) vma->vm_pgoff);
@@ -709,7 +717,8 @@ void lk_exit(void)
 {
   // TODO
   __free_pages(g_ipcs_page, get_order(PAGE_SIZE * REMOTE_PAGE_MEMORY_SIZE));
-  iounmap((void *) g_boot_addr);
+  iounmap((void *) g_va_boot_addr);
+  iounmap((void *) g_vcon);
   iounmap((void *) g_stat);
   iounmap((void *) g_shell_storage);
   iounmap((void *) g_log);
