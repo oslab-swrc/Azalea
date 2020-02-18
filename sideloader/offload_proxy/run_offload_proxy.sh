@@ -4,6 +4,6 @@
 #note: no channels > core number
 
 ulimit -n 1000000
-insmod ../offload_driver/offload.ko
+insmod ../lk/lk.ko
 
-./offload_local_proxy -o 64 -i 64 -c 48 -n 3
+./offload_local_proxy -o 64 -i 64 -c 24 -n 6
