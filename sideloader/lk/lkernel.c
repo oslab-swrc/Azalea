@@ -28,28 +28,17 @@
 
 #define LK_DEVICE_NAME "lk"
 
-static unsigned short g_onoff_bitmap[MAX_PROCESSOR_COUNT];
-
 static int lk_major = 0;
 static struct class *lk_class;
 
-/* unit = 512 byte */
-static unsigned short g_kernel32 = 0;
-static unsigned short g_kernel64 = 0;
-static unsigned short g_uapp = 0;
-static unsigned short g_total = 0;
-
-static unsigned short g_ukid[MAX_UNIKERNEL] = {0, };
-
-static unsigned int start_index, core_start, core_end;
-static unsigned long memory_start, memory_end;
-static unsigned long memory_start_addr, memory_shared_addr;
-
-unsigned long g_pml_addr = 0;
 static struct page *g_ipcs_page = 0;
+
+// pagetable addr
+unsigned long g_pml_addr = 0;
 unsigned long g_boot_addr = 0;
 unsigned long g_va_boot_addr = 0;
 
+// Ioremap addr
 static char *g_vcon, *g_stat;
 static char *g_shell_storage, *g_log;
 static SHELL_STORAGE_AREA *g_shell_addr;
@@ -70,40 +59,6 @@ static const struct file_operations lk_fops = {
   .unlocked_ioctl = lk_ioctl,
   .mmap = lk_mmap,
 };
-
-/**
- * Allocate id for the unikernel
- * 0: usable, 1: used
- */
-int alloc_ukid(void)
-{
-  int ukid = -1;
-  int i;
-
-  for (i=0; i<MAX_UNIKERNEL; i++) {
-    if (g_ukid[i] == 0) {
-      ukid = i;
-      g_ukid[i] = 1;
-      break;
-    }
-  }
-
-  return ukid;
-}
-
-/**
- * Free id : Set the input number of id to usable 
- */
-int free_ukid(int loc)
-{
-  if (g_ukid[loc] == 1)
-    g_ukid[loc] = 0;
-  else
-    return -1;
-
-  return 0; 
-}
-
 
 /**
  * open lkernel
@@ -191,164 +146,206 @@ static int wakeup_secondary_cpu_via_init(int phys_apicid, unsigned long start_ei
   return (send_status || accept_status);
 }
 
+//====== RESOURCE MANAGER ======
+static unsigned short g_onoff_bitmap[MAX_PROCESSOR_COUNT];
+
+static unsigned short g_ukid[MAX_UNIKERNEL] = {0, };
+static unsigned short g_total = 0;
+static unsigned short g_kernel32 = 0;
+static int ukid = -1;
+
+static unsigned int start_index, core_start, core_end;
+static unsigned long memory_start, memory_end;
+static unsigned long memory_start_addr, memory_shared_addr;
+
 /**
- * ioctl lkernel
- * LK_PARAM: Save input parameters and initialize the pagetable
- * LK_IMAGE_SIZE: Get the size of the kernel images and save into the variables
- * LK_LOADING: Copy image file into the memory separated into bootloader, kernel, and application
+ * @brief Allocate id for the unikernel (0: usable, 1: used)
+ * @param none
+ * @return success (#ukid), fail (-1)
+ */
+int alloc_ukid(void)
+{
+  int ukid = -1;
+  int i;
+
+  for (i=0; i<MAX_UNIKERNEL; i++) {
+    if (g_ukid[i] == 0) {
+      ukid = i;
+      g_ukid[i] = 1;
+      break;
+    }
+  }
+
+  if (i == MAX_UNIKERNEL)
+    return -1;
+
+  return ukid;
+}
+
+/**
+ * @brief Free id : Set the input number of id to usable 
+ * @param loc - input location
+ * @return success (0), fail (-1)
+ */
+int free_ukid(int loc)
+{
+  if (g_ukid[loc] == 1)
+    g_ukid[loc] = 0;
+  else
+    return -1;
+
+  return 0; 
+}
+
+/**
+ * @brief Initialize resources based on input parameter
+ * @param Input parameter [0]index [1]core_start [2]core_end 
+ * @param [3]memory_start [4]memory_end [5]g_total [6]g_kernel32
+ * @return success (0), fail (-1)
+ */
+int init_unikernel_resources(const unsigned short *g_param)
+{
+  // Allocate ID
+  ukid = alloc_ukid();
+  if (ukid == -1) {
+    printk(KERN_INFO "AZ_PARAM: unikernel id is not allocated\n");
+    return -1;
+  }
+ 
+  // Set cpu and memory information based on index
+  start_index = g_param[0];
+  core_start = g_param[1] == 0 ? CPUS_PER_NODE : g_param[1];
+  core_end = 0;    // deprecated
+  if (start_index != -1) {
+    memory_start = UNIKERNEL_START + (start_index * MEMORYS_PER_NODE);
+    memory_end = UNIKERNEL_START + ((start_index+1) * MEMORYS_PER_NODE);
+  } else {
+    memory_start = g_param[3];
+    memory_end = g_param[4];
+  }
+
+  memory_start_addr = memory_start << 30;
+  memory_shared_addr = ((unsigned long) (UNIKERNEL_START-SHARED_MEMORY_SIZE)) << 30;
+
+  g_total = g_param[5];
+  g_kernel32 = g_param[6];
+
+  printk(KERN_INFO "AZ_PARAM: Unikernel ID: %d\n", ukid);
+  printk(KERN_INFO "AZ_PARAM: index: %d, core_num: %d, memory_start: %d, memory_end: %d\n",
+         (int)start_index, (int)core_start, (int)memory_start, (int)memory_end);
+  printk(KERN_INFO "AZ_PARAM: memory_start_addr: %lx\n", (unsigned long) memory_start_addr);
+  printk(KERN_INFO "AZ_PARAM: g_total: %d, g_kernel32: %d\n", (int) g_total, (int) g_kernel32);
+
+  return 0;
+}
+//==============================
+
+/**
+ * @brief ioctl lkernel
+ * @brief LK_PARAM: Save input parameters and initialize the pagetable
+ * @brief LK_IMAGE_SIZE: Get the size of the kernel images and save into the variables
+ * @brief LK_LOADING: Copy image file into the memory separated into bootloader, kernel, and application
+ * @param filp, cmd, arg 
+ * @return 
  */
 static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
+  char *bladdr = NULL, *lkbin = NULL;
   int retu = 0;
 
   switch (cmd) {
-  case LK_PARAM:
+  case AZ_PARAM:  // Send parameters to resource manager
   {
-  // LK_PARAM: Save input parameters and initialize the pagetable
     unsigned short g_param[CONFIG_PARAM_NUM] = {0, };
 
-    retu = copy_from_user(g_param, (const void __user *) arg, 10);
-    if (retu)
+    // Initialize resource info.
+    retu = copy_from_user(g_param, (const void __user *) arg, sizeof(unsigned short)*(CONFIG_PARAM_NUM));
+    if (retu) {
+      printk(KERN_INFO "AZ_PARAM: copy_from_user failed\n");
       return -1;
-
-    // Set cpu and memory information based on index
-    start_index = g_param[0];
-    core_start = g_param[1] == 0 ? CPUS_PER_NODE : g_param[1];
-    core_end = 0;    // deprecated
-    if (start_index != -1) {
-      memory_start = UNIKERNEL_START + (start_index * MEMORYS_PER_NODE);
-      memory_end = UNIKERNEL_START + ((start_index+1) * MEMORYS_PER_NODE);
-    } else {
-      memory_start = g_param[3];
-      memory_end = g_param[4];
     }
 
-    memory_start_addr = memory_start << 30;
-    memory_shared_addr = ((unsigned long) (UNIKERNEL_START-SHARED_MEMORY_SIZE)) << 30;
+   // Initialize resources for unikenel
+    init_unikernel_resources(g_param);
 
-    printk(KERN_INFO "LK_PARAM: index: %d, core_num: %d, memory_start: %d, memory_end: %d\n",
-           (int)start_index, (int)core_start, (int)memory_start, (int)memory_end);
-    printk(KERN_INFO "LK_PARAM: memory_start_addr: %lx\n", (unsigned long) memory_start_addr);
-
-    // Pagetable Initialize
+    break;
+  }
+  case AZ_LOADING: // Perparing for booting (Init pagetable, Ioremap, and Copy images to the memory)
+  {
+    // 1. Initialize pagetable
     g_boot_addr = BOOT_ADDR;
     g_va_boot_addr = (unsigned long) ioremap(g_boot_addr, PAGE_4K * 10);
     if(g_va_boot_addr == (unsigned long) NULL) {
-      printk(KERN_ERR "LK_PARAM: unable to ioremap for %llx\n", (unsigned long long) g_boot_addr);
+      printk(KERN_ERR "AZ_LOADING: unable to ioremap for %llx\n", (unsigned long long) g_boot_addr);
       return -1;
     }
  
     g_pml_addr = g_boot_addr + PAGE_4K;
     init_page_table((unsigned long) (g_va_boot_addr + PAGE_4K));
+    if (!g_boot_addr || !g_pml_addr)
+      return -1;
 
-    printk(KERN_INFO "LK_PARAM: Pagetable initialization complete, g_boot_addr: %llx, g_pml_addr : %llx\n", (unsigned long long) g_boot_addr, (unsigned long long) g_pml_addr);
+    printk(KERN_INFO "AZ_LOADING: Pagetable initialization complete, g_boot_addr: %llx, g_pml_addr : %llx\n", (unsigned long long) g_boot_addr, (unsigned long long) g_pml_addr);
 
+    // 2. Ioremap vcon, stat, shell, and log
     // Ioremap for vcon memory
+    printk (KERN_INFO "AZ_LOADING: memory_shared_addr- %lx\n", memory_shared_addr);
     g_vcon = ioremap(memory_shared_addr + VCON_START_OFFSET, PAGE_4K * MAX_UNIKERNEL);
     if (g_vcon == NULL) {
-      printk (KERN_INFO "LK_PARAM: g_vcon ioremap error\n");
+      printk (KERN_INFO "AZ_LOADING: g_vcon ioremap error\n");
       return -EINVAL;
     }
-    memset(g_vcon, 0, PAGE_4K * MAX_UNIKERNEL);
-    printk (KERN_INFO "LK_PARAM: g_vcon ioremap success!!\n");
+    memset(g_vcon+PAGE_4K*ukid, 0, PAGE_4K);
+    printk(KERN_INFO "AZ_LOADING: g_vcon ioremap success!!\n");
 
     // Ioremap for stat memory
     g_stat = ioremap(memory_shared_addr + STAT_START_OFFSET, sizeof(STAT_AREA));
     if (g_stat == NULL) {
-      printk (KERN_INFO "g_stat ioremap error\n");
+      printk (KERN_INFO "AZ_LOADING: g_stat ioremap error\n");
       return -EINVAL;
     }
     memset(g_stat, 0, sizeof (STAT_AREA));
-    printk (KERN_INFO "LK_PARAM: g_stat ioremap success!!\n");
+    printk (KERN_INFO "AZ_LOADING: g_stat ioremap success!!\n");
     g_stat_addr = (STAT_AREA *) g_stat;
 
     // Ioremap for shell storage memory
     g_shell_storage = ioremap(memory_shared_addr + SHELL_STORAGE_START_OFFSET, sizeof(SHELL_STORAGE_AREA));
     if (g_shell_storage == NULL) {
-      printk (KERN_INFO "LK_PARAM: g_shell_storage ioremap error\n");
+      printk (KERN_INFO "AZ_LOADING: g_shell_storage ioremap error\n");
       return -EINVAL;
     }
     memset(g_shell_storage, 0, sizeof(SHELL_STORAGE_AREA));
-    printk (KERN_INFO "LK_PARAM: g_shell_storage ioremap success!!: %lx\n", (unsigned long) &g_shell_storage);
+    printk (KERN_INFO "AZ_LOADING: g_shell_storage ioremap success!!: %lx\n", (unsigned long) &g_shell_storage);
     g_shell_addr = (SHELL_STORAGE_AREA *) g_shell_storage;
 
     // Ioremap for log memory
     g_log = ioremap(memory_shared_addr + LOG_START_OFFSET + LOG_LENGTH, LOG_SIZE);
     if (g_log == NULL) {
-      printk (KERN_INFO "LK_PARAM: g_log ioremap error\n");
+      printk (KERN_INFO "AZ_LOADING: g_log ioremap error\n");
       return -EINVAL;
     }
     memset(g_log, 0, LOG_SIZE);
-    printk (KERN_INFO "LK_PARAM: g_log ioremap success!!: %lx\n", (unsigned long) g_log);
-  }
-    break;
-
-  case LK_IMG_SIZE:
-  {
-  // LK_IMAGE_SIZE: Get the size of the kernel images and save into the variables
-    char lkinfo[8] = {0, };
-
-    retu = copy_from_user(lkinfo, (const void __user *) arg, 8);
-    if (retu)
-      return -1;
-
-    g_total = *((unsigned short *) (lkinfo + 0));
-    g_kernel32 = *((unsigned short *) (lkinfo + 2));
-    g_kernel64 = *((unsigned short *) (lkinfo + 4));
-    g_uapp = *((unsigned short *) (lkinfo + 6));
-
-    printk(KERN_INFO
-           "LK_SIZE: sideloader: g_total %d bootloader: %d g_kernel64: %d uthread %d\n",
-           g_total, g_kernel32, g_kernel64, g_total - g_kernel32 - g_kernel64);
-  }
-    break;
-
-  case LK_LOADING:
-  {
-  // LK_LOADING: Copy image file into the memory separated into bootloader, kernel, and application
-    int ukid;
-#if 0
-    char *addr = NULL;
-#endif
-    char *bladdr = NULL, *lkbin = NULL;
-
+    printk (KERN_INFO "AZ_LOADING: g_log ioremap success!!: %lx\n", (unsigned long) g_log);
+ 
+    // 3. Copy bootloader and metadata into memory
     // copy image file into the lkbin variable
     lkbin = vmalloc((g_total) * SECTOR);
     if (lkbin == NULL) {
-      printk(KERN_INFO "LK_LOADING: allocation failed %d \n", (g_total) * SECTOR);
+      printk(KERN_INFO "AZ_LOADING: allocation failed %d \n", (g_total) * SECTOR);
       return -1;
     };
 
     retu = copy_from_user(lkbin, (const void __user *) arg, (g_total) * SECTOR);
-
     if (retu) {
-      printk(KERN_INFO "LK_LOADING: copy_from_user failed\n");
-      vfree(lkbin);
-      return -1;
-    };
-
-    if (!g_boot_addr || !g_pml_addr) {
+      printk(KERN_INFO "AZ_LOADING: copy_from_user(lkbin) failed\n");
       vfree(lkbin);
       return -1;
     }
 
-    // Get id for the unikernel
-    ukid = alloc_ukid();
-    if (ukid == -1) {
-      vfree(lkbin);
-      printk(KERN_INFO "LK_LOADING: unikernel id is not allocated\n");
-
-      return -1;
-    }
-
-    // Initialize vcon memory
-    memset(g_vcon+PAGE_4K*ukid, 0x20, PAGE_4K);
-
-    // Bootloader
+    // Copy bootloader into the memory
     bladdr = __va(g_boot_addr);
-    printk(KERN_INFO "LK_LOADING: bootloader copied to < 1M, [%p], size [%d]\n", __va(g_boot_addr), (g_kernel32) * SECTOR);
-
     memcpy(__va(g_boot_addr), lkbin, (g_kernel32) * SECTOR);
+    printk(KERN_INFO "AZ_LOADING: bootloader copied to < 1M, [%p], size [%d]\n", __va(g_boot_addr), (g_kernel32) * SECTOR);
 
     // Metadata
     *((unsigned long *) (bladdr + META_OFFSET)) = (ukid);
@@ -360,7 +357,7 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     *((unsigned long *) (bladdr + META_OFFSET + MEMORY_END_OFFSET)) = memory_end;
     *((unsigned long *) (bladdr + META_OFFSET + QEMU_OFFSET)) = 0;
 
-    // Store basic information of unikernel
+    // Store basic information of unikernel into the stat memory
     g_stat_addr->ukernel[ukid].used = 1;
     //g_stat_addr->ukernel[ukid].name 
     g_stat_addr->ukernel[ukid].mem_size = memory_end - memory_start;
@@ -368,51 +365,31 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
     g_stat_addr->ukernel[ukid].mem_used = 0;
     //g_stat_addr->ukernel[ukid].start_time = time();
 
-    printk(KERN_INFO "LK_LOADING: UK ID: %d\n", ukid);
-    printk(KERN_INFO "LK_LOADING: CPU_NUM: %d\n", core_start);
-    printk(KERN_INFO "LK_LOADING: MEMORY_START: %d GB, MEMORY_END: %d GB\n", (int) memory_start, (int) memory_end);
-    printk(KERN_INFO "LK_LOADING: g_pml_addr %lx, apic_addr %lx\n", (unsigned long) g_pml_addr, (unsigned long) APIC_DEFAULT_PHYS_BASE);
-
-#if 0
-    // Kernel
-    addr = ioremap_nocache(memory_start_addr + KERNEL_ADDR, (g_total - g_kernel32) * SECTOR);
-
-    if (addr == NULL) {
-      printk(KERN_INFO "LK_LOADING: Kernel ioremap error\n");
-      vfree(lkbin);
-      return -EINVAL;
-    } else {
-      printk(KERN_INFO "LK_LOADING: Kernel ioremap success: %lx, %d\n", (unsigned long) addr, (g_total-g_kernel32) * SECTOR);
-    }
-
-    memcpy(addr, lkbin + (g_kernel32 * SECTOR), g_kernel64 * SECTOR);
-
-    printk("LK_LOADING: Kernel copied from [%d] size [%d] bytes copied %p\n",
-           (g_kernel32) * SECTOR, (g_total - g_kernel32) * SECTOR, addr);
-
-    // User application
-    addr = ioremap_nocache(memory_start_addr + APP_ADDR, (g_total - g_kernel32 - g_kernel64) * SECTOR);
-
-    if (addr == NULL) {
-      printk(KERN_INFO "LK_LOADING: Application ioremap error\n");
-      vfree(lkbin);
-      return -EINVAL;
-    } else {
-      printk(KERN_INFO "LK_LOADING: Appliation ioremap success: %lx, %d\n", (unsigned long) addr, (g_total-g_kernel32) * SECTOR);
-    }
-
-    memcpy(addr, lkbin + (g_kernel32 * SECTOR) + (g_kernel64 * SECTOR), (g_total - g_kernel32 - g_kernel64) * SECTOR);
-
-    printk("LK_LOADING: Application copied from [%d] size [%d] bytes copied %p\n",
-           (g_kernel32+g_kernel64) * SECTOR, (g_total - g_kernel32 - g_kernel64) * SECTOR, addr);
-
-    iounmap(addr);
-#endif 
-
     vfree(lkbin);
   }
     break;
+  case AZ_GET_MEM_ADDR:  // Send bootloader addr to the application
+  {
+    if ((retu = copy_to_user((unsigned long *)arg, (unsigned long *)&memory_start_addr, sizeof(unsigned long))) < 0) {
+      printk (KERN_INFO "AZ_GET_BOOTADDR: memory_start_addr copy_to_user error\n");
+      return -EINVAL;
+    }
 
+    printk (KERN_INFO "AZ_GET_BOOT_ADDR: memory_start_addr copied\n");
+  }
+    break;
+  case AZ_PRINT_MSG:  // Print kernel message from the application
+  {
+    char buff[256];
+
+    if ((retu = copy_from_user(buff, (const void __user *) arg, sizeof(char)*256)) < 0) {
+      printk (KERN_INFO "AZ_PRINT_MSG: error\n");
+      return -EINVAL;
+    }
+
+    printk (KERN_INFO "%s", buff);
+  }
+    break;
   case CPU_ON:
   {
     unsigned int phy;
@@ -550,7 +527,8 @@ static int lk_release(struct inode *inode, struct file *filep)
 }
 
 /**
- * Set page entry for page table
+ * @brief Set page entry for page table
+ * @return none
  */
 void set_page_entry(PT_ENTRY * entry, DWORD upper_base_address,
                     DWORD lower_base_address, DWORD lower_flags,
@@ -561,9 +539,11 @@ void set_page_entry(PT_ENTRY * entry, DWORD upper_base_address,
 }
 
 /**
- * Initialize page table
- * Use 4 pages (PML4T, PDPT, PD, PD) from base address (BOOT_ADDR + 4K)
- *   - input: page table address (virtual)
+ * @brief Initialize page table
+ * @brief Use 4 pages (PML4T, PDPT, PD, PD) from base address (BOOT_ADDR + 4K)
+ * @brief  - input: page table address (virtual)
+ * @param base_va - virtual address for pagetable
+ * @return none
  */
 void init_page_table(QWORD base_va)
 {
@@ -619,7 +599,6 @@ void init_page_table(QWORD base_va)
   ...
   0xEFFF_FFFF -> 0x2FFF_FFFF
 */
-
   mapping_address = 0;
   set_page_entry(&(pd_entry[(PAGE_MAX_ENTRY_COUNT)]),
                  (i * (PAGE_DEFAULT_SIZE >> 20)) >> 12, mapping_address,
@@ -664,19 +643,9 @@ static int lk_mmap(struct file *filp, struct vm_area_struct *vma)
   size_t vma_size = vma->vm_end - vma->vm_start;
   unsigned long long offset = vma->vm_pgoff << PAGE_SHIFT;
 
-#if 0
-  vma->vm_flags |= VM_IO; // 
-  vma->vm_flags |= (VM_DONTEXPAND | VM_DONTDUMP);
-
-  printk("1. remap start : %llx, off: %llx\n", (u64) vma->vm_start, (u64) vma->vm_pgoff);
-
-  vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot); 
-  printk(KERN_INFO "off=%llx\n", (unsigned long long) vma->vm_pgoff); 
-#endif
-
   remap_pfn_range(vma, vma->vm_start, offset >> PAGE_SHIFT, vma_size, vma->vm_page_prot); 
 
-  printk("2. remap start : %llx, off: %llx\n", (u64) vma->vm_start, (u64) vma->vm_pgoff);
+  printk("LK_MMAP: remap start : %llx, off: %llx\n", (u64) vma->vm_start, (u64) vma->vm_pgoff);
 
   return 0;
 }
@@ -687,7 +656,6 @@ static int lk_mmap(struct file *filp, struct vm_area_struct *vma)
 static int __init lk_init(void)
 {
   struct device *err_dev = NULL;
-  //int order = XXX(vma->vm_end - vma->vm_start);
   int order = get_order(REMOTE_PAGE_MEMORY_SIZE * PAGE_SIZE);
 
   g_ipcs_page = alloc_pages(GFP_KERNEL, order);
