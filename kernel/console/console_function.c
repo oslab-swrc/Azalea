@@ -23,9 +23,9 @@ extern QWORD *g_console_magic;
  * @return none
  */
 int cs_boot_msg_print(int yloc) {
-int x = 0, y = 0;
-char *screen = NULL;
-char line[CONSOLE_WIDTH+3];
+  int x = 0, y = 0;
+  char *screen = NULL;
+  char line[CONSOLE_WIDTH+1] = {0, };
 
   if(g_console_proxy_flag == FALSE)
     return (-1);
@@ -35,15 +35,11 @@ char line[CONSOLE_WIDTH+3];
     for (x = 0; x < CONSOLE_WIDTH; x++) {
       line[x] = *(screen + y*CONSOLE_WIDTH + x);
     }
-    line[CONSOLE_WIDTH] = '\n';
-    line[CONSOLE_WIDTH+1] = '\r';
-    line[CONSOLE_WIDTH+2] = '\0';
+    lk_sprintf(line, "%s\n", line);
     cs_write(1, line, lk_strlen(line));
   }
-
   return (0);
 }
-
 
 /**
  * @brief console write call
@@ -54,17 +50,17 @@ char line[CONSOLE_WIDTH+3];
  */
 ssize_t cs_write(int fd, void *buf, size_t count)
 {
-channel_t *ch = NULL;
-struct circular_queue *icq = NULL;
-struct circular_queue *ocq = NULL;
+  channel_t *ch = NULL;
+  struct circular_queue *icq = NULL;
+  struct circular_queue *ocq = NULL;
 
-TCB *current = NULL;
-QWORD mytid = -1;
+  TCB *current = NULL;
+  QWORD mytid = -1;
 
-ssize_t ssret = 0;
+  ssize_t ssret = 0;
 
-struct iovec iov[MAX_IOV_NUM];
-int iovcnt = 0;
+  struct iovec iov[MAX_IOV_NUM];
+  int iovcnt = 0;
 
   if(g_console_proxy_flag == FALSE)
     return (-1);
@@ -99,21 +95,21 @@ int iovcnt = 0;
  */
 int cs_printf(const char *parameter, ...)
 {
-channel_t *ch = NULL;
-struct circular_queue *icq = NULL;
-struct circular_queue *ocq = NULL;
+  channel_t *ch = NULL;
+  struct circular_queue *icq = NULL;
+  struct circular_queue *ocq = NULL;
 
-struct iovec iov[MAX_IOV_NUM];
-int iovcnt = 0;
+  struct iovec iov[MAX_IOV_NUM];
+  int iovcnt = 0;
 
-TCB *current = NULL;
-QWORD mytid = -1;
+  TCB *current = NULL;
+  QWORD mytid = -1;
 
-int iret = 0;
+  int iret = 0;
 
-va_list ap;
-char buf[1024];
-int len = 0;
+  va_list ap;
+  char buf[1024];
+  int len = 0;
 
   if(g_console_proxy_flag == FALSE)
     return (-1);
@@ -145,7 +141,6 @@ int len = 0;
   return (iret);
 }
 
-
 /**
  * @brief console print call
  * @param buf buffer
@@ -153,18 +148,18 @@ int len = 0;
  */
 int cs_puts(void *buf)
 {
-channel_t *ch = NULL;
-struct circular_queue *icq = NULL;
-struct circular_queue *ocq = NULL;
+  channel_t *ch = NULL;
+  struct circular_queue *icq = NULL;
+  struct circular_queue *ocq = NULL;
 
-TCB *current = NULL;
-QWORD mytid = -1;
+  TCB *current = NULL;
+  QWORD mytid = -1;
 
-size_t len = 0;
-int iret = 0;
+  size_t len = 0;
+  int iret = 0;
 
-struct iovec iov[MAX_IOV_NUM];
-int iovcnt = 0;
+  struct iovec iov[MAX_IOV_NUM];
+  int iovcnt = 0;
 
   if(g_console_proxy_flag == FALSE)
     return (-1);
@@ -196,19 +191,19 @@ int iovcnt = 0;
 
 /**
  * @brief console exit call
- * @param 
+ * @param none 
  * @return success (0), fail (-1)
  */
 int cs_exit(void)
 {
-channel_t *ch = NULL;
-struct circular_queue *icq = NULL;
-struct circular_queue *ocq = NULL;
+  channel_t *ch = NULL;
+  struct circular_queue *icq = NULL;
+  struct circular_queue *ocq = NULL;
 
-TCB *current = NULL;
-QWORD mytid = -1;
+  TCB *current = NULL;
+  QWORD mytid = -1;
 
-int iret = 0;
+  int iret = 0;
 
   if(g_console_proxy_flag == FALSE)
     return (-1);
