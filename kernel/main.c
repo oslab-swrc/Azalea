@@ -52,8 +52,9 @@ void HALT()
   }
 }
 
-/*
- * IA-32e mode main
+/**
+ * @brief IA-32e mode main
+ * @param boot_mode - 0:AP, 1:BST
  */
 void Main(int boot_mode)
 {
@@ -75,13 +76,11 @@ void Main(int boot_mode)
   }
 
   kernel_pagetables_init(CONFIG_KERNEL_PAGETABLE_ADDRESS);
-  lk_print_xy(0, yloc++, "Init Kernel Page Tables .....................[Pass]");
-  store_init_stat(INIT_PAGETABLE_STAT);
 
   lk_print_xy(0, yloc++, "IA-32e C language kernel started.............[Pass]");
-  lk_print_xy(2, yloc++, "ID: %d, VCON: 0x%q", g_ukid, g_vcon_addr);
-  lk_print_xy(2, yloc++, "CPU_NUM: %d", g_cpu_start);
-  lk_print_xy(2, yloc++, "MEMORY_START:0x%q,MEMORY_END:0x%q", g_memory_start, g_memory_end);
+  lk_print_xy(0, yloc++, "(ID: %d, VCON: 0x%q)", g_ukid, g_vcon_addr);
+  lk_print_xy(0, yloc++, "(CPU_NUM: %d)", g_cpu_start);
+  lk_print_xy(0, yloc++, "(MEMORY_START: %d GB,MEMORY_END: %d GB)", g_memory_start>>30, g_memory_end>>30);
   lk_print_xy(0, yloc++, "Init Kernel Page Tables .....................[Pass]");
   store_init_stat(INIT_IA32E_START_STAT);
   store_init_stat(INIT_PAGETABLE_STAT);
@@ -92,8 +91,10 @@ void Main(int boot_mode)
 
 #if DEBUG
   lk_print_xy(0, yloc, "Memory check.................................[    ]");
-  if (az_check_memory() == FALSE)
+  if (az_check_memory() == FALSE) {
+    lk_print_xy(xloc, yloc++, "Fail");
     debug_halt((char *)__func__, __LINE__);
+  }
   lk_print_xy(xloc, yloc++, "Pass");
 #endif
 
@@ -103,7 +104,7 @@ void Main(int boot_mode)
   store_init_stat(INIT_MEMORY_STAT);
 
   lk_print_xy(0, yloc, "Init Shell storage ..........................[    ]");
-  shell_storage_area_init();		// Initialize shell storage area
+  shell_storage_area_init();
   lk_print_xy(xloc, yloc++, "Pass");
 
   lk_print_xy(0, yloc, "Init GDT and switch to IA-32e mode...........[    ]");
@@ -113,7 +114,7 @@ void Main(int boot_mode)
   store_init_stat(INIT_GDT_SWITCH_IA32E_STAT);
 
   lk_print_xy(0, yloc, "Load TSS ....................................[    ]");
-  load_tr(GDT_TSS);      // 1 = get_apic_id() ; 
+  load_tr(GDT_TSS); 
   lk_print_xy(xloc, yloc++, "Pass");
   store_init_stat(INIT_LOAD_TSS_STAT);
 
@@ -172,9 +173,9 @@ void Main(int boot_mode)
   signal_init();
   lk_print_xy(xloc, yloc++, "Pass");
 
-  // Start idle thread
-  store_init_stat(INIT_IDLE_THREAD_STAT);
+  lk_print_xy(0, yloc, "Remove low identical mapping.................[    ]");
   remove_low_identical_mapping(CONFIG_KERNEL_PAGETABLE_ADDRESS);
+  lk_print_xy(xloc, yloc++, "Pass");
 
 #ifdef	OFFLOAD_ENABLE
   // init offload console channel
@@ -213,11 +214,14 @@ void Main(int boot_mode)
   }
 #endif
 
+  // Start idle thread
+  store_init_stat(INIT_IDLE_THREAD_STAT);
   start_idle_thread(THREAD_TYPE_BSP);
 }
 
-/*
- * start APs
+/**
+ * @brief start APs
+ * return success (TRUE), fail (FALSE)
  */
 BOOL start_ap(void)
 {
@@ -229,8 +233,9 @@ BOOL start_ap(void)
   return TRUE;
 }
 
-/*
- * main functions for APs
+/**
+ * @brief main function for APs
+ * return none
  */
 static void main_for_ap(void)
 {

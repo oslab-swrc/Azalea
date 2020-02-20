@@ -2,12 +2,13 @@
 #define __LKERNEL_H__
 
 #define PAGE_4K             (0x1000)
-#define CONFIG_PARAM_NUM    5
+#define CONFIG_PARAM_NUM    7
 #define SECTOR				512
 
-#define LK_IMG_SIZE			0
-#define LK_LOADING			1
-#define LK_PARAM			4
+#define AZ_PARAM            10
+#define AZ_LOADING          11
+#define AZ_GET_MEM_ADDR     12
+#define AZ_PRINT_MSG        13
 
 #define CPU_ON				100
 #define CPU_OFF				110
