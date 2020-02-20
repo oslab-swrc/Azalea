@@ -358,7 +358,8 @@ static void destroy_tcb(TCB *t)
  */
 TCB *get_current_tcb(void)
 {
-  TCB *tcb = get_current();
+  TCB *tcb = NULL ;
+  tcb = (TCB *)running_thread[get_apic_id()]; 
   atomic_inc(&tcb->refc);
   return tcb;
 }

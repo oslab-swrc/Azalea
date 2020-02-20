@@ -252,6 +252,7 @@ void cmd(channel_t *cs)
       break;
 
     default:
+      printf("Unknown\n");
       break;
     }
   }

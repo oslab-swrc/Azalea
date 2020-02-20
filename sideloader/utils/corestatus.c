@@ -11,7 +11,7 @@ char g_screen[256] ;
 
 int main()
 {
-    int fd = 0;
+    int fd = -1;
     int ret = 0;
 
     memset(g_screen, 0, sizeof(g_screen));
@@ -26,7 +26,10 @@ int main()
 
     ret = ioctl(fd, 25, g_screen) ;
 
-    if (ret != 0 ) return -1 ;
+    if (ret != 0 ) {
+	    close(fd) ;
+	    return -1 ;
+    }
 
     g_screen[220] = '\0' ;
 

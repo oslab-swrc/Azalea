@@ -757,7 +757,7 @@ void sys3_off_readdir(struct channel_struct *ch)
 
   if(pret == NULL && errno != 0) {
     fprintf(stderr, "FIO READDIR: %s\n", strerror(errno));
-    pret = (struct dirent *) -1;
+    pret = NULL ;
   }
 
   // retrun ret

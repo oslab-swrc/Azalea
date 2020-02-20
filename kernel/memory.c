@@ -14,6 +14,10 @@ QWORD g_memory_start;
 QWORD g_memory_end;
 QWORD g_shared_memory;
 
+
+/* avoid CWE-1006 */
+QWORD free_mem_start;
+
 static QWORD heap_end;
 
 static spinlock_t heap_lock;
@@ -27,9 +31,11 @@ void free_mem_init(void)
   BYTE* cur_bitmap = NULL;
   int block_count = 0, bitmap = 0;
 
-  QWORD free_mem_start = va(g_memory_start + CONFIG_KERNEL_SIZE);  // free memory start addr
+//  QWORD free_mem_start = va(g_memory_start + CONFIG_KERNEL_SIZE);  // free memory start addr
   QWORD free_mem_end = va(g_memory_end);  // free memory end addr 
   QWORD free_mem_size = free_mem_end - free_mem_start;	// free memory size
+
+  free_mem_start = va(g_memory_start + CONFIG_KERNEL_SIZE);
 
   bitmap = bitmap_size(free_mem_size);	// bitmap size (block list index + bitmap address + bitmap)
   bitmap = ((bitmap + (512 - 1)) & ~(512 - 1));
@@ -441,12 +447,13 @@ BYTE get_bitmap_flag(int block_list_index, int offset)
 ssize_t sys_sbrk(ssize_t incr)
 {
   ssize_t ret = 0;
+  QWORD increment = (QWORD) incr ;
 
   spinlock_lock(&heap_lock);
   ret = heap_end;
 
   if ((heap_end >= HEAP_START) && (heap_end < HEAP_START + HEAP_SIZE)) {
-    heap_end += incr;
+    heap_end += increment;
 
     if (PAGE_FLOOR(heap_end) > PAGE_FLOOR(ret)) {
       // Do something of VMA
@@ -468,12 +475,13 @@ ssize_t sys_sbrk(ssize_t incr)
 ssize_t sys_brk(ssize_t val)
 {
   ssize_t ret = 0;
+  QWORD end = (QWORD) val ;
 
   spinlock_lock(&heap_lock);
   ret = heap_end;
 
   if ((heap_end >= HEAP_START) && (heap_end < HEAP_START + HEAP_SIZE)) {
-    heap_end = val;
+    heap_end = end;
 
     if (PAGE_FLOOR(heap_end) > PAGE_FLOOR(ret)) {
       // Do something of VMA

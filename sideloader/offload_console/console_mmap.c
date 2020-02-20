@@ -59,7 +59,7 @@ int munmap_console_channel(channel_t *console_channel)
  */
 int mmap_console_channel(channel_t *console_channel, int start_index, int opages, int ipages)
 {
-  int console_fd = 0;
+  int console_fd = -1;
 
   unsigned long in_cq_base = 0;
   unsigned long in_cq_base_pa = 0;
@@ -162,7 +162,7 @@ int mmap_unikernel_memory(int start_index)
   unsigned long kernel_mem_base_pa_len;
   unsigned long channel_mem_base_pa_len;
 
-  int console_fd = 0;
+  int console_fd = -1;
 
   console_fd = open("/dev/lk", O_RDWR | O_SYNC) ;
   if ( console_fd < 0 ) {

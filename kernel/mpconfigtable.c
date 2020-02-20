@@ -18,6 +18,8 @@ BOOL find_mp_floating_pointer_address(QWORD * address)
   QWORD ebda_address = 0;
   QWORD system_base_memory = 0;
 
+  QWORD mp_floating_pointer_addr = 0x0F0000 ;
+
   printk("Extended BIOS Data Area = [0x%X] ", (DWORD) (*(WORD *) 0x040E) * 16);
   printk("System Base Address = [0x%X] ", (DWORD) (*(WORD *) 0x0413) * 1024);
 
@@ -48,7 +50,7 @@ BOOL find_mp_floating_pointer_address(QWORD * address)
     }
   }
 
-  for (mp_floating_pointer = (char *) 0x0F0000;
+  for (mp_floating_pointer = (char *) mp_floating_pointer_addr ;
        (QWORD) mp_floating_pointer < 0x0FFFFF; mp_floating_pointer++) {
     if (lk_memcmp(mp_floating_pointer, "_MP_", 4) == 0) {
       printk("MP Floating Pointer is in ROM, [0x%X] address",
@@ -207,6 +209,7 @@ IO_APIC_ENTRY *find_io_apic_entry_for_isa(void)
       entry_address += sizeof(IO_INTERRUPT_ASSIGNMENT_ENTRY);
       break;
     default:
+      lk_print_xy(0,10,"invalid MP_ENTRY_TYPE") ;
       break;
     }
   }
@@ -234,6 +237,7 @@ IO_APIC_ENTRY *find_io_apic_entry_for_isa(void)
       entry_address += sizeof(IO_INTERRUPT_ASSIGNMENT_ENTRY);
       break;
     default:
+      lk_print_xy(0,10,"invalid MP_ENTRY_TYPE") ;
       break;
     }
   }

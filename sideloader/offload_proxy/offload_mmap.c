@@ -80,7 +80,7 @@ int mmap_channels(channel_t *offload_channels, int n_unikernels, int n_offload_c
 {
   int offload_channels_offset = 0;
 
-  int offload_fd = 0;
+  int offload_fd = -1;
 
   unsigned long in_cq_base = 0;
   unsigned long in_cq_base_pa = 0;
@@ -190,7 +190,7 @@ unsigned long mmap_unikernels_memory(int n_unikernels)
   unsigned long kernels_mem_base_pa_len = 0;
   unsigned long channel_mem_base_pa_len = 0;
 
-  int offload_fd = 0;
+  int offload_fd = -1;
 
   offload_fd = open("/dev/lk", O_RDWR | O_SYNC) ;
   if ( offload_fd < 0 ) {

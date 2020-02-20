@@ -20,7 +20,7 @@
  */
 int main(int argc, char *argv[] )
 {
-  int fd = 0, fd1 = 0;
+  int fd = -1, fd1 = -1;
   int ret = 0;
   char *buf = NULL;
   unsigned short param[CONFIG_PARAM_NUM] = {0, };

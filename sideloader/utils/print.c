@@ -13,7 +13,7 @@
 
 #define MAX_X		80
 
-unsigned long *g_vcon;
+char *g_vcon;
 char *g_screen ;
 
 /**
@@ -22,7 +22,7 @@ char *g_screen ;
  */
 int main(int argc, char *argv[])
 {
-  int fd = 0;
+  int fd = -1;
   char Achar  = 0;
   int ret = 0;
   int loc = 0;
@@ -33,7 +33,11 @@ int main(int argc, char *argv[])
 
   // Print the console
   g_vcon = malloc(sizeof(PAGE_4K * MAX_UNIKERNEL));
-  g_screen = (char *) g_vcon + PAGE_4K*loc;
+
+  if ( g_vcon == NULL )
+	  return -1 ;
+
+  g_screen = g_vcon + (PAGE_4K*loc);
 
   // 
   fd = open("/dev/lk", O_RDONLY);
@@ -54,12 +58,13 @@ int main(int argc, char *argv[])
 	for (i=1; i<=25; i++) {
       Achar = g_screen[MAX_X*i] ;
       g_screen[MAX_X*i]='\0' ;
-      printf("%s\n", g_screen+(i-1)*MAX_X);
+      printf("%s\n", g_screen+((i-1)*MAX_X));
       g_screen[MAX_X*i] = Achar ;
     }
 
     sleep(1);
   }
 
+  close(fd) ;
   return 0;
 }

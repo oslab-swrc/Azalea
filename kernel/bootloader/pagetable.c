@@ -120,7 +120,7 @@ void main()
 	
 	init_page_table((QWORD)pagetable) ;
 	
-	int fd = 0 ;
+	int fd = -1 ;
 
 	fd = open("page.bin", O_CREAT | O_WRONLY, 777) ;
 

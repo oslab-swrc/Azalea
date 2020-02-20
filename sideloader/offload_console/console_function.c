@@ -125,9 +125,10 @@ int do_print_v(unsigned long iov_pa, int iovcnt)
 
 	for(i = 0; i < iovcnt; i++) {
 	  iov_base_va = get_va((unsigned long) iov[i].iov_base);
-	  if(iov_base_va != 0) 
+	  if(iov_base_va != 0) { 
 	    printf("%s", (char *) iov_base_va);
 	    fflush(stdout);
+	  }
 	}
 
 	return (0);

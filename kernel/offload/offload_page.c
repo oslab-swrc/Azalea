@@ -206,14 +206,15 @@ int i = 0;
 
     /* expand this region */
     page_len = PAGE_SIZE_4K - offset_in_page; //rest of page;
+
     if (page_len > scan_buf_len)
       page_len = scan_buf_len;
 
-      read_page_len += page_len;
-      scan_buf += page_len;
-      scan_buf_len -= page_len;
-      prev_page_addr = page_addr;
-    }
+    read_page_len += page_len;
+    scan_buf += page_len;
+    scan_buf_len -= page_len;
+    prev_page_addr = page_addr;
+  }
 
   iov[*iovcnt].iov_base = (void *) read_page_addr;
   iov[*iovcnt].iov_len = (size_t) read_page_len;

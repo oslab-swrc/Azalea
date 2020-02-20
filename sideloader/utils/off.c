@@ -12,7 +12,7 @@
 int main(int argc, char *argv[])
 {
 
-  int fd = 0;
+  int fd = -1;
   int ret = -1;
   unsigned int phy = 0;
 

@@ -14,9 +14,7 @@ static char *log_buffer ;
 static spinlock_t log_lock ;
 
 /**
- * @brief Initialize Shell Storage Area 
- * @param none
- * return none
+ * Initialize Shell Storage Area 
  */
 void shell_storage_area_init(void)
 {
@@ -26,18 +24,13 @@ void shell_storage_area_init(void)
   log_buffer = (char*) (CONFIG_SHARED_MEMORY + LOG_START_OFFSET + LOG_LENGTH);
   log_front = (unsigned int *) (CONFIG_SHARED_MEMORY + LOG_START_OFFSET);
   log_rear = (unsigned int *) (CONFIG_SHARED_MEMORY + LOG_START_OFFSET + 4);    
-  lk_memset(log_front, 0, (MAX_LOG_COUNT+1) * LOG_LENGTH);
+  lk_memset(log_buffer, 0, (MAX_LOG_COUNT+1) * LOG_LENGTH);
 
   // shell_storage
   g_ss_area = (SHELL_STORAGE_AREA *) (CONFIG_SHARED_MEMORY + SHELL_STORAGE_START_OFFSET);
   lk_memset(g_ss_area, 0, sizeof(SHELL_STORAGE_AREA));
 }
 
-/**
- * @brief Write log message to the log memory 
- * @param msg : log message
- * return none
- */
 void shell_enqueue(const char * msg) 
 {
   spinlock_lock(&log_lock) ;
@@ -60,21 +53,17 @@ void store_pagefault_info(QWORD tid, QWORD fault_address, QWORD error_code, QWOR
   PF_INFO *pf_info = NULL;
   DWORD pos = 0;
 
-#if 0
-  pos = pf_area->pf_count % MAX_PAGEFAULT_SIZE;
-#else
   pos = pf_area->pf_count;
-  if (pos > MAX_PAGEFAULT_SIZE)
-    return;
-#endif
-  pf_info = &pf_area->info[pos];
-
+  if (pos < MAX_PAGEFAULT_SIZE && pos > 0)
+  {
+  	pf_info = &pf_area->info[pos];
+  
   // store the page fault information
-  pf_info->thread_id = tid;
-  pf_info->fault_addr = fault_address;
-  pf_info->error_code = error_code;
-  pf_info->rip = rip;
-
+  	pf_info->thread_id = tid;
+  	pf_info->fault_addr = fault_address;
+  	pf_info->error_code = error_code;
+  	pf_info->rip = rip;
+  }
   pf_area->pf_count++;
 }
 

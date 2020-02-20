@@ -114,6 +114,7 @@ void cmd(channel_t *cs)
       break;
 
     default:
+      printf("Unknown\n");
       break;
     }
   }
@@ -190,14 +191,14 @@ int main(int argc, char *argv[])
   //unmmap console channel
   if(!munmap_console_channel(&console_channel)) {
     err++;
-    printf("%s failed to unregister channel \n", __func__);
+    printf("%s failed to unregister channel \n", __FUNCTION__);
     goto __end;
   } 
 
   //unmmap unikernel memory 
-  if(!munmap_unikernel_memory() < 0){
+  if(munmap_unikernel_memory() != 0){
     err++;
-    printf("%s failed to unregister channel \n", __func__);
+    printf("%s failed to unregister channel \n", __FUNCTION__);
     goto __end;
    }
 

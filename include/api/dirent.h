@@ -209,7 +209,7 @@ extern int readdir64_r (DIR *__restrict __dirp,
 extern void rewinddir (DIR *__dirp) __THROW __nonnull ((1));
 
 #if defined __USE_BSD || defined __USE_MISC || defined __USE_XOPEN
-# include <bits/types.h>
+//# include <bits/types.h>
 
 /* Seek to position POS on DIRP.  */
 extern void seekdir (DIR *__dirp, long int __pos) __THROW __nonnull ((1));
