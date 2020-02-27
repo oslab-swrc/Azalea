@@ -1,6 +1,8 @@
 #ifndef __OFFLOAD_CHANNEL_H__
 #define __OFFLOAD_CHANNEL_H__
 
+#include <pthread.h>
+
 #include "offload_memory_config.h"
 
 #define	PAGE_SIZE_4K	(0x1000)
@@ -51,6 +53,10 @@ typedef struct channel_struct {
   int in_connected;
   struct circular_queue *in_cq;
   unsigned long in_cq_len;
+
+  char padding1[64] __attribute__((aligned(L_CACHE_LINE_SIZE)));
+  pthread_mutex_t mutex;
+  char padding2[64] __attribute__((aligned(L_CACHE_LINE_SIZE)));
 } channel_t;
 
 // Channel function

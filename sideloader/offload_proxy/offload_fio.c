@@ -3,9 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <dirent.h>
 
 #include "offload_channel.h"
 #include "offload_fio.h"
@@ -19,9 +21,8 @@
  * @param channel 
  * @return none
  */
-void sys_off_open(struct channel_struct *ch)
+void sys_off_open(thread_job_t *job)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
 
@@ -34,9 +35,10 @@ void sys_off_open(struct channel_struct *ch)
   int  tid = 0;
   int  offload_function_type = 0;
 
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job->ch;
+  out_cq = job->ch->out_cq;
+  in_pkt = (io_packet_t *) &job->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -50,9 +52,6 @@ void sys_off_open(struct channel_struct *ch)
   printf("\nopen system call: path=%s, flags=%d, mode=%d", path, oflag, mode);
 #endif
 
-  // empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
-
   // execute open
   if(mode == 0) {
     iret = open(path, oflag);
@@ -65,7 +64,9 @@ void sys_off_open(struct channel_struct *ch)
 	fprintf(stderr, "FIO OPEN: %s, %s\n", strerror(errno), path);
 
   // retrun ret
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 /**
@@ -73,9 +74,8 @@ void sys_off_open(struct channel_struct *ch)
  * @param channel 
  * @return none
  */
-void sys_off_creat(struct channel_struct *ch)
+void sys_off_creat(thread_job_t *job)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
 
@@ -87,9 +87,10 @@ void sys_off_creat(struct channel_struct *ch)
   int  tid = 0;
   int  offload_function_type = 0;
 
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job->ch;
+  out_cq = job->ch->out_cq;
+  in_pkt = (io_packet_t *) &job->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -101,9 +102,6 @@ void sys_off_creat(struct channel_struct *ch)
   printf("\ncreat system call: path=%s, mode=%d", path, mode);
 #endif
 
-  // empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
-
   // execute create
   iret = creat(path, mode);
 
@@ -111,7 +109,9 @@ void sys_off_creat(struct channel_struct *ch)
 	fprintf(stderr, "FIO CREAT: %s, %s\n", strerror(errno), path);
 
   // retrun ret
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 /**
@@ -161,9 +161,8 @@ ssize_t do_sys_off_read_v(int fd, unsigned long iov_pa, int iovcnt)
  * @param channel 
  * @return none
  */
-void sys_off_read(struct channel_struct *ch)
+void sys_off_read(thread_job_t *job)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
 
@@ -176,9 +175,10 @@ void sys_off_read(struct channel_struct *ch)
   int tid = 0;
   int  offload_function_type = 0;
 
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job->ch;
+  out_cq = job->ch->out_cq;
+  in_pkt = (io_packet_t *) &job->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -187,18 +187,22 @@ void sys_off_read(struct channel_struct *ch)
   pa = (unsigned long) in_pkt->param2;
   count = (int) in_pkt->param3;
 
-  // empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
-
   // execute read
+
+#if 1
   sret = do_sys_off_read_v(fd, pa, count);
+#else
+  sret = read(fd, (void *) get_va(pa), (size_t) count);
+#endif
 
   // check error
   if(sret  == -1)
-	fprintf(stderr, "FIO READ: %s, %d\n", strerror(errno), fd);
+	fprintf(stderr, "FIO READ: %s, fd: %d, pa: %lx\n", strerror(errno), fd, pa);
 
   // retrun ret
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) sret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 /**
@@ -251,9 +255,8 @@ ssize_t do_sys_off_write_v(int fd, unsigned long iov_pa, int iovcnt)
  * @param channel 
  * @return none
  */
-void sys_off_write(struct channel_struct *ch)
+void sys_off_write(thread_job_t *job)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
 
@@ -266,9 +269,10 @@ void sys_off_write(struct channel_struct *ch)
   int tid = 0;
   int  offload_function_type = 0;
 
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job->ch;
+  out_cq = job->ch->out_cq;
+  in_pkt = (io_packet_t *) &job->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -277,17 +281,20 @@ void sys_off_write(struct channel_struct *ch)
   pa = (unsigned long) in_pkt->param2;
   count = (int) in_pkt->param3;
 
-  // empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
-
   // execute write
+#if 1
   sret = do_sys_off_write_v(fd, pa, count);
+#else
+  sret = write(fd, (void *) get_va(pa), (size_t) count);
+#endif
 
   // check error
   if(sret == -1)
-	fprintf(stderr, "FIO WRITE: %s, %d\n", strerror(errno), fd);
+	fprintf(stderr, "FIO WRITE: %s, fd: %d, pa: %lx\n", strerror(errno), fd, pa);
 
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) sret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 /**
@@ -296,9 +303,8 @@ void sys_off_write(struct channel_struct *ch)
  * @param channel 
  * @return none
  */
-void sys_off_close(struct channel_struct *ch)
+void sys_off_close(thread_job_t *job)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
 
@@ -309,27 +315,33 @@ void sys_off_close(struct channel_struct *ch)
   int tid = 0;
   int  offload_function_type = 0;
 
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job->ch;
+  out_cq = job->ch->out_cq;
+  in_pkt = (io_packet_t *) &job->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
 
   fd = (int) in_pkt->param1;
 
-  // empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
 
-  // execute close
-  iret = close(fd);
-
-  // check error
-  if(iret == -1)
-	fprintf(stderr, "FIO CLOSE: %s, %d\n", strerror(errno), fd);
+  if(fd > 2) {
+    // execute close
+    iret = close(fd);
+ 
+    // check error
+    if(iret == -1)
+      fprintf(stderr, "FIO CLOSE: %s, %d\n", strerror(errno), fd);
+  }
+  else {
+    iret = -1;
+  }
 
   // retrun ret
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 
@@ -339,9 +351,8 @@ void sys_off_close(struct channel_struct *ch)
  * @param channel 
  * @return none
  */
-void sys_off_lseek(struct channel_struct *ch)
+void sys_off_lseek(thread_job_t *job)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
 
@@ -354,9 +365,10 @@ void sys_off_lseek(struct channel_struct *ch)
   int tid = 0;
   int  offload_function_type = 0;
 
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job->ch;
+  out_cq = job->ch->out_cq;
+  in_pkt = (io_packet_t *) &job->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -364,9 +376,6 @@ void sys_off_lseek(struct channel_struct *ch)
   fd = (int) in_pkt->param1;
   offset = (off_t) in_pkt->param2;
   whence = (int) in_pkt->param3;
-
-  // empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
 
   // execute lseek
   oret = lseek(fd, offset, whence);
@@ -376,7 +385,9 @@ void sys_off_lseek(struct channel_struct *ch)
         fprintf(stderr, "FIO LSEEK: %s, %d\n", strerror(errno), fd);
 
   // retrun ret
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) oret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 
@@ -386,9 +397,8 @@ void sys_off_lseek(struct channel_struct *ch)
  * @param channel 
  * @return none
  */
-void sys_off_link(struct channel_struct *ch)
+void sys_off_link(thread_job_t *job)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
 
@@ -400,18 +410,16 @@ void sys_off_link(struct channel_struct *ch)
   int tid = 0;
   int  offload_function_type = 0;
 
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job->ch;
+  out_cq = job->ch->out_cq;
+  in_pkt = (io_packet_t *) &job->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
 
   oldpath = (char *) get_va(in_pkt->param1);
   newpath = (char *) get_va(in_pkt->param2);
-
-  // empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
 
   // execute link
   iret = link(oldpath, newpath);
@@ -421,7 +429,9 @@ void sys_off_link(struct channel_struct *ch)
     fprintf(stderr, "FIO LINK: %s, %s %s\n", strerror(errno), oldpath, newpath);
 
   // retrun ret
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 
@@ -431,9 +441,8 @@ void sys_off_link(struct channel_struct *ch)
  * @param channel 
  * @return none
  */
-void sys_off_unlink(struct channel_struct *ch)
+void sys_off_unlink(thread_job_t *job)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
 
@@ -444,17 +453,15 @@ void sys_off_unlink(struct channel_struct *ch)
   int tid = 0;
   int  offload_function_type = 0;
 
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job->ch;
+  out_cq = job->ch->out_cq;
+  in_pkt = (io_packet_t *) &job->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
 
   path = (char *) get_va(in_pkt->param1);
-
-  // empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
 
   // execute unlink
   iret = unlink(path);
@@ -464,7 +471,9 @@ void sys_off_unlink(struct channel_struct *ch)
     fprintf(stderr, "FIO UNLINK: %s, %s\n", strerror(errno), path);
 
   // retrun ret
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 /**
@@ -472,9 +481,8 @@ void sys_off_unlink(struct channel_struct *ch)
  * @param channel 
  * @return none
  */
-void sys_off_stat(struct channel_struct *ch)
+void sys_off_stat(thread_job_t *job)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
 
@@ -486,18 +494,16 @@ void sys_off_stat(struct channel_struct *ch)
   int tid = 0;
   int  offload_function_type = 0;
 
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job->ch;
+  out_cq = job->ch->out_cq;
+  in_pkt = (io_packet_t *) &job->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
 
   pathname = (char *) get_va(in_pkt->param1);
   buf = (struct stat *) get_va(in_pkt->param2);
-
-  // empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
 
   // execute unlink
   iret = stat(pathname, buf);
@@ -507,7 +513,9 @@ void sys_off_stat(struct channel_struct *ch)
     fprintf(stderr, "FIO STAT: %s, %s\n", strerror(errno), pathname);
 
   // retrun ret
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 /**
@@ -515,9 +523,8 @@ void sys_off_stat(struct channel_struct *ch)
  * @param channel 
  * @return none
  */
-void sys3_off_getcwd(struct channel_struct *ch)
+void sys3_off_getcwd(thread_job_t *job)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
 
@@ -529,18 +536,16 @@ void sys3_off_getcwd(struct channel_struct *ch)
   int tid = 0;
   int  offload_function_type = 0;
 
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job->ch;
+  out_cq = job->ch->out_cq;
+  in_pkt = (io_packet_t *) &job->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
 
   buf = (char *) get_va(in_pkt->param1);
   size = (size_t) in_pkt->param2;
-
-  // empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
 
   // execute unlink
   pret = getcwd(buf, size);
@@ -550,7 +555,9 @@ void sys3_off_getcwd(struct channel_struct *ch)
     fprintf(stderr, "FIO GETCWd: %s, %s\n", strerror(errno), buf);
 
   // retrun ret
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) pret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 /**
@@ -558,9 +565,8 @@ void sys3_off_getcwd(struct channel_struct *ch)
  * @param channel 
  * @return none
  */
-void sys3_off_system(struct channel_struct *ch)
+void sys3_off_system(thread_job_t *job)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
 
@@ -571,17 +577,15 @@ void sys3_off_system(struct channel_struct *ch)
   int tid = 0;
   int  offload_function_type = 0;
 
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job->ch;
+  out_cq = job->ch->out_cq;
+  in_pkt = (io_packet_t *) &job->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
 
   command = (char *) get_va(in_pkt->param1);
-
-  // empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
 
   // execute unlink
   iret = system(command);
@@ -591,7 +595,9 @@ void sys3_off_system(struct channel_struct *ch)
     fprintf(stderr, "FIO SYSTEM: %s, %s\n", strerror(errno), command);
 
   // retrun ret
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 /**
@@ -599,9 +605,8 @@ void sys3_off_system(struct channel_struct *ch)
  * @param channel 
  * @return none
  */
-void sys_off_chdir(struct channel_struct *ch)
+void sys_off_chdir(thread_job_t *job)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
 
@@ -612,17 +617,15 @@ void sys_off_chdir(struct channel_struct *ch)
   int tid = 0;
   int  offload_function_type = 0;
 
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job->ch;
+  out_cq = job->ch->out_cq;
+  in_pkt = (io_packet_t *) &job->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
 
   path = (char *) get_va(in_pkt->param1);
-
-  // empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
 
   // execute unlink
   iret = chdir(path);
@@ -632,7 +635,9 @@ void sys_off_chdir(struct channel_struct *ch)
     fprintf(stderr, "FIO CHDIR: %s, %s\n", strerror(errno), path);
 
   // retrun ret
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 /**
@@ -640,9 +645,8 @@ void sys_off_chdir(struct channel_struct *ch)
  * @param channel 
  * @return none
  */
-void sys3_off_opendir(struct channel_struct *ch)
+void sys3_off_opendir(thread_job_t *job)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
 
@@ -653,17 +657,15 @@ void sys3_off_opendir(struct channel_struct *ch)
   int tid = 0;
   int  offload_function_type = 0;
 
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job->ch;
+  out_cq = job->ch->out_cq;
+  in_pkt = (io_packet_t *) &job->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
 
   name = (char *) get_va(in_pkt->param1);
-
-  // empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
 
   // execute opendir 
   pret = opendir(name);
@@ -673,7 +675,9 @@ void sys3_off_opendir(struct channel_struct *ch)
     fprintf(stderr, "FIO OPENDIR: %s, NULL\n", strerror(errno));
 
   // retrun ret
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) pret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 
@@ -682,9 +686,8 @@ void sys3_off_opendir(struct channel_struct *ch)
  * @param channel 
  * @return none
  */
-void sys3_off_closedir(struct channel_struct *ch)
+void sys3_off_closedir(thread_job_t *job)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
 
@@ -695,17 +698,15 @@ void sys3_off_closedir(struct channel_struct *ch)
   int tid = 0;
   int  offload_function_type = 0;
 
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job->ch;
+  out_cq = job->ch->out_cq;
+  in_pkt = (io_packet_t *) &job->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
 
   dirp = (DIR *) in_pkt->param1;
-
-  // empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
 
   // execute closedir 
   iret = closedir(dirp);
@@ -715,7 +716,9 @@ void sys3_off_closedir(struct channel_struct *ch)
     fprintf(stderr, "FIO CLOSEDIR: %s\n", strerror(errno));
 
   // retrun ret
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 /**
@@ -723,9 +726,8 @@ void sys3_off_closedir(struct channel_struct *ch)
  * @param channel 
  * @return none
  */
-void sys3_off_readdir(struct channel_struct *ch)
+void sys3_off_readdir(thread_job_t *job)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
 
@@ -736,9 +738,10 @@ void sys3_off_readdir(struct channel_struct *ch)
   int tid = 0;
   int  offload_function_type = 0;
 
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job->ch;
+  out_cq = job->ch->out_cq;
+  in_pkt = (io_packet_t *) &job->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -746,9 +749,6 @@ void sys3_off_readdir(struct channel_struct *ch)
   dirp = (DIR *) in_pkt->param1;
 
   //printf("readdir(l): readdir: dirp: %lx \n", dirp);
-
-  // empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
 
   // execute readdir 
   errno = 0;
@@ -761,7 +761,9 @@ void sys3_off_readdir(struct channel_struct *ch)
   }
 
   // retrun ret
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) pret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 /**
@@ -769,9 +771,8 @@ void sys3_off_readdir(struct channel_struct *ch)
  * @param channel 
  * @return none
  */
-void sys3_off_rewinddir(struct channel_struct *ch)
+void sys3_off_rewinddir(thread_job_t *job)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
 
@@ -780,21 +781,21 @@ void sys3_off_rewinddir(struct channel_struct *ch)
   int tid = 0;
   int  offload_function_type = 0;
 
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job->ch;
+  out_cq = job->ch->out_cq;
+  in_pkt = (io_packet_t *) &job->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
 
   dirp = (DIR *) in_pkt->param1;
 
-  // empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
-
   // execute closedir 
   rewinddir(dirp);
 
   // retrun ret
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) 0);
+  pthread_mutex_unlock(&ch->mutex);
 }

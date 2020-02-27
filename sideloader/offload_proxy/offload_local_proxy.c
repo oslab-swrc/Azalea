@@ -13,6 +13,7 @@
 #include "offload_network.h"
 #include "systemcalllist.h"
 #include "arch.h"
+#include "offload_thread_pool.h"
 
 #define PAGE_SHIFT (12)
 #define PAGE_SIZE (1 << PAGE_SHIFT)
@@ -26,23 +27,51 @@
 //mmapped unikernels' start memory address, unikernels's start physical address = 48G
 extern unsigned long g_mmap_unikernels_mem_base_va;
 
-struct thread_channel_information {
+typedef struct offload_watch_arg_info {
    channel_t *ch;	
    int n_ch;
-   int mutex_index;
-}; 
+   int n_cq_element;
+   int index;
+} offload_watch_arg_t; 
 
 int g_offload_channel_runnable;
 int g_n_channels_per_node;
 int g_n_channels;
 int g_n_nodes;
 
-pthread_mutex_t count_mutex[MAX_MUTEX] __attribute__((aligned(L_CACHE_LINE_SIZE)));  
-pthread_cond_t count_threshold_cv[MAX_MUTEX] __attribute__((aligned(L_CACHE_LINE_SIZE))); 
-int is_data[MAX_MUTEX] __attribute__((aligned(L_CACHE_LINE_SIZE)));
-int watch_data[MAX_MUTEX] __attribute__((aligned(L_CACHE_LINE_SIZE)));
 
-volatile int atomic_kids;
+// mutex to handle send_offload_message() 
+pthread_mutex_t job_mutex[MAX_MUTEX] __attribute__((aligned(L_CACHE_LINE_SIZE)));  
+
+// data struct of thread argument for thread pool
+typedef struct job_mutex {
+  char padding[64] __attribute__((aligned(L_CACHE_LINE_SIZE)));
+  pthread_mutex_t mutex __attribute__((aligned(L_CACHE_LINE_SIZE)));
+} job_mutex_t;
+
+// pointer to thread pool 
+ThreadPool *g_pool[MAX_NODE];
+
+/**
+ * @brief memcpy by sizeof(unsigned long) 
+ * @param destination, source, size 
+ * @return (copied size)
+ */
+int memcpy64(void *destination, const void *source, int size)
+{
+  int i = 0;
+  int remain_byte = 0;
+
+  for (i=0; i<(size / 8); i++)
+    ((unsigned long *) destination)[i] = ((unsigned long *) source)[i];
+
+  remain_byte = i * 8;
+  for (i=0; i<(size % 8); i++) {
+    ((char *) destination)[remain_byte] = ((char *) source)[remain_byte];
+    remain_byte++;
+  }
+  return size;
+}
 
 /**
  * @brief offload local proxy thread
@@ -51,120 +80,90 @@ volatile int atomic_kids;
  */
 void *offload_local_proxy(void *arg)
 {
-  struct thread_channel_information *thread_channels = (struct thread_channel_information *)arg;
+io_packet_t *in_pkt = NULL;
+thread_job_t *job = NULL;
 
-  struct channel_struct *offload_channel = NULL;
-  struct channel_struct *curr_channel = NULL;
-  struct circular_queue *in_cq = NULL;
-  io_packet_t *in_pkt = NULL;
-
-  int index = 0;
-
-  offload_channel = thread_channels->ch;
-  index = thread_channels->mutex_index;
-
-  curr_channel = offload_channel;
-  in_cq = (struct circular_queue *) curr_channel->in_cq;
-
-
-  __sync_fetch_and_add(&atomic_kids, 1);
-
-  while (g_offload_channel_runnable) {
-
-    pthread_mutex_lock(&count_mutex[index]);
-
-    while(is_data[index] == 0) {
-      pthread_cond_wait(&count_threshold_cv[index],  &count_mutex[index]); 
-    }
-
-    while(cq_avail_data(in_cq)) {
-      in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  job = (thread_job_t *) arg;
+  in_pkt = (io_packet_t *) &job->pkt;
       
-      switch(in_pkt->io_function_type) {
-        case SYSCALL_sys_read:
-           sys_off_read(curr_channel);
-           break;
-        case SYSCALL_sys_write:
-           sys_off_write(curr_channel);
-           break;
-        case SYSCALL_sys_lseek:
-           sys_off_lseek(curr_channel);
-           break;
-        case SYSCALL_sys_open:
-           sys_off_open(curr_channel);
-           break;
-        case SYSCALL_sys_creat:
-           sys_off_creat(curr_channel);
-           break;
-        case SYSCALL_sys_close:
-           sys_off_close(curr_channel);
-           break;
-        case SYSCALL_sys_link:
-           sys_off_link(curr_channel);
-           break;
-        case SYSCALL_sys_unlink:
-           sys_off_unlink(curr_channel);
-           break;
-        case SYSCALL_sys_gethostname:
-           sys_off_gethostname(curr_channel);
-           break;
-        case SYSCALL_sys_gethostbyname:
-           sys_off_gethostbyname(curr_channel);
-           break;
-        case SYSCALL_sys_getsockname:
-           sys_off_getsockname(curr_channel);
-           break;
-        case SYSCALL_sys_socket:
-           sys_off_socket(curr_channel);
-           break;
-        case SYSCALL_sys_bind:
-           sys_off_bind(curr_channel);
-           break;
-        case SYSCALL_sys_listen:
-           sys_off_listen(curr_channel);
-           break;
-        case SYSCALL_sys_connect:
-           sys_off_connect(curr_channel);
-           break;
-        case SYSCALL_sys_accept:
-           sys_off_accept(curr_channel);
-           break;
-        case SYSCALL_sys_stat:
-           sys_off_stat(curr_channel);
-           break;
-        case SYSCALL_sys3_getcwd:
-           sys3_off_getcwd(curr_channel);
-           break;
-        case SYSCALL_sys3_system:
-           sys3_off_system(curr_channel);
-           break;
-        case SYSCALL_sys_chdir:
-           sys_off_chdir(curr_channel);
-           break;
-        case SYSCALL_sys3_opendir:
-           sys3_off_opendir(curr_channel);
-           break;
-        case SYSCALL_sys3_closedir:
-           sys3_off_closedir(curr_channel);
-           break;
-        case SYSCALL_sys3_readdir:
-           sys3_off_readdir(curr_channel);
-           break;
-        case SYSCALL_sys3_rewinddir:
-           sys3_off_rewinddir(curr_channel);
-           break;
-        default :
-           printf("function type: unknown[%d]\n", (int) in_pkt->io_function_type);
-           break;
-      }
-    }
-
-    is_data[index] = 0;
-    watch_data[index] = 1;
-    pthread_mutex_unlock(&count_mutex[index]);
+  switch(in_pkt->io_function_type) {
+    case SYSCALL_sys_read:
+       sys_off_read(job);
+       break;
+    case SYSCALL_sys_write:
+       sys_off_write(job);
+       break;
+    case SYSCALL_sys_lseek:
+       sys_off_lseek(job);
+       break;
+    case SYSCALL_sys_open:
+       sys_off_open(job);
+       break;
+    case SYSCALL_sys_creat:
+       sys_off_creat(job);
+       break;
+    case SYSCALL_sys_close:
+       sys_off_close(job);
+       break;
+    case SYSCALL_sys_link:
+       sys_off_link(job);
+       break;
+    case SYSCALL_sys_unlink:
+       sys_off_unlink(job);
+       break;
+    case SYSCALL_sys_gethostname:
+       sys_off_gethostname(job);
+       break;
+    case SYSCALL_sys_gethostbyname:
+       sys_off_gethostbyname(job);
+       break;
+    case SYSCALL_sys_getsockname:
+       sys_off_getsockname(job);
+       break;
+    case SYSCALL_sys_socket:
+       sys_off_socket(job);
+       break;
+    case SYSCALL_sys_bind:
+       sys_off_bind(job);
+       break;
+    case SYSCALL_sys_listen:
+       sys_off_listen(job);
+       break;
+    case SYSCALL_sys_connect:
+       sys_off_connect(job);
+       break;
+    case SYSCALL_sys_accept:
+       sys_off_accept(job);
+       break;
+    case SYSCALL_sys_stat:
+       sys_off_stat(job);
+       break;
+    case SYSCALL_sys3_getcwd:
+       sys3_off_getcwd(job);
+       break;
+    case SYSCALL_sys3_system:
+       sys3_off_system(job);
+       break;
+    case SYSCALL_sys_chdir:
+       sys_off_chdir(job);
+       break;
+    case SYSCALL_sys3_opendir:
+       sys3_off_opendir(job);
+       break;
+    case SYSCALL_sys3_closedir:
+       sys3_off_closedir(job);
+       break;
+    case SYSCALL_sys3_readdir:
+       sys3_off_readdir(job);
+       break;
+    case SYSCALL_sys3_rewinddir:
+       sys3_off_rewinddir(job);
+       break;
+    default :
+       printf("function type: unknown[%d]\n", (int) in_pkt->io_function_type);
+       break;
   }
 
-  pthread_exit((void *)0);
   return (NULL);
 }
 
@@ -174,43 +173,114 @@ void *offload_local_proxy(void *arg)
  * @param arg contains channels and channel number for this thread 
  * @return (NULL)
  */
-void *offload_local_watch(void *arg)
+void *offload_watch(void *arg)
 {
-  struct thread_channel_information *thread_channels = (struct thread_channel_information *)arg;
+  struct offload_watch_arg_info *thread_channels = (struct offload_watch_arg_info *)arg;
 
-  int n_channels_of_thread = 0;
-  int mutex_index = 0;
+  //io_packet_t param_pkt[100];
+  cq_element *ce = NULL;
+  io_packet_t *in_pkt = NULL;
+
+  int n_channels = 0;
+  int n_cq_element= 0;
+
   struct channel_struct *offload_channels = NULL;
   struct channel_struct *curr_channel = NULL;
   struct circular_queue *in_cq = NULL;
 
   int i = 0;
 
+  //thread job parameer
+  thread_job_t *job = NULL;//[THREAD_POOL_SIZE];
+  int max_job_size = 0;
+  int job_index = 0;
+  int thread_pool_size = 0;
+  ThreadPool *pool = NULL;
+
   offload_channels = thread_channels->ch;
-  n_channels_of_thread = thread_channels->n_ch;
-  mutex_index = thread_channels->mutex_index;
+  n_channels = thread_channels->n_ch;
+  n_cq_element = thread_channels->n_cq_element;
+
+#ifdef DEBUG
+  printf("# channels: %d, # cq_element: %d\n", n_channels, n_cq_element);
+#endif
+
+  max_job_size = n_channels * n_cq_element;
+  job = (thread_job_t *) malloc(max_job_size * sizeof(thread_job_t));
+  if (job == NULL) {
+    printf("failed to allocate memory\n");
+    exit(1);
+  }
+
+  //create thread pool
+  thread_pool_size = n_channels * 3;
+  pool = createPool(thread_pool_size);
+  g_pool[thread_channels->index] = pool;
+  sleep(1);
+
+
+  for(i = 0; i < n_channels; i++) {
+    pthread_mutex_init(&(offload_channels + i)->mutex, NULL);
+  }
+
+#define RETRY
+
+#ifdef RETRY
+  int retry_count = 0;
+  int max_retry_count = 0;
+  max_retry_count = (int) (thread_pool_size / n_channels);
+#endif
+
+  job_index = 0;
 
   while (g_offload_channel_runnable) {
-    for(i = 0; i < n_channels_of_thread && g_offload_channel_runnable; i++) {
-      if(watch_data[mutex_index + i] == 1) {
+    for(i = 0; i < n_channels && g_offload_channel_runnable; i++) {
         curr_channel = (struct channel_struct *) (offload_channels + i);
-        asm volatile ("" : : : "memory");
         in_cq = (struct circular_queue *) curr_channel->in_cq;
+
+#ifdef RETRY
+        retry_count = 0;
+#endif
+retry_watch:
+
         if(cq_avail_data(in_cq)) {
-          pthread_mutex_lock(&count_mutex[mutex_index + i]);
-          is_data[mutex_index + i] = 1;
-          watch_data[mutex_index + i] = 0;
-          pthread_cond_signal(&count_threshold_cv[mutex_index + i]);  
-          pthread_mutex_unlock(&count_mutex[mutex_index + i]); 
+          ce = (cq_element *) (in_cq->data + in_cq->tail);
+          in_pkt= (io_packet_t *)(ce);
+
+          // copy pkt to thread args
+          memcpy64((void *)&job[job_index].pkt, (void *) in_pkt, sizeof(io_packet_t));
+          job[job_index].ch = curr_channel;
+
+          in_cq->tail = (in_cq->tail + 1) % in_cq->size;
+
+          //add job to thread pool
+          while(WAIT_ISSUED == addJobToPool(pool, (void *) offload_local_proxy, (void *) &job[job_index])) {
+	    ;//usleep(1);
+          } 
+
+          job_index = (job_index + 1) % max_job_size;
+
+#ifdef RETRY 
+#if 1
+          if(++retry_count < max_retry_count) {
+                //retry_count++;
+                goto retry_watch;
+          }
+#else
+          goto retry_watch;
+#endif
+#endif
         }
-      }
     }
   }
+
+  destroyPool(pool);
+
+  free(job);
 
   pthread_exit((void *)0);
   return (NULL);
 }
-
 /**
  * @brief wait command and do command
  * @param  channel
@@ -236,7 +306,14 @@ void cmd(channel_t *cs)
 	icq = (cs + i)->in_cq;
         if((i%g_n_channels_per_node == 0)&& (i != 0))
         printf("\n");
-        printf("queue state(%03d): [p->u: h:%2d t:%2d] [u->p: h:%2d t:%2d]\n", i, ocq->head, ocq->tail, icq->head, icq->tail);
+        //printf("queue state(%03d): [p->u: h:%2d t:%2d] [u->p: h:%2d t:%2d]\n", i, ocq->head, ocq->tail, icq->head, icq->tail);
+	printf("queue state(%03d): [p->u(%2d): h:%2d t:%2d] [u->p(%2d): h:%2d t:%2d]\n", i, cq_avail_data(ocq), ocq->head, ocq->tail, cq_avail_data(icq), icq->head, icq->tail);
+      }
+      break;
+
+    case 't':
+      for (i = 0; i < g_n_nodes; i++) {
+        printf("thread pool: #threads: %d, #pending jobs: %d \n", (int) getThreadCount(g_pool[i]), (int) getJobCount(g_pool[i]));
       }
       break;
 
@@ -268,15 +345,13 @@ void cmd(channel_t *cs)
 int main(int argc, char *argv[])
 {
   channel_t *offload_channels;
-  struct thread_channel_information thread_channels[OFFLOAD_MAX_CHANNEL];
-  struct thread_channel_information thread_channels_watch[MAX_NODE];
+  offload_watch_arg_t offload_watch_arg[MAX_NODE];
   unsigned long ocq_elements, icq_elements;
   unsigned long opages, ipages;
   int err = 0;
   int i = 0;
   unsigned long status;
-  pthread_t *offload_threads;
-  pthread_t *offload_threads_watch;
+  pthread_t *threads_offload_watch;
 
   unsigned long unikernels_mem_size = 0;
 
@@ -314,16 +389,10 @@ int main(int argc, char *argv[])
     exit(1);
   }
 
-  offload_threads = (pthread_t *) malloc((g_n_channels) * sizeof(pthread_t)); // 1 for watch
-  if (offload_threads == NULL) {
+  threads_offload_watch = (pthread_t *) malloc((g_n_nodes) * sizeof(pthread_t)); // 1 for watch
+  if (threads_offload_watch == NULL) {
     printf("failed to allocate memory\n");
-    goto __free_offload_threads;
-  }
-
-  offload_threads_watch = (pthread_t *) malloc((g_n_nodes) * sizeof(pthread_t)); // 1 for watch
-  if (offload_threads_watch == NULL) {
-    printf("failed to allocate memory\n");
-    goto __free_offload_threads_watch;
+    goto __free_threads_offload_watch;
   }
 
   for (i = 0; i < g_n_channels; i++)
@@ -338,75 +407,36 @@ int main(int argc, char *argv[])
 
   g_offload_channel_runnable = 1;
 
-  for(i = 0; i < MAX_MUTEX; i++) {
-    pthread_mutex_init(&count_mutex[i], NULL);  
-    pthread_cond_init(&count_threshold_cv[i], NULL);
-    is_data[i] = 0;
-    watch_data[i] = 1;
-  }
 
-  atomic_kids = 0;
-
-  channel_t *curr_ch = offload_channels;
-  for (i = 0; i < g_n_channels; i++) {
-      thread_channels[i].ch = curr_ch;
-      thread_channels[i].n_ch = 1;
-      thread_channels[i].mutex_index = i;
-      pthread_create(offload_threads + i, NULL, offload_local_proxy, &thread_channels[i]);
-      curr_ch++;
-  }
-
-  // wait for offload_local_proxy
-  while(1) {
-    if(atomic_kids == g_n_channels) 
-     break;
-  }  
-
-  usleep(1000);
-
-#if 0
+#if 1
   for (i = 0; i < g_n_nodes; i++) {
-    thread_channels_watch[i].ch = offload_channels + i * g_n_channels_per_node;
-    thread_channels_watch[i].n_ch = g_n_channels_per_node;
-    thread_channels_watch[i].mutex_index = i * g_n_channels_per_node;
-    pthread_create(offload_threads_watch + i, NULL, offload_local_watch, &thread_channels_watch[i]);
+    offload_watch_arg[i].ch = offload_channels + i * g_n_channels_per_node;
+    offload_watch_arg[i].n_ch = g_n_channels_per_node;
+    offload_watch_arg[i].n_cq_element = icq_elements;
+    offload_watch_arg[i].index = i;
+    pthread_create(threads_offload_watch + i, NULL, offload_watch, &offload_watch_arg[i]);
   }
 #else
-    thread_channels_watch[0].ch = offload_channels;
-    thread_channels_watch[0].n_ch = g_n_channels;
-    thread_channels_watch[0].mutex_index = 0;
-    pthread_create(offload_threads_watch + 0, NULL, offload_local_watch, &thread_channels_watch[0]);
+    offload_watch_arg[0].ch = offload_channels;
+    offload_watch_arg[0].n_ch = g_n_channels;
+    offload_watch_arg[0].n_cq_element = icq_elements;
+    offload_watch_arg[0].index = 0;
+    pthread_create(threads_offload_watch + 0, NULL, offload_watch, &offload_watch_arg[0]);
 
 #endif
 
   // begin of logic
   cmd(offload_channels);
 
-  for (i = 0; i < g_n_channels; i++) { // 1 for watch
-    pthread_mutex_lock(&count_mutex[i]);
-    pthread_cond_signal(&count_threshold_cv[i]);  
-    is_data[i] = 1;
-    pthread_mutex_unlock(&count_mutex[i]); 
-  }
-
-  for (i = 0; i < g_n_channels; i++) { // 1 for watch
-    pthread_join(*(offload_threads + i), (void **)&status);
-  }
-
-#if 0
+#if 1
   for (i = 0; i < g_n_nodes; i++) { // 1 for watch
 #else
   for (i = 0; i < 1; i++) { // 1 for watch
 #endif
-    pthread_join(*(offload_threads_watch + i), (void **)&status);
+    pthread_join(*(threads_offload_watch + i), (void **)&status);
   }
 
-  for (i = 0; i < g_n_channels; i++) { // 1 for watch
-    pthread_mutex_destroy(&count_mutex[i]);
-    pthread_cond_destroy(&count_threshold_cv[i]);
-  }
   // end of logic
-
   if (munmap_channels(offload_channels, g_n_channels) < 0)
       err++;
 
@@ -419,13 +449,9 @@ int main(int argc, char *argv[])
 
 __end:
 
-__free_offload_threads_watch:
-  if (offload_threads_watch)
-    free(offload_threads_watch);
-
-__free_offload_threads:
-  if (offload_threads)
-    free(offload_threads);
+__free_threads_offload_watch:
+  if (threads_offload_watch)
+    free(threads_offload_watch);
 
   if (offload_channels)
     free(offload_channels);

@@ -61,7 +61,7 @@
 #define THREAD_DEFAULT_TIME_QUANTUM   THREAD_INFINITE_TIME_QUANTUM
 #define THREAD_DEFAULT_TIME_SLICE     (10)
 #define THREAD_IDLE_THREAD_TIME_SLICE (10)
-#define RUNNABLE_MAX			20
+#define RUNNABLE_MAX			100
 #endif
 
 #define THREAD_INIT_NAME	      (~0x0)
@@ -193,6 +193,7 @@ int __thread_exit(int tid);
 int thread_exit(TCB *tcb);
 int lk_app_exec(void *app_ptr);
 BOOL schedule(QWORD intention);
+BOOL schedule_to(int next_tid, QWORD intention);
 int thread_suspend(int tid);
 int thread_wake_up(int tid);
 
