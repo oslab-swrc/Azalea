@@ -61,7 +61,7 @@
 #define THREAD_DEFAULT_TIME_QUANTUM   THREAD_INFINITE_TIME_QUANTUM
 #define THREAD_DEFAULT_TIME_SLICE     (10)
 #define THREAD_IDLE_THREAD_TIME_SLICE (10)
-#define RUNNABLE_MAX			20
+#define RUNNABLE_MAX			100
 #endif
 
 #define THREAD_INIT_NAME	      (~0x0)
@@ -107,6 +107,9 @@ enum thread_state_enum {
 #define THREAD_IPI_ALL		(APIC_DESTINATION_SHORT_HAND_ALL_INCLUDING_SELF >> 18)
 #define THREAD_IPI_ALL_BUT_SELF	(APIC_DESTINATION_SHORT_HAND_ALL_EXCLUDING_SELF >> 18)
 
+#define THREAD_INIT_CREATE    0
+#define THREAD_INIT_IDLE      1
+#define THREAD_INIT_DESTROY   2
 
 #define SET_CORE_MASK(core_mask, i)	((core_mask)->mask[i / (sizeof(DWORD)*8)]) |= (0x1 << (i % (sizeof(DWORD)*8)))
 #define CLEAR_CORE_MASK(core_mask, i)	(core_mask)->mask[i / (sizeof(DWORD)*8)] &= ~(0x1 << (i % (sizeof(DWORD)*8)))
@@ -177,7 +180,7 @@ int create_thread(QWORD ip, QWORD argv, int core_mask);
 
 void sched_init(void);
 void thread_init(void);
-void init_tcb(TCB *tcb, QWORD stack);
+void init_tcb(TCB *tcb, QWORD stack, const int type);
 void lk_thread_set_name(QWORD tid, QWORD name);
 QWORD lk_thread_lookup_tid(QWORD name);
 QWORD lk_thread_lookup_state(QWORD tid);
