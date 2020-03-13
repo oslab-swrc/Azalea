@@ -6,14 +6,16 @@
 #include "memory.h"
 #include "shellstorage.h"
 #include "thread.h"
+#include "utility.h"
+#include "console_function.h"
 
 #define INTR_CNT 256
 
-extern unsigned int shutdown_kernel ;
+extern unsigned int shutdown_kernel;
 extern QWORD g_memory_start;
+extern BOOL g_console_proxy_flag;    // Console proxy availability flag 
 
-
-unsigned int general_fault_exeception_cnt ;
+unsigned int general_fault_exeception_cnt;
 
 struct intr_handler {
   QWORD user_driver_id;
@@ -41,12 +43,31 @@ void send_eoi(int irq_no)
   lapic_send_eoi();
 }
 
+char e_code[][50] = {"Divide Error", "Debug", "NMI", "BreakPoint", "Overflow", 
+"Bound Range Exceeded", "Invalid Opcode", "Device Not Available", "Double Fault", "Coprocessor Segment Overrun", 
+"Invalid TSS", "Segment Not Present", "Stack Segment Fault", "General Protection", "Page Fault", 
+"Reserved", "FPU Error", "Alignment Check", "Machne Check", "SIMD Floating Point Exception", 
+"Reserved", "Reserved", "Reserved", "Reserved", "Reserved", 
+"Reserved", "Reserved", "Reserved", "Reserved", "Reserved", 
+"Reserved", "Reserved"};
+
 /**
- * Common Exception Handler
+ * @brief Common Exception Handler
+ * @param vector_number - vector number of error
+ * @param error_code - error code
+ * @param v - error loc.
+ * @return none
  */
 void lk_common_exception_handler(int vector_number, QWORD error_code, QWORD v)
 {
-  lk_print_xy(0, 24, "Exception: %Q %Q %Q %Q", get_apic_id(), (QWORD) vector_number, v, error_code);
+  char msg[256] = {0, };
+
+  lk_sprintf(msg, "Exception: %Q %s %Q %Q\n", get_apic_id(), e_code[vector_number], v, error_code);
+  
+  lk_print_xy(0, 24, msg);
+
+  if (g_console_proxy_flag)
+    cs_printf(msg);
 
   while(1)
     ;
