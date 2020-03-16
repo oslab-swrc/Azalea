@@ -45,6 +45,8 @@ struct thread_list g_migrating_list;
 atomic_t g_exit_thread_cnt;
 atomic_t g_thread_cnt;
 
+static void *tcb_base_addr;
+
 static inline BOOL core_is_allowed(TCB * t, int cid)
 {
   return ISSET_CORE_MASK(&t->core_mask, cid) ? FALSE : TRUE;
@@ -91,7 +93,6 @@ void sched_init(void)
 void thread_init(void)
 {
   int i = 0;
-  void *t_tcb = NULL;
 
   thread_list_init(&g_global_tcb_list);
 
@@ -101,14 +102,14 @@ void thread_init(void)
     g_running_thread_list[i] = NULL;
   }
 
-  t_tcb = az_alloc(PAGE_SIZE_4K*CONFIG_NUM_THREAD);
-  if(t_tcb == NULL)
+  tcb_base_addr = az_alloc(PAGE_SIZE_4K*CONFIG_NUM_THREAD);
+  if(tcb_base_addr == NULL)
     debug_halt((char *) __func__, __LINE__);
 
   // Initialize TCBs
   for (i = 0; i < CONFIG_NUM_THREAD; i++) {
     TCB *tcb;
-    void *tcb_temp = t_tcb + (PAGE_SIZE_4K * i);
+    void *tcb_temp = tcb_base_addr + (PAGE_SIZE_4K * i);
 
     tcb = (TCB *) tcb_temp;
     tcb->state = THREAD_STATE_NOTALLOC;
@@ -243,7 +244,9 @@ TCB *alloc_tcb(void)
 }
 
 /**
- * allocate a TCB for the idle thread
+ * @brief Allocate a TCB for the idle thread
+ * @param cid - 
+ * @return Allocated TCB
  */
 TCB *alloc_tcb_idle(int cid)
 {
@@ -254,45 +257,56 @@ TCB *alloc_tcb_idle(int cid)
   return tcb;
 }
 
+/**
+ * @brief check whether input tcb is idle thread
+ * @param tcb - target TCB
+ * @return if idle return TRUE(1), else FALSE(0)
+ */
 int is_idle_thread(TCB * tcb)
 {
   return (tcb->id < MAX_PROCESSOR_COUNT) ? 1 : 0;
 }
 
-void init_tcb(TCB * tcb, QWORD stack)
+/** 
+ * @brief Initialize TCB in three case (create, idle, destroy)
+ * @param tcb - target TCB
+ * @param stack - stack address set when creating thread
+ * @param type - Initialize type (CREATE, IDLE, DESTROY)
+ * @return none
+ */
+void init_tcb(TCB * tcb, QWORD stack, const int type)
 {
-  if (is_idle_thread(tcb)) {
-    tcb->remaining_time_slice = THREAD_IDLE_THREAD_TIME_SLICE;
-    tcb->remaining_time_quantum = THREAD_IDLE_THREAD_TIME_SLICE;
-  } else {
-//TODO:
-#if 0 
-    tcb->stack = (QWORD) stack + CONFIG_TCB_SIZE;
-    tcb->stack_base = tcb->stack;
-    tcb->remaining_time_slice = THREAD_DEFAULT_TIME_SLICE;
-    tcb->remaining_time_quantum = THREAD_DEFAULT_TIME_QUANTUM;
-#else
+  void *tcb_temp = tcb_base_addr + (PAGE_SIZE_4K * (tcb->id-MAX_PROCESSOR_COUNT));
+
+  switch (type) {
+  case THREAD_INIT_CREATE:
     tcb->stack_base = (QWORD) stack + CONFIG_STACK_SIZE;
     tcb->remaining_time_slice = THREAD_DEFAULT_TIME_SLICE;
     tcb->remaining_time_quantum = THREAD_DEFAULT_TIME_QUANTUM;
-#endif
 
     tcb->name = THREAD_INIT_NAME;
+    /*tcb->state = THREAD_STATE_CREATED;*/
+    tcb->acc_ltc = 0;
+    break;
+  case THREAD_INIT_IDLE:
+    tcb->remaining_time_slice = THREAD_IDLE_THREAD_TIME_SLICE;
+    tcb->remaining_time_quantum = THREAD_IDLE_THREAD_TIME_SLICE;
+    tcb->acc_ltc = 0;
+    break;
+  case THREAD_INIT_DESTROY:
+    // free the allocated stack memory
+    az_free((void *) (tcb->stack_base - CONFIG_STACK_SIZE));
+
+    //Initialize tcb->stack
+    tcb->stack = (QWORD) tcb_temp + CONFIG_TCB_SIZE;
+    tcb->stack_base = tcb->stack;
+    tcb->state = THREAD_STATE_NOTALLOC;
+    tcb->running_core = -1;
+    break;
+  default:
+    debug_halt((char *)__func__, tcb->id);
+    break;
   }
-
-  /*tcb->state = THREAD_STATE_CREATED;*/
-
-  tcb->acc_ltc = 0;
-}
-
-void init_tcb_destroy(TCB * tcb)
-{
-  // free the allocated stack memory
-  az_free((void *) (tcb->stack_base - CONFIG_STACK_SIZE));
-
-  init_tcb(tcb, 0);
-  tcb->state = THREAD_STATE_NOTALLOC;  // XXX:
-  tcb->running_core = -1;
 }
 
 #if 1
@@ -311,7 +325,7 @@ static void destroy_tcb(TCB *t)
     dl_list_add_tail(&t->tcb_link, &g_global_tcb_list.tcb_list);
     g_global_tcb_list.count++;
     mfence();
-    init_tcb_destroy(t);
+    init_tcb(t, 0, THREAD_INIT_DESTROY);
     t->gen++;
     spinlock_unlock(&g_global_tcb_list.lock);
   } else if (per_cpu(local_tcb_list).count > 4) {
@@ -323,13 +337,13 @@ static void destroy_tcb(TCB *t)
     mfence();
     spinlock_unlock(&g_global_tcb_list.lock);
 
-    init_tcb_destroy(t);
+    init_tcb(t, 0, THREAD_INIT_DESTROY);
     t->gen++;
     dl_list_init(&per_cpu(local_tcb_list).tcb_list);
     dl_list_add_tail(&t->tcb_link, &per_cpu(local_tcb_list).tcb_list);
     per_cpu(local_tcb_list).count = 1;
   } else {
-    init_tcb_destroy(t);
+    init_tcb(t, 0, THREAD_INIT_DESTROY);
     t->gen++;
     dl_list_add_tail(&t->tcb_link, &per_cpu(local_tcb_list).tcb_list);
     per_cpu(local_tcb_list).count++;
@@ -339,7 +353,7 @@ static void destroy_tcb(TCB *t)
   list_insert_tail(&t->tcb_link, &g_global_tcb_list.tcb_list);
   g_global_tcb_list.count++;
   mfence();
-  init_tcb_destroy(t);
+  init_tcb(t, 0, THREAD_INIT_DESTROY);
   t->gen++;
   spinlock_unlock(&g_global_tcb_list.lock);
 #endif
@@ -605,9 +619,9 @@ int create_thread(QWORD ip, QWORD argv, int core_mask)
   tcb_lock(thr);
 
   stack_address = az_alloc(CONFIG_STACK_SIZE);
-  lk_print("Thread created: %d, stack: %q\n", thr->id, stack_address);
+  lk_print("Thread created: %d, stack: %q, %q\n", thr->id, stack_address, thr->stack);
 
-  init_tcb(thr, (QWORD) stack_address);
+  init_tcb(thr, (QWORD) stack_address, THREAD_INIT_CREATE);
   
   thr->running_core = core_mask;
   set_core(thr, &cst, core_mask);
@@ -1401,7 +1415,7 @@ void setup_idle_thread()
   // idle thread(thread0) creation for BSP
   // This must be the first alloc_tcb() call
   thread_idle = alloc_tcb_idle(cid);
-  init_tcb(thread_idle, 0);
+  init_tcb(thread_idle, 0, THREAD_INIT_IDLE);
 
   thread_idle->state = THREAD_STATE_RUNNING;
   set_cr3(CONFIG_KERNEL_PAGETABLE_ADDRESS);
