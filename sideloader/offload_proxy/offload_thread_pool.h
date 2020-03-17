@@ -14,8 +14,8 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MYTHREADS_H
-#define MYTHREADS_H
+#ifndef OFFLOAD_THREAD_POOL_H
+#define OFFLOAD_THREAD_POOL_H
 
 #include <stdint.h> // Standard integer
 #include <pthread.h> // The thread library
@@ -328,4 +328,4 @@ uint64_t get_job_count(thread_pool_t *pool);
  */
 uint64_t get_thread_count(thread_pool_t *);
 
-#endif
+#endif /* OFFLOAD_THREAD_POOL_H */

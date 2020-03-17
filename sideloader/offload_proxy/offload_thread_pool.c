@@ -461,7 +461,11 @@ void suspend_pool(thread_pool_t *pool){
 /* Resume a suspended pool. See header for more
  * details.
  */
+<<<<<<< HEAD
+void resume_pool(thread_pool_t *pool){
+=======
 void resumePool(thread_pool_t *pool){
+>>>>>>> fdb55f0c5a2912199e7add48bd7698f493a7f7f0
 	if(pool==NULL || !pool->is_initialized){ // Sanity check
 		printf("\n[THREADPOOL:RESM:ERROR] Pool is not initialized!");
 		return;
