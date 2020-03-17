@@ -94,30 +94,30 @@ void cmd(channel_t *cs)
   while (loop) {
     switch (getchar()) {
     // show queue status
-    case 'q':
-	ocq = cs->out_cq;
-	icq = cs->in_cq;
-        printf("queue state(%03d): ptu: h:%d t:%d utp: h:%d t:%d\n", start_index, ocq->head, ocq->tail, icq->head, icq->tail);
-      break;
-
-    // stop console_local_proxy which manages the channels on scif region
-    case 'x':
-      g_console_proxy_runnable = 0;
-      console_channel_info = ((unsigned long *) g_mmap_console_channels_info_va) + start_index;
-      *(console_channel_info) = (unsigned long) 0;
-      loop = 0;
-      break;
-
-    case '\n':
-      printf("> ");
-      fflush(stdout);
-      break;
-
-    default:
-      break;
+      case 'q':
+          ocq = cs->out_cq;
+          icq = cs->in_cq;
+          printf("queue state(%03d): ptu: h:%d t:%d utp: h:%d t:%d\n", start_index, ocq->head, ocq->tail, icq->head, icq->tail);
+        break;
+ 
+      // stop console_local_proxy which manages the channels on scif region
+      case 'x':
+        g_console_proxy_runnable = 0;
+        console_channel_info = ((unsigned long *) g_mmap_console_channels_info_va) + start_index;
+        *(console_channel_info) = (unsigned long) 0;
+        loop = 0;
+        break;
+ 
+      case '\n':
+        printf("> ");
+        fflush(stdout);
+        break;
+ 
+      default:
+        break;
     }
+    usleep(10);
   }
-  usleep(10);
 }
 
 

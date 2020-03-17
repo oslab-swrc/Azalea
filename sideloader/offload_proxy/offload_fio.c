@@ -13,6 +13,7 @@
 #include "offload_fio.h"
 #include "offload_message.h"
 #include "offload_mmap.h"
+#include "offload_thread_pool.h"
 
 //#define DEBUG
 
@@ -21,7 +22,7 @@
  * @param channel 
  * @return none
  */
-void sys_off_open(thread_job_t *job)
+void sys_off_open(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -36,9 +37,9 @@ void sys_off_open(thread_job_t *job)
   int  offload_function_type = 0;
 
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -74,7 +75,7 @@ void sys_off_open(thread_job_t *job)
  * @param channel 
  * @return none
  */
-void sys_off_creat(thread_job_t *job)
+void sys_off_creat(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -88,9 +89,9 @@ void sys_off_creat(thread_job_t *job)
   int  offload_function_type = 0;
 
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -161,7 +162,7 @@ ssize_t do_sys_off_read_v(int fd, unsigned long iov_pa, int iovcnt)
  * @param channel 
  * @return none
  */
-void sys_off_read(thread_job_t *job)
+void sys_off_read(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -176,9 +177,9 @@ void sys_off_read(thread_job_t *job)
   int  offload_function_type = 0;
 
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -255,7 +256,7 @@ ssize_t do_sys_off_write_v(int fd, unsigned long iov_pa, int iovcnt)
  * @param channel 
  * @return none
  */
-void sys_off_write(thread_job_t *job)
+void sys_off_write(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -270,9 +271,9 @@ void sys_off_write(thread_job_t *job)
   int  offload_function_type = 0;
 
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -303,7 +304,7 @@ void sys_off_write(thread_job_t *job)
  * @param channel 
  * @return none
  */
-void sys_off_close(thread_job_t *job)
+void sys_off_close(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -316,9 +317,9 @@ void sys_off_close(thread_job_t *job)
   int  offload_function_type = 0;
 
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -351,7 +352,7 @@ void sys_off_close(thread_job_t *job)
  * @param channel 
  * @return none
  */
-void sys_off_lseek(thread_job_t *job)
+void sys_off_lseek(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -366,9 +367,9 @@ void sys_off_lseek(thread_job_t *job)
   int  offload_function_type = 0;
 
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -397,7 +398,7 @@ void sys_off_lseek(thread_job_t *job)
  * @param channel 
  * @return none
  */
-void sys_off_link(thread_job_t *job)
+void sys_off_link(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -411,9 +412,9 @@ void sys_off_link(thread_job_t *job)
   int  offload_function_type = 0;
 
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -441,7 +442,7 @@ void sys_off_link(thread_job_t *job)
  * @param channel 
  * @return none
  */
-void sys_off_unlink(thread_job_t *job)
+void sys_off_unlink(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -454,9 +455,9 @@ void sys_off_unlink(thread_job_t *job)
   int  offload_function_type = 0;
 
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -481,7 +482,7 @@ void sys_off_unlink(thread_job_t *job)
  * @param channel 
  * @return none
  */
-void sys_off_stat(thread_job_t *job)
+void sys_off_stat(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -495,9 +496,9 @@ void sys_off_stat(thread_job_t *job)
   int  offload_function_type = 0;
 
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -523,7 +524,7 @@ void sys_off_stat(thread_job_t *job)
  * @param channel 
  * @return none
  */
-void sys3_off_getcwd(thread_job_t *job)
+void sys3_off_getcwd(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -537,9 +538,9 @@ void sys3_off_getcwd(thread_job_t *job)
   int  offload_function_type = 0;
 
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -565,7 +566,7 @@ void sys3_off_getcwd(thread_job_t *job)
  * @param channel 
  * @return none
  */
-void sys3_off_system(thread_job_t *job)
+void sys3_off_system(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -578,9 +579,9 @@ void sys3_off_system(thread_job_t *job)
   int  offload_function_type = 0;
 
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -605,7 +606,7 @@ void sys3_off_system(thread_job_t *job)
  * @param channel 
  * @return none
  */
-void sys_off_chdir(thread_job_t *job)
+void sys_off_chdir(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -618,9 +619,9 @@ void sys_off_chdir(thread_job_t *job)
   int  offload_function_type = 0;
 
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -645,7 +646,7 @@ void sys_off_chdir(thread_job_t *job)
  * @param channel 
  * @return none
  */
-void sys3_off_opendir(thread_job_t *job)
+void sys3_off_opendir(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -658,9 +659,9 @@ void sys3_off_opendir(thread_job_t *job)
   int  offload_function_type = 0;
 
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -686,7 +687,7 @@ void sys3_off_opendir(thread_job_t *job)
  * @param channel 
  * @return none
  */
-void sys3_off_closedir(thread_job_t *job)
+void sys3_off_closedir(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -699,9 +700,9 @@ void sys3_off_closedir(thread_job_t *job)
   int  offload_function_type = 0;
 
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -726,7 +727,7 @@ void sys3_off_closedir(thread_job_t *job)
  * @param channel 
  * @return none
  */
-void sys3_off_readdir(thread_job_t *job)
+void sys3_off_readdir(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -739,9 +740,9 @@ void sys3_off_readdir(thread_job_t *job)
   int  offload_function_type = 0;
 
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;
@@ -771,7 +772,7 @@ void sys3_off_readdir(thread_job_t *job)
  * @param channel 
  * @return none
  */
-void sys3_off_rewinddir(thread_job_t *job)
+void sys3_off_rewinddir(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -782,9 +783,9 @@ void sys3_off_rewinddir(thread_job_t *job)
   int  offload_function_type = 0;
 
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   tid = (int) in_pkt->tid;
   offload_function_type = (int) in_pkt->io_function_type;

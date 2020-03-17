@@ -6,13 +6,13 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include "arch.h"
 #include "offload_channel.h"
 #include "offload_mmap.h"
 #include "offload_memory_config.h"
 #include "offload_fio.h"
 #include "offload_network.h"
 #include "systemcalllist.h"
-#include "arch.h"
 #include "offload_thread_pool.h"
 
 #define PAGE_SHIFT (12)
@@ -39,6 +39,8 @@ int g_n_channels_per_node;
 int g_n_channels;
 int g_n_nodes;
 
+// the max number of threas in thread pool
+ #define MAX_POOL_THREAD	2048 
 
 // mutex to handle send_offload_message() 
 pthread_mutex_t job_mutex[MAX_MUTEX] __attribute__((aligned(L_CACHE_LINE_SIZE)));  
@@ -50,7 +52,7 @@ typedef struct job_mutex {
 } job_mutex_t;
 
 // pointer to thread pool 
-ThreadPool *g_pool[MAX_NODE];
+thread_pool_t *g_pool[MAX_NODE];
 
 /**
  * @brief memcpy by sizeof(unsigned long) 
@@ -81,83 +83,83 @@ int memcpy64(void *destination, const void *source, int size)
 void *offload_local_proxy(void *arg)
 {
 io_packet_t *in_pkt = NULL;
-thread_job_t *job = NULL;
+job_args_t *job_args = NULL;
 
-  job = (thread_job_t *) arg;
-  in_pkt = (io_packet_t *) &job->pkt;
+  job_args = (job_args_t *) arg;
+  in_pkt = (io_packet_t *) &job_args->pkt;
       
   switch(in_pkt->io_function_type) {
     case SYSCALL_sys_read:
-       sys_off_read(job);
+       sys_off_read(job_args);
        break;
     case SYSCALL_sys_write:
-       sys_off_write(job);
+       sys_off_write(job_args);
        break;
     case SYSCALL_sys_lseek:
-       sys_off_lseek(job);
+       sys_off_lseek(job_args);
        break;
     case SYSCALL_sys_open:
-       sys_off_open(job);
+       sys_off_open(job_args);
        break;
     case SYSCALL_sys_creat:
-       sys_off_creat(job);
+       sys_off_creat(job_args);
        break;
     case SYSCALL_sys_close:
-       sys_off_close(job);
+       sys_off_close(job_args);
        break;
     case SYSCALL_sys_link:
-       sys_off_link(job);
+       sys_off_link(job_args);
        break;
     case SYSCALL_sys_unlink:
-       sys_off_unlink(job);
+       sys_off_unlink(job_args);
        break;
     case SYSCALL_sys_gethostname:
-       sys_off_gethostname(job);
+       sys_off_gethostname(job_args);
        break;
     case SYSCALL_sys_gethostbyname:
-       sys_off_gethostbyname(job);
+       sys_off_gethostbyname(job_args);
        break;
     case SYSCALL_sys_getsockname:
-       sys_off_getsockname(job);
+       sys_off_getsockname(job_args);
        break;
     case SYSCALL_sys_socket:
-       sys_off_socket(job);
+       sys_off_socket(job_args);
        break;
     case SYSCALL_sys_bind:
-       sys_off_bind(job);
+       sys_off_bind(job_args);
        break;
     case SYSCALL_sys_listen:
-       sys_off_listen(job);
+       sys_off_listen(job_args);
        break;
     case SYSCALL_sys_connect:
-       sys_off_connect(job);
+       sys_off_connect(job_args);
        break;
     case SYSCALL_sys_accept:
-       sys_off_accept(job);
+       sys_off_accept(job_args);
        break;
     case SYSCALL_sys_stat:
-       sys_off_stat(job);
+       sys_off_stat(job_args);
        break;
     case SYSCALL_sys3_getcwd:
-       sys3_off_getcwd(job);
+       sys3_off_getcwd(job_args);
        break;
     case SYSCALL_sys3_system:
-       sys3_off_system(job);
+       sys3_off_system(job_args);
        break;
     case SYSCALL_sys_chdir:
-       sys_off_chdir(job);
+       sys_off_chdir(job_args);
        break;
     case SYSCALL_sys3_opendir:
-       sys3_off_opendir(job);
+       sys3_off_opendir(job_args);
        break;
     case SYSCALL_sys3_closedir:
-       sys3_off_closedir(job);
+       sys3_off_closedir(job_args);
        break;
     case SYSCALL_sys3_readdir:
-       sys3_off_readdir(job);
+       sys3_off_readdir(job_args);
        break;
     case SYSCALL_sys3_rewinddir:
-       sys3_off_rewinddir(job);
+       sys3_off_rewinddir(job_args);
        break;
     default :
        printf("function type: unknown[%d]\n", (int) in_pkt->io_function_type);
@@ -171,13 +173,12 @@ thread_job_t *job = NULL;
 /**
  * @brief offload local watch thread
  * @param arg contains channels and channel number for this thread 
- * @return (NULL)
+ * @return none
  */
 void *offload_watch(void *arg)
 {
   struct offload_watch_arg_info *thread_channels = (struct offload_watch_arg_info *)arg;
 
-  //io_packet_t param_pkt[100];
   cq_element *ce = NULL;
   io_packet_t *in_pkt = NULL;
 
@@ -191,11 +192,12 @@ void *offload_watch(void *arg)
   int i = 0;
 
   //thread job parameer
-  thread_job_t *job = NULL;//[THREAD_POOL_SIZE];
+  job_args_t *job_args = NULL;
   int max_job_size = 0;
-  int job_index = 0;
+  int job_args_index = 0;
   int thread_pool_size = 0;
-  ThreadPool *pool = NULL;
+  thread_pool_t *pool = NULL;
+  int watch_count = 0;
 
   offload_channels = thread_channels->ch;
   n_channels = thread_channels->n_ch;
@@ -205,20 +207,21 @@ void *offload_watch(void *arg)
   printf("# channels: %d, # cq_element: %d\n", n_channels, n_cq_element);
 #endif
 
+  //alloc memory for job parameter
   max_job_size = n_channels * n_cq_element;
-  job = (thread_job_t *) malloc(max_job_size * sizeof(thread_job_t));
-  if (job == NULL) {
+  job_args = (job_args_t *) malloc(max_job_size * sizeof(job_args_t));
+  if (job_args == NULL) {
     printf("failed to allocate memory\n");
     exit(1);
   }
 
   //create thread pool
-  thread_pool_size = n_channels * 3;
-  pool = createPool(thread_pool_size);
+  thread_pool_size = MAX_POOL_THREAD;
+  pool = create_pool(thread_pool_size);
   g_pool[thread_channels->index] = pool;
   sleep(1);
 
-
+  // initialize mutex for  send_offload_message()
   for(i = 0; i < n_channels; i++) {
     pthread_mutex_init(&(offload_channels + i)->mutex, NULL);
   }
@@ -228,55 +231,61 @@ void *offload_watch(void *arg)
 #ifdef RETRY
   int retry_count = 0;
   int max_retry_count = 0;
-  max_retry_count = (int) (thread_pool_size / n_channels);
 #endif
 
-  job_index = 0;
+  job_args_index = 0;
+  watch_count = 0;
 
   while (g_offload_channel_runnable) {
+
+    if(watch_count++ > 1000) {
+      //sleep watch thread
+      usleep(1);
+      watch_count = 0;
+    }
+
     for(i = 0; i < n_channels && g_offload_channel_runnable; i++) {
         curr_channel = (struct channel_struct *) (offload_channels + i);
         in_cq = (struct circular_queue *) curr_channel->in_cq;
 
 #ifdef RETRY
         retry_count = 0;
+        max_retry_count = cq_avail_data(in_cq);
 #endif
 retry_watch:
 
         if(cq_avail_data(in_cq)) {
+          watch_count = 0;
           ce = (cq_element *) (in_cq->data + in_cq->tail);
           in_pkt= (io_packet_t *)(ce);
 
           // copy pkt to thread args
-          memcpy64((void *)&job[job_index].pkt, (void *) in_pkt, sizeof(io_packet_t));
-          job[job_index].ch = curr_channel;
+          memcpy64((void *)&job_args[job_args_index].pkt, (void *) in_pkt, sizeof(io_packet_t));
+          job_args[job_args_index].ch = curr_channel;
 
           in_cq->tail = (in_cq->tail + 1) % in_cq->size;
 
           //add job to thread pool
-          while(WAIT_ISSUED == addJobToPool(pool, (void *) offload_local_proxy, (void *) &job[job_index])) {
-	    ;//usleep(1);
+          while(WAIT_ISSUED == add_job_to_pool(pool, (void *) offload_local_proxy, (void *) &job_args[job_args_index])) {
+	    usleep(1);
           } 
 
-          job_index = (job_index + 1) % max_job_size;
+          job_args_index = (job_args_index + 1) % max_job_size;
 
 #ifdef RETRY 
-#if 1
-          if(++retry_count < max_retry_count) {
-                //retry_count++;
-                goto retry_watch;
+          if(retry_count++ < max_retry_count) {
+            goto retry_watch;
           }
-#else
-          goto retry_watch;
-#endif
 #endif
         }
     }
   }
 
-  destroyPool(pool);
+  //destroy thread pool
+  destroy_pool(pool);
 
-  free(job);
+  //free memory for job args
+  free(job_args);
 
   pthread_exit((void *)0);
   return (NULL);
@@ -299,37 +308,37 @@ void cmd(channel_t *cs)
 
   while (loop) {
     switch (getchar()) {
-    // show queue status
-    case 'q':
-      for (i = 0; i < g_n_channels; i++) {
-	ocq = (cs + i)->out_cq;
-	icq = (cs + i)->in_cq;
-        if((i%g_n_channels_per_node == 0)&& (i != 0))
-        printf("\n");
-        //printf("queue state(%03d): [p->u: h:%2d t:%2d] [u->p: h:%2d t:%2d]\n", i, ocq->head, ocq->tail, icq->head, icq->tail);
-	printf("queue state(%03d): [p->u(%2d): h:%2d t:%2d] [u->p(%2d): h:%2d t:%2d]\n", i, cq_avail_data(ocq), ocq->head, ocq->tail, cq_avail_data(icq), icq->head, icq->tail);
-      }
-      break;
-
-    case 't':
-      for (i = 0; i < g_n_nodes; i++) {
-        printf("thread pool: #threads: %d, #pending jobs: %d \n", (int) getThreadCount(g_pool[i]), (int) getJobCount(g_pool[i]));
-      }
-      break;
-
-    // stop offload_local_proxy which manages the channels on scif region
-    case 'x':
-      g_offload_channel_runnable = 0;
-      loop = 0;
-      break;
-
-    case '\n':
-      printf("> ");
-      fflush(stdout);
-      break;
-
-    default:
-      break;
+      // show queue status
+      case 'q':
+        for (i = 0; i < g_n_channels; i++) {
+          ocq = (cs + i)->out_cq;
+          icq = (cs + i)->in_cq;
+          if((i%g_n_channels_per_node == 0)&& (i != 0))
+          printf("\n");
+          printf("queue state(%03d): [p->u(%3d): h:%3d t:%3d] [u->p(%3d): h:%3d t:%3d]\n", i, cq_avail_data(ocq), ocq->head, ocq->tail, cq_avail_data(icq), icq->head, icq->tail);
+        }
+        break;
+ 
+      // show thread pool status
+      case 't':
+        for (i = 0; i < g_n_nodes; i++) {
+          printf("thread pool: #threads: %d, #pending jobs: %d \n", (int) get_thread_count(g_pool[i]), (int) get_job_count(g_pool[i]));
+        }
+        break;
+ 
+      // stop offload_local_proxy which manages the channels on scif region
+      case 'x':
+        g_offload_channel_runnable = 0;
+        loop = 0;
+        break;
+ 
+      case '\n':
+        printf("> ");
+        fflush(stdout);
+        break;
+ 
+      default:
+        break;
     }
   }
 }
@@ -339,7 +348,7 @@ void cmd(channel_t *cs)
  * @brief offload local proxy main
  * @param argc
  * @param argv  "-o <no elements> -i <no elements> -c"
- *              " <no channels> -t <no threads>
+ *              " <no channels per unikernel> -n <no unikernels>
  * @return  success 0, fail > 0
  */
 int main(int argc, char *argv[])
@@ -407,8 +416,9 @@ int main(int argc, char *argv[])
 
   g_offload_channel_runnable = 1;
 
+#define MULTI_WATCH
 
-#if 1
+#ifdef MULTI_WATCH
   for (i = 0; i < g_n_nodes; i++) {
     offload_watch_arg[i].ch = offload_channels + i * g_n_channels_per_node;
     offload_watch_arg[i].n_ch = g_n_channels_per_node;
@@ -428,7 +438,7 @@ int main(int argc, char *argv[])
   // begin of logic
   cmd(offload_channels);
 
-#if 1
+#ifdef MULTI_WATCH
   for (i = 0; i < g_n_nodes; i++) { // 1 for watch
 #else
   for (i = 0; i < 1; i++) { // 1 for watch

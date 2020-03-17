@@ -12,13 +12,14 @@
 #include "offload_channel.h"
 #include "offload_message.h"
 #include "offload_mmap.h"
+#include "offload_thread_pool.h"
 
 /**
  * @brief Receive the request from the queue, Execute gethostname systemcall then return the result
  * @param ch- channel defined and allocated in the shared memory
  * @return none
  */
-void sys_off_gethostname(thread_job_t *job)
+void sys_off_gethostname(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -30,9 +31,9 @@ void sys_off_gethostname(thread_job_t *job)
 
   // Get the queue information
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   // Receive parameters passed from the queue
   tid = (int) in_pkt->tid;
@@ -56,7 +57,7 @@ void sys_off_gethostname(thread_job_t *job)
  * @param ch- channel defined and allocated in the shared memory
  * @return none
  */
-void sys_off_gethostbyname(thread_job_t *job)
+void sys_off_gethostbyname(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -73,9 +74,9 @@ void sys_off_gethostbyname(thread_job_t *job)
 
   // Get the queue information
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   // Receive parameters passed from the queue
   tid = (int) in_pkt->tid;
@@ -121,7 +122,7 @@ void sys_off_gethostbyname(thread_job_t *job)
  * @param ch- channel defined and allocated in the shared memory
  * @return none
  */
-void sys_off_getsockname(thread_job_t *job)
+void sys_off_getsockname(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -134,9 +135,9 @@ void sys_off_getsockname(thread_job_t *job)
 
   // Get the queue information
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   // Receive parameters passed from the queue
   tid = (int) in_pkt->tid;
@@ -161,7 +162,7 @@ void sys_off_getsockname(thread_job_t *job)
  * @param ch- channel defined and allocated in the shared memory
  * @return none
  */
-void sys_off_socket(thread_job_t *job)
+void sys_off_socket(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -174,9 +175,9 @@ void sys_off_socket(thread_job_t *job)
 
   // Get the queue information
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   // Receive parameters passed from the queue
   tid = (int) in_pkt->tid;
@@ -201,7 +202,7 @@ void sys_off_socket(thread_job_t *job)
  * @param ch- channel defined and allocated in the shared memory
  * @return none
  */
-void sys_off_bind(thread_job_t *job)
+void sys_off_bind(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -214,9 +215,9 @@ void sys_off_bind(thread_job_t *job)
 
   // Get the queue information
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   // Receive parameters passed from the queue
   tid = (int) in_pkt->tid;
@@ -241,7 +242,7 @@ void sys_off_bind(thread_job_t *job)
  * @param ch- channel defined and allocated in the shared memory
  * @return none
  */
-void sys_off_listen(thread_job_t *job)
+void sys_off_listen(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -253,9 +254,9 @@ void sys_off_listen(thread_job_t *job)
 
   // Get the queue information
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   // Receive parameters passed from the queue
   tid = (int) in_pkt->tid;
@@ -279,7 +280,7 @@ void sys_off_listen(thread_job_t *job)
  * @param ch- channel defined and allocated in the shared memory
  * @return none
  */
-void sys_off_connect(thread_job_t *job)
+void sys_off_connect(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -292,9 +293,9 @@ void sys_off_connect(thread_job_t *job)
 
   // Get the queue information
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   // Receive parameters passed from the queue
   tid = (int) in_pkt->tid;
@@ -319,7 +320,7 @@ void sys_off_connect(thread_job_t *job)
  * @param ch- channel defined and allocated in the shared memory
  * @return none
  */
-void sys_off_accept(thread_job_t *job)
+void sys_off_accept(job_args_t *job_args)
 {
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
@@ -332,9 +333,9 @@ void sys_off_accept(thread_job_t *job)
 
   // Get the queue information
   struct channel_struct *ch;
-  ch = job->ch;
-  out_cq = job->ch->out_cq;
-  in_pkt = (io_packet_t *) &job->pkt;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   // Receive parameters passed from the queue
   tid = (int) in_pkt->tid;

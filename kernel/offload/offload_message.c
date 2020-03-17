@@ -71,10 +71,6 @@ check_ocq:
 }
 
 
-
-
-
-
 /**
  *@brief receive offload message
  *@param icq circular queue
@@ -123,15 +119,16 @@ check_icq:
       check_count++;
       goto check_icq;
     }
+
     mfence();
-      spinlock_unlock(&icq->slock);
-      //mutex_unlock(&icq->lock);
+    spinlock_unlock(&icq->slock);
+    //mutex_unlock(&icq->lock);
 
-      get_current()->remaining_time_slice = 0;
-      schedule(THREAD_INTENTION_READY);
+    get_current()->remaining_time_slice = 0;
+    schedule(THREAD_INTENTION_READY);
 
-      goto receive_retry;
-    }
+    goto receive_retry;
+  }
 
   return ret;
 }

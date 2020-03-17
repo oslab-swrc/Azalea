@@ -27,11 +27,6 @@ typedef struct io_packet_struct {
   unsigned long ret;          
 } io_packet_t;
 
-typedef struct thread_job {
-   channel_t *ch;
-   io_packet_t pkt;
-} thread_job_t;
-
 void send_offload_message(struct circular_queue *out_cq, int tid, int offload_function_type, unsigned long  ret);
 
 #endif //__OFFLOAD_MESSAGE_H__

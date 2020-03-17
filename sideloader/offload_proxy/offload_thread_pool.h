@@ -24,6 +24,8 @@
 #include <inttypes.h> // Standard integer format specifiers
 
 #include "atomic.h"
+#include "offload_channel.h"
+#include "offload_message.h"
 
 //#define DEBUG // The debug switch
 
@@ -37,10 +39,10 @@
  * gives tremendous flexibility managing the 
  * threads at runtime.
  */
-typedef struct ThreadList {
+typedef struct threadList {
 	pthread_t thread; // The thread object
-	struct ThreadList *next; // Link to next thread
-} ThreadList;
+	struct threadList *next; // Link to next thread
+} thread_list_t;
 
 /* A singly linked list of worker functions. This
  * list is implemented as a queue to manage the
@@ -50,7 +52,15 @@ typedef struct Job {
 	void (*function)(void *); // The worker function
 	void *args; // Argument to the function
 	struct Job *next; // Link to next Job
-} Job;
+} job_t;
+
+/* 
+ * the args for the worker function
+ */
+typedef struct JobArgs {
+   channel_t *ch;
+   io_packet_t pkt;
+} job_args_t;
 
 /* The core pool structure. This is the only
  * user accessible structure in the API. It contains
@@ -58,24 +68,24 @@ typedef struct Job {
  * synchronization between the threads, along with
  * dynamic management and execution control.
  */
-struct ThreadPool {
+struct threadPool {
 	/* The FRONT of the thread queue in the pool.
 	 * It typically points to the first thread
 	 * created in the pool.
 	 */
-	ThreadList * threads;
+	thread_list_t * threads;
 
 	/* The REAR of the thread queue in the pool.
 	 * Points to the last, and most young thread
 	 * added to the pool.
 	 */
-	ThreadList * rearThreads;
+	thread_list_t * rear_threads;
 
 	/* Number of threads in the pool. As this can
 	 * grow dynamically, access and modification 
 	 * of it is bounded by a mutex.
 	 */
-	uint64_t numThreads;
+	uint64_t num_threads;
 
 	/* The indicator which indicates the number
 	 * of threads to remove. If this is equal to
@@ -85,7 +95,7 @@ struct ThreadPool {
 	 * before executing a job, and if finds the 
 	 * value >0, immediately exits.
 	 */
-	uint64_t removeThreads;
+	uint64_t remove_threads;
 
 	/* Denotes the number of idle threads in the
 	 * pool at any given instant of time. This value
@@ -94,14 +104,14 @@ struct ThreadPool {
 	 * the initialization of the pool, whichever
 	 * applicable.
 	 */
-	volatile uint64_t waitingThreads;
+	volatile uint64_t waiting_threads;
 
 	/* Denotes whether the pool is presently
 	 * initalized or not. This variable is used to
 	 * busy wait after the creation of the pool
 	 * to ensure all threads are in waiting state.
 	 */
-	volatile uint8_t isInitialized;
+	volatile uint8_t is_initialized;
 
 	/* The main mutex for the job queue. All
 	 * operations on the queue is done after locking
@@ -128,24 +138,23 @@ struct ThreadPool {
 	 * it is set to 0, which happens when the pool
 	 * is destroyed.
 	 */
-//	_Atomic uint8_t run;
 	atomic_t run;
 
 	/* Used to assign unique thread IDs to each
 	 * running threads. It is an always incremental
 	 * counter.
 	 */
-	uint64_t threadID;
+	uint64_t thread_id;
 
 	/* The FRONT of the job queue, which typically
 	 * points to the job to be executed next.
 	 */
-	Job *FRONT;
+	job_t *FRONT;
 
 	/* The REAR of the job queue, which points
 	 * to the job last added in the pool.
 	 */
-	Job *REAR;
+	job_t *REAR;
 
 	/* Mutex used to denote the end of the job
 	 * queue, which triggers the function
@@ -166,11 +175,10 @@ struct ThreadPool {
 	/* Counter to the number of jobs
 	 * present in the job queue
 	 */
-//	_Atomic uint64_t jobCount;
-	atomic64_t jobCount;
+	atomic64_t job_count;
 };
 
-typedef struct ThreadPool ThreadPool;
+typedef struct threadPool thread_pool_t;
 
 /* The status enum to indicate any failure.
  * 
@@ -191,7 +199,7 @@ typedef enum Status{
 	INVALID_NUMBER,
 	WAIT_ISSUED,
 	COMPLETED	
-} ThreadPoolStatus;
+} thread_pool_status;
 
 /* Creates a new thread pool with argument number of threads. 
  * 
@@ -203,14 +211,14 @@ typedef enum Status{
  * in case of insufficient memory, which is rare, and a NULL
  * is returned in that case.
  */
-ThreadPool * createPool(uint64_t);
+thread_pool_t * create_pool(uint64_t);
 
 /* Waits till all the threads in the pool are finished.
  *
  * When this method returns, it is assured that all threads
  * in the pool have finished executing, and in waiting state.
  */
-void waitToComplete(ThreadPool *);
+void wait_to_complete(thread_pool_t *);
 
 /* Destroys the argument pool.
  *
@@ -225,7 +233,7 @@ void waitToComplete(ThreadPool *);
  * threads, destroys all synchronization objects, and frees
  * any remaining jobs, finally freeing the pool itself.
  */
-void destroyPool(ThreadPool *);
+void destroy_pool(thread_pool_t *);
 
 /* Add a new job to the pool.
  *
@@ -241,7 +249,7 @@ void destroyPool(ThreadPool *);
  * When all threads are idle, any one of them wakes up and
  * executes this function asynchronously.
  */
-ThreadPoolStatus addJobToPool(ThreadPool *, void (*func)(void *), void *);
+thread_pool_status add_job_to_pool(thread_pool_t *, void (*func)(void *), void *);
 
 /* Add some new threads to the pool.
  * 
@@ -256,7 +264,7 @@ ThreadPoolStatus addJobToPool(ThreadPool *, void (*func)(void *), void *);
  * pthread_create, or for insufficient memory. These error 
  * codes can be compared using the Status enum above.
  */
-ThreadPoolStatus addThreadsToPool(ThreadPool *, uint64_t);
+thread_pool_status add_threads_to_pool(thread_pool_t *, uint64_t);
 
 /* Suspend all currently executing threads in the pool.
  *
@@ -268,7 +276,7 @@ ThreadPoolStatus addThreadsToPool(ThreadPool *, uint64_t);
  * till the thread completes the present job, and then
  * halts the thread.
  */
-void suspendPool(ThreadPool *);
+void suspend_pool(thread_pool_t *);
 
 /* Resume a suspended pool.
  *
@@ -278,7 +286,7 @@ void suspendPool(ThreadPool *);
  * wake up from suspend very soon in future. This method 
  * fails if the pool was not previously suspended.
  */
-void resumePool(ThreadPool *);
+void resume_pool(thread_pool_t *);
 
 /* Remove an existing thread from the pool.
  *
@@ -298,7 +306,7 @@ void resumePool(ThreadPool *);
  * the pool, the queue will automatically resume from the
  * position where it stopped.
  */
-void removeThreadFromPool(ThreadPool *);
+void remove_thread_from_pool(thread_pool_t *);
 
 /* Returns the number of pending jobs in the pool.
  *
@@ -308,7 +316,7 @@ void removeThreadFromPool(ThreadPool *);
  * idlement if no new jobs are added to the pool from this
  * instant.
  */
-uint64_t getJobCount(ThreadPool *pool);
+uint64_t get_job_count(thread_pool_t *pool);
 
 /* Returns the number of threads present in the pool.
  *
@@ -318,6 +326,6 @@ uint64_t getJobCount(ThreadPool *pool);
  * executing a worker function or in idle wait, will be
  * returned by this method.
  */
-uint64_t getThreadCount(ThreadPool *);
+uint64_t get_thread_count(thread_pool_t *);
 
 #endif
