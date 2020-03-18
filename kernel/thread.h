@@ -196,6 +196,7 @@ int __thread_exit(int tid);
 int thread_exit(TCB *tcb);
 int lk_app_exec(void *app_ptr);
 BOOL schedule(QWORD intention);
+BOOL schedule_to(int next_tid, QWORD intention);
 int thread_suspend(int tid);
 int thread_wake_up(int tid);
 

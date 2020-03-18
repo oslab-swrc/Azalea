@@ -1,6 +1,7 @@
 #include "offload_network.h"
 #include <errno.h>
 #include <fcntl.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -11,15 +12,15 @@
 #include "offload_channel.h"
 #include "offload_message.h"
 #include "offload_mmap.h"
+#include "offload_thread_pool.h"
 
 /**
  * @brief Receive the request from the queue, Execute gethostname systemcall then return the result
  * @param ch- channel defined and allocated in the shared memory
  * @return none
  */
-void sys_off_gethostname(struct channel_struct *ch)
+void sys_off_gethostname(job_args_t *job_args)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
   int tid = 0;
@@ -29,9 +30,10 @@ void sys_off_gethostname(struct channel_struct *ch)
   int len = 0;
 
   // Get the queue information
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   // Receive parameters passed from the queue
   tid = (int) in_pkt->tid;
@@ -39,16 +41,15 @@ void sys_off_gethostname(struct channel_struct *ch)
   name = (char *) get_va(in_pkt->param1);
   len = (int) in_pkt->param2;
 
-  // Empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
-
   // Execute gethostname systemcall
   ret = gethostname(name, len); 
   if(ret == -1)
 	fprintf(stderr, "%s\n", strerror(errno));
 
   // Sent to the result to the kernel
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (int) ret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 /**
@@ -56,9 +57,8 @@ void sys_off_gethostname(struct channel_struct *ch)
  * @param ch- channel defined and allocated in the shared memory
  * @return none
  */
-void sys_off_gethostbyname(struct channel_struct *ch)
+void sys_off_gethostbyname(job_args_t *job_args)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
   int tid = 0;
@@ -73,9 +73,10 @@ void sys_off_gethostbyname(struct channel_struct *ch)
   char *h_addr;
 
   // Get the queue information
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   // Receive parameters passed from the queue
   tid = (int) in_pkt->tid;
@@ -87,9 +88,6 @@ void sys_off_gethostbyname(struct channel_struct *ch)
   h_addrtype = (int *) get_va(in_pkt->param4);
   h_length = (int *) get_va(in_pkt->param5);
   h_addr = (char *) get_va(in_pkt->param6);
-
-  // Empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
 
   // Execute gethostbyname systemcall
   ret = gethostbyname(name);
@@ -114,7 +112,9 @@ void sys_off_gethostbyname(struct channel_struct *ch)
   }
 
   // Sent to the result to the kernel
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) ret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 /**
@@ -122,9 +122,8 @@ void sys_off_gethostbyname(struct channel_struct *ch)
  * @param ch- channel defined and allocated in the shared memory
  * @return none
  */
-void sys_off_getsockname(struct channel_struct *ch)
+void sys_off_getsockname(job_args_t *job_args)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
   int tid = 0;
@@ -135,9 +134,10 @@ void sys_off_getsockname(struct channel_struct *ch)
   int iret = -1;
 
   // Get the queue information
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   // Receive parameters passed from the queue
   tid = (int) in_pkt->tid;
@@ -146,16 +146,15 @@ void sys_off_getsockname(struct channel_struct *ch)
   addr = (struct sockaddr *) get_va(in_pkt->param2);
   addrlen = (socklen_t *) get_va(in_pkt->param3);
 
-  // Empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
-
   // Execute getsockname systemcall
   iret = getsockname(sockfd, addr, addrlen);
   if(iret == -1)
     fprintf(stderr, "%s\n", strerror(errno));
 
   // Sent to the result to the kernel
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 /**
@@ -163,9 +162,8 @@ void sys_off_getsockname(struct channel_struct *ch)
  * @param ch- channel defined and allocated in the shared memory
  * @return none
  */
-void sys_off_socket(struct channel_struct *ch)
+void sys_off_socket(job_args_t *job_args)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
   int tid = 0;
@@ -176,9 +174,10 @@ void sys_off_socket(struct channel_struct *ch)
   int iret = -1;
 
   // Get the queue information
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   // Receive parameters passed from the queue
   tid = (int) in_pkt->tid;
@@ -187,16 +186,15 @@ void sys_off_socket(struct channel_struct *ch)
   type = (int) in_pkt->param2; 
   protocol = (int) in_pkt->param3;
 
-  // Empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
-
   // Execute socket systemcall
   iret = socket(domain, type, protocol);
   if(iret == -1)
     fprintf(stderr, "%s\n", strerror(errno));
 
   // Sent to the result to the kernel
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 /**
@@ -204,9 +202,8 @@ void sys_off_socket(struct channel_struct *ch)
  * @param ch- channel defined and allocated in the shared memory
  * @return none
  */
-void sys_off_bind(struct channel_struct *ch)
+void sys_off_bind(job_args_t *job_args)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
   int tid = 0;
@@ -217,9 +214,10 @@ void sys_off_bind(struct channel_struct *ch)
   int iret = 0;
 
   // Get the queue information
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   // Receive parameters passed from the queue
   tid = (int) in_pkt->tid;
@@ -228,16 +226,15 @@ void sys_off_bind(struct channel_struct *ch)
   addr = (struct sockaddr *) get_va(in_pkt->param2);
   addrlen = (socklen_t) in_pkt->param3;
 
-  // Empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
-
   // Execute bind systemcall
   iret = bind(sockfd, addr, addrlen);
   if(iret == -1)
     fprintf(stderr, "%s\n", strerror(errno));
 
   // Sent to the result to the kernel
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 /**
@@ -245,9 +242,8 @@ void sys_off_bind(struct channel_struct *ch)
  * @param ch- channel defined and allocated in the shared memory
  * @return none
  */
-void sys_off_listen(struct channel_struct *ch)
+void sys_off_listen(job_args_t *job_args)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
   int tid = 0;
@@ -257,9 +253,10 @@ void sys_off_listen(struct channel_struct *ch)
   int iret = -1;
 
   // Get the queue information
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   // Receive parameters passed from the queue
   tid = (int) in_pkt->tid;
@@ -267,16 +264,15 @@ void sys_off_listen(struct channel_struct *ch)
   sockfd = (int) in_pkt->param1;
   backlog = (int) in_pkt->param2;
 
-  // Empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
-
   // Execute listen systemcall
   iret = listen(sockfd, backlog);
   if(iret == -1)
     fprintf(stderr, "%s\n", strerror(errno));
 
   // Sent to the result to the kernel
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 /**
@@ -284,9 +280,8 @@ void sys_off_listen(struct channel_struct *ch)
  * @param ch- channel defined and allocated in the shared memory
  * @return none
  */
-void sys_off_connect(struct channel_struct *ch)
+void sys_off_connect(job_args_t *job_args)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
   int tid = 0;
@@ -297,9 +292,10 @@ void sys_off_connect(struct channel_struct *ch)
   int iret = -1;
 
   // Get the queue information
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   // Receive parameters passed from the queue
   tid = (int) in_pkt->tid;
@@ -308,16 +304,15 @@ void sys_off_connect(struct channel_struct *ch)
   addr = (struct sockaddr *) get_va(in_pkt->param2);
   addrlen = (socklen_t) in_pkt->param3; 
 
-  // Empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
-
   // Execute connect systemcall
   iret = connect(sockfd, addr, addrlen);
   if(iret == -1)
     fprintf(stderr, "%s\n", strerror(errno));
 
   // Sent to the result to the kernel
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+  pthread_mutex_unlock(&ch->mutex);
 }
 
 /**
@@ -325,9 +320,8 @@ void sys_off_connect(struct channel_struct *ch)
  * @param ch- channel defined and allocated in the shared memory
  * @return none
  */
-void sys_off_accept(struct channel_struct *ch)
+void sys_off_accept(job_args_t *job_args)
 {
-  struct circular_queue *in_cq = NULL;
   struct circular_queue *out_cq = NULL;
   io_packet_t *in_pkt = NULL;
   int tid = 0;
@@ -338,9 +332,10 @@ void sys_off_accept(struct channel_struct *ch)
   int iret = -1;
 
   // Get the queue information
-  in_cq = ch->in_cq;
-  out_cq = ch->out_cq;
-  in_pkt = (io_packet_t *) (in_cq->data + in_cq->tail);
+  struct channel_struct *ch;
+  ch = job_args->ch;
+  out_cq = job_args->ch->out_cq;
+  in_pkt = (io_packet_t *) &job_args->pkt;
 
   // Receive parameters passed from the queue
   tid = (int) in_pkt->tid;
@@ -349,14 +344,13 @@ void sys_off_accept(struct channel_struct *ch)
   addr = (struct sockaddr *) get_va(in_pkt->param2);
   addrlen = (socklen_t *) get_va(in_pkt->param3);
 
-  // Empty in_cq
-  in_cq->tail = (in_cq->tail + 1) % in_cq->size;
-
   // Execute accept systemcall
   iret = accept(sockfd, addr, addrlen);
   if(iret == -1)
       fprintf(stderr, "%s\n", strerror(errno));
 
   // Sent to the result to the kernel
+  pthread_mutex_lock(&ch->mutex);
   send_offload_message(out_cq, tid, offload_function_type, (unsigned long) iret);
+  pthread_mutex_unlock(&ch->mutex);
 }

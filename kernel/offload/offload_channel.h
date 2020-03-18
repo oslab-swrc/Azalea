@@ -1,6 +1,8 @@
 #ifndef __OFFLOAD_CHANNEL_H__
 #define __OFFLOAD_CHANNEL_H__
 
+#include <sys/lock.h>
+
 #include "mutex.h"
 
 #define CQ_ELE_PAGE_NUM (2)             // 2
@@ -19,8 +21,10 @@ struct circular_queue {
   int head;
   int tail;
   unsigned long size;
-  char padding[64] __attribute__((aligned(L_CACHE_LINE_SIZE))); 
+  char padding1[64] __attribute__((aligned(L_CACHE_LINE_SIZE))); 
   ticket_mutex_t lock __attribute__((aligned(L_CACHE_LINE_SIZE)));
+  char padding2[64] __attribute__((aligned(L_CACHE_LINE_SIZE)));
+  spinlock_t slock __attribute__((aligned(L_CACHE_LINE_SIZE)));
 
   cq_element data[0] __attribute__((aligned(4096)));
 };

@@ -47,11 +47,21 @@ atomic_t g_thread_cnt;
 
 static void *tcb_base_addr;
 
+/**
+ * @brief Check if input core_id is allowed on target TCB
+ * @param t - target TCB
+ * @param cid - input core_id
+ */
 static inline BOOL core_is_allowed(TCB * t, int cid)
 {
   return ISSET_CORE_MASK(&t->core_mask, cid) ? FALSE : TRUE;
 }
 
+/**
+ * @brief Return current running TCB
+ * @param none
+ * @return TCB - current running TCB
+ */
 TCB *get_current(void)
 {
   return (TCB *)running_thread[get_apic_id()];
@@ -59,8 +69,10 @@ TCB *get_current(void)
 
 static int refill_time_slice(TCB * tcb);
 
-/*
- * initialize thread list
+/**
+ * @brief initialize thread list
+ * @param thread_list - target thread_list
+ * @return none
  */
 static void thread_list_init(struct thread_list *l)
 {
@@ -70,8 +82,10 @@ static void thread_list_init(struct thread_list *l)
   dl_list_init(&l->tcb_list);
 }
 
-/*
- * initialize schedule
+/**
+ * @brief Initialize scheduler
+ * @param none
+ * @return none
  */
 void sched_init(void)
 {
@@ -87,21 +101,26 @@ void sched_init(void)
   thread_list_init(&g_migrating_list);
 }
 
-/*
- * initlaize thread
+/**
+ * @brief Initlaize threads (TCBs)
+ * @param none
+ * @return none
  */
 void thread_init(void)
 {
   int i = 0;
 
+  // Initialize global tcb list
   thread_list_init(&g_global_tcb_list);
 
+  // Initialize local tcb and running_thread list
   for (i = 0; i < MAX_PROCESSOR_COUNT; i++) {
     thread_list_init(&per_cpu_byid(local_tcb_list, i));
 
     g_running_thread_list[i] = NULL;
   }
 
+  // Allocate memory for the TCBs
   tcb_base_addr = az_alloc(PAGE_SIZE_4K*CONFIG_NUM_THREAD);
   if(tcb_base_addr == NULL)
     debug_halt((char *) __func__, __LINE__);
@@ -178,8 +197,10 @@ void thread_init(void)
   }
 }
 
-/*
- * allocate a TCB
+/**
+ * @brief Allocate a TCB from local or global TCB list
+ * @param nonoe
+ * @return Allocated TCB
  */
 TCB *alloc_tcb(void)
 {
@@ -245,7 +266,7 @@ TCB *alloc_tcb(void)
 
 /**
  * @brief Allocate a TCB for the idle thread
- * @param cid - 
+ * @param cid - target core_id
  * @return Allocated TCB
  */
 TCB *alloc_tcb_idle(int cid)
@@ -314,8 +335,13 @@ static atomic_t tdcnt;
 static atomic_t trcnt;
 #endif
 
-// tcb destory mean to move input TCB into g_global_tcb_list.
-// it doesn't need to free memory
+/**
+ * @brief Destroy target TCB
+ * @brief TCB destory mean to move input TCB into g_global_tcb_list, 
+ * @brief and it doesn't need to free memory
+ * @param t - taret TCB
+ * @return none
+ */
 static void destroy_tcb(TCB *t)
 {
 #if 1
@@ -367,18 +393,23 @@ static void destroy_tcb(TCB *t)
 #endif
 }
 
-/*
- * get current TCB
+/**
+ * @brief Get current running TCB
+ * @param none
+ * @return current running TCB
  */
 TCB *get_current_tcb(void)
 {
   TCB *tcb = get_current();
   atomic_inc(&tcb->refc);
+
   return tcb;
 }
 
-/*
- * get TCB
+/**
+ * @brief Get TCB from global thread list, and increase ref. count
+ * @param tid - thread id
+ * @return Target TCB
  */
 TCB *get_tcb(QWORD tid)
 {
@@ -394,8 +425,11 @@ TCB *get_tcb(QWORD tid)
   return tcb;
 }
 
-/*
- * put TCB
+/**
+ * @brief Destroy TCB from global thread list, and decrease ref. count
+ * @brief Error when the status of input tcb is THREAD_STATE_NOTALLOC
+ * @param tcb - target TCB
+ * @return none
  */
 void put_tcb(TCB *tcb)
 {
@@ -410,8 +444,14 @@ void put_tcb(TCB *tcb)
 
 extern void return_from_setup_thread(void);
 
-/* 
- * Store the information of context and stack into TCB
+/**
+ * @brief Store the information of context and stack into TCB
+ * @param tcb - target TCB
+ * @param flags - flags for the TCB
+ * @param entrypoint - entrypoint for the TCB
+ * @param stack_address - stack memory address for the TCB
+ * @param thread_param - Parameters want to pass
+ * @return none
  */
 static void setup_thread(TCB * tcb, QWORD flags, QWORD entrypoint, void *stack_address, QWORD thread_param)
 {
@@ -452,8 +492,11 @@ static void setup_thread(TCB * tcb, QWORD flags, QWORD entrypoint, void *stack_a
 }
 
 /**
- * Change thread's intention to THREAD_INTENTION_EXITED
- * The thread is terminatedby other thread
+ * @brief Exit target thread
+ * @brief Change thread's intention to THREAD_INTENTION_EXITED
+ * @brief The thread is terminatedby other thread
+ * @param tid - target TCB's id
+ * @return success (0)
  */
 int __thread_exit(int tid)
 {
@@ -476,7 +519,9 @@ int __thread_exit(int tid)
 }
 
 /**
- * exit thread
+ * @brief Exit target thread invoked from scheduler
+ * @param tcb - target TCB
+ * @return success (0)
  */
 int thread_exit(TCB *tcb)
 {
@@ -487,8 +532,10 @@ int thread_exit(TCB *tcb)
   return 0;
 }
 
-/*
- * suspend thread
+/**
+ * @brief Suspend thread
+ * @param tid - target TCB's id
+ * @return succedd (0)
  */
 int thread_suspend(int tid)
 {
@@ -504,8 +551,10 @@ int thread_suspend(int tid)
   return 0;
 }
 
-/*
- * wake up thread
+/**
+ * @brief Wake up thread
+ * @param tid - target TCB's ID
+ * @return success (0)
  */
 int thread_wake_up(int tid)
 {                               // resume
@@ -521,27 +570,33 @@ int thread_wake_up(int tid)
   return 0;
 }
 
-/*
- * set thread name
+/**
+ * @brief Set the name of thread in TCB
+ * @param tid - target TCB's id
+ * @param name - name of thread
+ * @return none
  */
 void lk_thread_set_name(QWORD tid, QWORD name)
 {
   TCB *tcb = NULL;
   tcb = get_tcb(tid);
   if (tcb == NULL)
-    return;
+    debug_halt((char *) __func__, __LINE__);
+
   tcb->name = name;
   put_tcb(tcb);
 }
 
-/*
- * look up thread tid
+/**
+ * @brief Lookup threads with the same name with input value and return the id
+ * @param name - thread name
+ * @return ID of the thread, fail (-1)
  */
 QWORD lk_thread_lookup_tid(QWORD name)
 {
   int i = 0;
   TCB *tcb = NULL;
-  QWORD tid = 0;
+  QWORD tid = -1;
 
   for (i = MAX_PROCESSOR_COUNT; i < CONFIG_NUM_THREAD + MAX_PROCESSOR_COUNT; i++) {
     tcb = get_tcb(i);
@@ -567,14 +622,16 @@ QWORD lk_thread_lookup_tid(QWORD name)
   return tid;
 }
 
-/*
- * look up thread state
+/**
+ * @brief Lookup threads with the same id with input value and return the state
+ * @param tid - id of the thread
+ * @return State of the thread, fail (-1)
  */
 QWORD lk_thread_lookup_state(QWORD tid)
 {
   int i = 0;
   TCB *tcb = NULL;
-  QWORD state = 0;
+  QWORD state = -1;
 
   for (i = MAX_PROCESSOR_COUNT; i < CONFIG_NUM_THREAD + MAX_PROCESSOR_COUNT; i++) {
     tcb = get_tcb(i);
@@ -596,7 +653,11 @@ QWORD lk_thread_lookup_state(QWORD tid)
 }
 
 /**
- * Create thread
+ * @brief Create thread
+ * @param ip - instruction point
+ * @param argv - parameter want to pass to created thread
+ * @param core_mask - masking info. for allocation core
+ * return id of the created thread, fail (-1)
  */
 int create_thread(QWORD ip, QWORD argv, int core_mask)
 {
@@ -655,8 +716,10 @@ int create_thread(QWORD ip, QWORD argv, int core_mask)
   return thr->id;
 }
 
-/*
- * Execute unikernel application
+/**
+ * @brief Execute unikernel application
+ * @param app_ptr - application memory addr.
+ * @return id of the thread, fail (-1)
  */
 int lk_app_exec(void *app_ptr)
 {
@@ -676,17 +739,22 @@ int lk_app_exec(void *app_ptr)
   return tid;
 }
 
-/*
- * is available next TCB
+/**
+ * @brief Check if input thread is available to next one
+ * @param tcb - target TCB
+ * @return success (0), fail (-1)
  */
-static inline BYTE available_next(TCB * tcb)
+static inline BYTE available_next(TCB* tcb)
 {
   return ((tcb->remaining_time_slice > 0)
           && (tcb->state == THREAD_STATE_READY) ? TRUE : FALSE);
 }
 
-/*
- * select next thread
+
+/**
+ * @brief Select next thread
+ * @param none
+ * @return selected thread to run next
  */
 static TCB *select_next_thread(void)
 {
@@ -791,8 +859,14 @@ retry:
   return found_tcb;
 }
 
-// handle Thread Load Balancing
-// 각 코어별 최저 thread 개수에 따른 thread 할당
+
+/**
+ * @brief Handle thread load balancing
+ * @brief Thread allocation according to the minimum number of threads for each core
+ * @param next_tcb - thread selected to run next
+ * @param cid - the number of core
+ * @return the number of core running the smallest number of threads
+ */
 int get_cid_of_min_thread(TCB * next_tcb, int cid)
 {
   TCB *tcb = NULL;
@@ -801,8 +875,7 @@ int get_cid_of_min_thread(TCB * next_tcb, int cid)
   QWORD tmp_thread_count = 0;
   int i = 0, min_cid = -1;
 
-  // core_mask 가 해당 코어에만 지정한 경우
-  // 무조건 해당 코어에 할당
+  // If core_mask is specified only for the core, it is unconditionally assigned to the core
 #if 0
   QWORD core_affinity;
 
@@ -815,9 +888,7 @@ int get_cid_of_min_thread(TCB * next_tcb, int cid)
     return cid;
 #endif
 
-  // 아래 요청 코어의 로직은 for loop 안에 넣어서 처리해도 되나
-  // 빠른 응답을 위해 따로 분리
-  // 요청 코어의 thread 개수 검사
+  // Check the number of threads in the request core
   tcb = g_running_thread_list[cid];
 
   if (tcb->id >= MAX_PROCESSOR_COUNT)
@@ -825,12 +896,12 @@ int get_cid_of_min_thread(TCB * next_tcb, int cid)
   else
     cid_thread_count = runnable_list[cid].count;
 
-  // 할당된 thread 가 0인 경우, 요청 코어에 할당
+  // If the allocated thread is 0, it is allocated to the request core
   if (!cid_thread_count)
     return cid;
 
   min_cid = cid;
-  // 전체 코어에서 최저 thread 가 할당된 코어 검색
+  // Search for cores that have the lowest thread assigned to all cores
   for (i = 0; i < MAX_PROCESSOR_COUNT; i++) {
     // check whether core is waked or not
     if (g_running_thread_list[i] == NULL)
@@ -857,19 +928,21 @@ int get_cid_of_min_thread(TCB * next_tcb, int cid)
     }
   }
 
-  // 요청 코어의 thread 개수와 최저 thread 개수가 동일한 경우
-  // 요청 코어에 할당
+  // If the number of threads in the request core and the lowest number of threads are the same, 
+  // it is allocated to the request core
   if (cid_thread_count <= min_thread_count)
     return cid;
   else
     return min_cid;
 }
 
-/*
- * post context switch for previous thread
- * - THREAD_INTENTION_READY
- * - THREAD_INTENTION_BLOCKED
- * - THREAD_INTENTION_EXITED
+/**
+ * @brief Post context switch for previous thread
+ * @brief - THREAD_INTENTION_READY
+ * @brief - THREAD_INTENTION_BLOCKED
+ * @brief - THREAD_INTENTION_EXITED
+ * @param prev - previously running thread
+ * @return none
  */
 void __post_context_switch(TCB * prev)
 {
@@ -933,11 +1006,13 @@ void __post_context_switch(TCB * prev)
   }
 }
 
-/*
- * post context switch
- * - post context switch for previous thread
- * - move threads in the migrating list to the runnable list
- * - move to-be-READY thread in the blocked list to the runnable list
+/**
+ * @brief Post context switch
+ * @brief - post context switch for previous thread
+ * @brief - move threads in the migrating list to the runnable list
+ * @brief - move to-be-READY thread in the blocked list to the runnable list
+ * @param prev - previouly running thread
+ * @return none
  */
 void post_context_switch(TCB * prev)
 {
@@ -1054,8 +1129,10 @@ void post_context_switch(TCB * prev)
   }
 }
 
-/*
- * refill time slice
+/**
+ * @brief Refill time slice
+ * @param tcb - target TCB
+ * @return success (0)
  */
 static int refill_time_slice(TCB * tcb)
 {
@@ -1078,7 +1155,9 @@ static int refill_time_slice(TCB * tcb)
 }
 
 /**
- * Adjust consumed time slice and decrease remaining time slice
+ * @brief Adjust consumed time slice and decrease remaining time slice
+ * @param none
+ * @return Consumed time slice
  */
 long adjust_time_slice(void)
 {
@@ -1099,7 +1178,9 @@ long adjust_time_slice(void)
 }
 
 /**
- * Decrease remaining time slice of input tcb
+ * @brief Decrease remaining time slice of input tcb
+ * @param consumed_time_slice - consumed time slice
+ * @return none
  */
 void decrease_remaining_time_slice(long consumed_time_slice)
 {
@@ -1113,8 +1194,11 @@ void decrease_remaining_time_slice(long consumed_time_slice)
     lapic_send_eoi();
 }
 
+
 /**
- * Schedule
+ * @brief Schedule
+ * @param intention - State want to change on current thread
+ * @return Success (0), fail (-1)
  */
 BOOL schedule(QWORD intention)
 {
@@ -1150,6 +1234,9 @@ BOOL schedule(QWORD intention)
     return TRUE;
   }
 
+  if(next->remaining_time_slice <= 0) 
+    refill_time_slice(next);
+
   lapic_start_timer_oneshot(next->remaining_time_slice);
 
   next->running_core = cid;
@@ -1171,15 +1258,99 @@ BOOL schedule(QWORD intention)
   return FALSE;
 }
 
-void release_thread_spl(TCB * prev)
+
+/**
+ * @brief Schedule to a specific thread
+ * @param next_tid - thread id want to schedule
+ * @param intention - State want to change on current thread
+ * @return Success (0), fail (-1)
+ */
+BOOL schedule_to(int next_tid, QWORD intention)
+{
+  TCB *curr = NULL;
+  TCB *next = NULL, *prev = NULL;
+  int cid = -1;
+  long consumed_time_slice = 0;
+
+  curr = get_current();
+  cid = curr->running_core;
+
+  consumed_time_slice = adjust_time_slice();
+  lapic_stop_timer();
+  decrease_remaining_time_slice(consumed_time_slice);
+
+  tcb_lock(curr);
+  /*atomic_or(intention, &curr->intention);*/
+  atomic_set(&curr->intention, intention | atomic_get(&curr->intention));
+  tcb_unlock(curr);
+
+  next = get_tcb(next_tid);
+  // if next's running core is same with current running thread,
+  // it guarantees that thread is not running
+  if (likely((next->running_core == curr->running_core) && core_is_allowed(next, cid))) {
+    if (next->remaining_time_slice <= 0) {
+        refill_time_slice(next);
+    }
+    lapic_start_timer_oneshot(next->remaining_time_slice);
+
+    next->state = THREAD_STATE_RUNNING;
+    g_running_thread_list[cid] = next;
+  } 
+  else {
+    put_tcb(next);
+    next = select_next_thread();
+
+    if (next->remaining_time_slice <= 0) {
+        refill_time_slice(next);
+    }
+    lapic_start_timer_oneshot(next->remaining_time_slice);
+
+    if (unlikely(next == curr)) {
+      curr->state = THREAD_STATE_RUNNING;
+      post_context_switch(curr);
+
+      return TRUE;
+    }
+    get_tcb(next->id);
+  }
+
+  next->running_core = cid;
+  running_thread[get_apic_id()] = next;
+
+  put_tcb(next);
+
+  prev = context_switch(curr, next);
+
+  post_context_switch(prev);
+
+  // signal handling
+  if (curr->signal_flag != 0) {
+    do_signal(curr->signal_handler, curr->id);
+
+    // initialize signal handler
+    curr->signal_flag = 0;
+    curr->signal_handler = 0;
+  }
+
+  return FALSE;
+}
+
+/**
+ * @brief Release thread spl
+ * @param prev - previously running thread
+ * @return none
+ */
+void release_thread_spl(TCB* prev)
 {
   post_context_switch(prev);
 }
 
 /**
- * Initially setup for idle thread
+ * @brief Initially setup for idle thread
+ * @prarm none
+ * @return none
  */
-void setup_idle_thread()
+void setup_idle_thread(void)
 {
   TCB *thread_idle = NULL;
   int cid = get_apic_id();
@@ -1201,7 +1372,9 @@ void setup_idle_thread()
 }
 
 /**
- * IDLE thread for BSP
+ * @brief IDLE thread for BSP
+ * @param thread_type - type of the thread (BSP of AP)
+ * @return none
  */
 void start_idle_thread(int thread_type)
 {
@@ -1239,7 +1412,11 @@ void start_idle_thread(int thread_type)
 }
 
 /**
- * Core mask
+ * @brief Setting masking info into TCB
+ * @param tcb - target TCB
+ * @param cst - masking info. want to set
+ * @param core - target core info.
+ * @return none
  */
 void set_core(TCB *tcb, core_set_t *cst, int core)
 {
@@ -1253,47 +1430,95 @@ void set_core(TCB *tcb, core_set_t *cst, int core)
   COPY_CORE_MASK(&tcb->core_mask, cst);
 }
 
+/**
+ * @brief Do exit
+ * @param arg - target TCB to exit
+ * @return none
+ */
 void do_exit(int arg)
 {
   __thread_exit(arg);
 }
 
+/**
+ * @brief Block current task
+ * @param none
+ * @return none
+ */
 void block_current_task(void)
 {
   // To be implemented
 }
 
+/**
+ * @brief Reschedule
+ * @param none
+ * @return none
+ */
 void reschedule(void)
 {
   // To be implemented
 }
 
+/**
+ * @brief Wake up task
+ * @param id - target id of the thread
+ * @return Success (0)
+ */
 int wakeup_task(tid_t id)
 {
   // To be implemented
   return 0;
 }
 
+/**
+ * @brief Get pid
+ * @param none
+ * @return ID of current running thread
+ */
 tid_t sys_getpid(void)
 {
   return get_current()->id;
 }
 
+/**
+ * @brief Get priority (Priority is not supported by the kernel)
+ * @param id - id of the thread
+ * @return -ENOSYS
+  */
 int sys_getprio(tid_t *id)
 {
   return -ENOSYS;
 }
 
+/**
+ * @brief Set priority (Priority is not supported by the kernel)
+ * @param id - id of the thread
+ * @param prio - priority want to set
+ * @return -ENOSYS
+ */
 int sys_setprio(tid_t *id, int prio)
 {
   return -ENOSYS;
 }
 
+/**
+ * @brief Exit systemcall
+ * @param arg - 
+ * @return none
+ */
 void sys_exit(int arg)
 {
   // To be implemented
 }
 
+/**
+ * @brief Clone systemcall
+ * @param id - id of the thread
+ * @param ep - entrypoint (instruction point)
+ * @param argv - parameters want to pass to create thread
+ * @return Success (0), fail (-1)
+ */
 int sys_clone(tid_t *id, void *ep, void *argv)
 {
   tid_t tid;
@@ -1310,6 +1535,11 @@ int sys_clone(tid_t *id, void *ep, void *argv)
   }
 }
 
+/** 
+ * @brief Yield systemcall
+ * @param none
+ * @return none
+ */
 void sys_yield(void)
 {
   // To be implemented

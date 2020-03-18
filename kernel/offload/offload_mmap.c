@@ -98,13 +98,13 @@ BOOL init_offload_channel()
 		icq_base_va = (QWORD) offload_channel_base_va + offload_channels_offset * (n_ipages + n_opages) * PAGE_SIZE_4K;
 		cur_channel->in = (struct circular_queue *) (icq_base_va);
 		//lock init
-		mutex_init(&cur_channel->in->lock);
+		spinlock_init(&cur_channel->in->slock);
 
 		// map ocq of ith channel
 		ocq_base_va = (QWORD) icq_base_va + (n_ipages * PAGE_SIZE_4K);
 		cur_channel->out = (struct circular_queue *) (ocq_base_va);
 		//lock init
-		mutex_init(&cur_channel->out->lock);
+		spinlock_init(&cur_channel->in->slock);
 	}
 
 	return(TRUE);

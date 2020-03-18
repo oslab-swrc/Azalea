@@ -3,14 +3,15 @@
 
 #include "offload_channel.h"
 #include "offload_message.h"
+#include "offload_thread_pool.h"
 
-void sys_off_gethostname(struct channel_struct *ch);
-void sys_off_gethostbyname(struct channel_struct *ch);
-void sys_off_getsockname(struct channel_struct *ch);
-void sys_off_socket(struct channel_struct *ch);
-void sys_off_bind(struct channel_struct *ch);
-void sys_off_listen(struct channel_struct *ch);
-void sys_off_connect(struct channel_struct *ch);
-void sys_off_accept(struct channel_struct *ch);
+void sys_off_gethostname(job_args_t *job_args);
+void sys_off_gethostbyname(job_args_t *job_args);
+void sys_off_getsockname(job_args_t *job_args);
+void sys_off_socket(job_args_t *job_args);
+void sys_off_bind(job_args_t *job_args);
+void sys_off_listen(job_args_t *job_args);
+void sys_off_connect(job_args_t *job_args);
+void sys_off_accept(job_args_t *job_args);
 
 #endif /* __OFFLOAD_NETWORK_H__ */
