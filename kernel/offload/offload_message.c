@@ -26,7 +26,6 @@ int check_count = 0;
 
 send_retry:
 
-  //mutex_lock(&ocq->lock);
   spinlock_lock(&ocq->slock);
 
 check_ocq:
@@ -51,7 +50,6 @@ check_ocq:
     ocq->head = (ocq->head + 1) % ocq->size;
 
     mfence();
-    //mutex_unlock(&ocq->lock);
     spinlock_unlock(&ocq->slock);
   }
   else {
@@ -62,7 +60,6 @@ check_ocq:
 
     mfence();
     spinlock_unlock(&ocq->slock);
-    //mutex_unlock(&ocq->lock);
 
     get_current()->remaining_time_slice = 0;
     schedule(THREAD_INTENTION_READY);
@@ -88,7 +85,6 @@ int check_count = 0;
 
 receive_retry:
     spinlock_lock(&icq->slock);
-    //mutex_lock(&icq->lock);
 
     check_count = 0;
 check_icq:
@@ -103,12 +99,10 @@ check_icq:
 
       mfence();
       spinlock_unlock(&icq->slock);
-      //mutex_unlock(&icq->lock);
     }
     else {
       mfence();
       spinlock_unlock(&icq->slock);
-      //mutex_unlock(&icq->lock);
       schedule_to((int) (ipkt->tid - g_ukid * 10000), THREAD_INTENTION_READY);
 
       goto receive_retry;
@@ -122,7 +116,6 @@ check_icq:
 
     mfence();
     spinlock_unlock(&icq->slock);
-    //mutex_unlock(&icq->lock);
 
     get_current()->remaining_time_slice = 0;
     schedule(THREAD_INTENTION_READY);

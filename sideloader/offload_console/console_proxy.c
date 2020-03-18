@@ -116,7 +116,7 @@ void cmd(channel_t *cs)
       default:
         break;
     }
-    usleep(10);
+    usleep(100);
   }
 }
 

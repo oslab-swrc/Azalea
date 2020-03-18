@@ -792,149 +792,6 @@ retry:
   return found_tcb;
 }
 
-#if 0 
-static TCB *select_next_thread(void)
-{
-  int found = 0;
-  TCB *next_tcb = NULL, *tmp_ptr = NULL, *found_tcb = NULL;
-  TCB *curr_tcb = get_current();
-  int cid = get_current()->running_core;
-
-  cid = curr_tcb->running_core;
-
-retry:
-  found = 0;
-  dl_list_for_each_safe(next_tcb, tmp_ptr, &per_cpu(runnable_list).tcb_list, TCB, tcb_link) {
-    tcb_lock(next_tcb);
-
-    // If there exists only one thread in runnable list then
-    // Move to-be-BLOCKED thread in the runnable list to the blocked list.
-    // Move to-be-EXITED thread in the runnable and blocked list to the free list
-    if (atomic_get(&next_tcb->intention) & THREAD_INTENTION_EXITED) {
-
-      // and if prev=next, schedule idle thread
-      if (curr_tcb->id == next_tcb->id) {
-        refill_time_slice(g_idle_thread_list[cid]);
-
-        return g_idle_thread_list[cid];
-      }
-
-      per_cpu(runnable_list).count--;
-      dl_list_del_init(&next_tcb->tcb_link);
-
-      next_tcb->state = THREAD_STATE_EXITED;
-      /*atomic_and(~THREAD_INTENTION_EXITED, &t->intention);*/
-      atomic_set(&next_tcb->intention, atomic_get(&next_tcb->intention) & ~THREAD_INTENTION_EXITED);
-
-      tcb_unlock(next_tcb);
-
-      // Destroy TCB
-      put_tcb(next_tcb);
-
-      continue;
-    } 
-
-    if (atomic_get(&next_tcb->intention) & THREAD_INTENTION_BLOCKED) {
-      per_cpu(runnable_list).count--;
-      dl_list_del_init(&next_tcb->tcb_link);
-
-      next_tcb->state = THREAD_STATE_BLOCKED;
-      /*atomic_and(~THREAD_INTENTION_BLOCKED, &next_tcb->intention);*/
-      atomic_set(&next_tcb->intention, atomic_get(&next_tcb->intention) & ~THREAD_INTENTION_BLOCKED);
-
-      dl_list_add_tail(&next_tcb->tcb_link, &per_cpu(blocked_list).tcb_list);
-      per_cpu(blocked_list).count++;
-
-      tcb_unlock(next_tcb);
-
-      continue;
-    }
-
-    if(!found) {
-      if (available_next(next_tcb) == TRUE && next_tcb != curr_tcb) {
-        if (core_is_allowed(next_tcb, cid)) {
-          if (!found) {
-            found = 1;
-            found_tcb = next_tcb;
-            next_tcb->state = THREAD_STATE_RUNNING;
-            /*per_cpu(runnable_list).count--;*/
-            /*list_remove_init(&next_tcb->tcb_link);*/
-            g_running_thread_list[cid] = next_tcb;
-          }
-        // if selected next_tcb is not allowed in this core, then put it in the migrating list
-        } else if (spinlock_trylock(&g_migrating_list.lock)) {
-          // migrate the next_tcb to the g_migrating_list
-          per_cpu(runnable_list).count--;
-          dl_list_del_init(&next_tcb->tcb_link);
- 
-          dl_list_add_tail(&next_tcb->tcb_link, &g_migrating_list.tcb_list);
-          g_migrating_list.count++;
-          spinlock_unlock(&g_migrating_list.lock);
-        }
-      }
-      tcb_unlock(next_tcb);
-    }
-    else {
-      if (!core_is_allowed(next_tcb, cid)) {
-        if (spinlock_trylock(&g_migrating_list.lock)) {
-          // migrate the next_tcb to the g_migrating_list
-          per_cpu(runnable_list).count--;
-          dl_list_del_init(&next_tcb->tcb_link);
- 
-          dl_list_add_tail(&next_tcb->tcb_link, &g_migrating_list.tcb_list);
-          g_migrating_list.count++;
-          spinlock_unlock(&g_migrating_list.lock);
-        }
-      }
-      tcb_unlock(next_tcb);
-    }
-  }
-
-  if (!found) {
-    int refilled = 0;
-
-   // if there are threads ready with no time slice in the runnable list, then refill the time slice
-    dl_list_for_each(next_tcb, &per_cpu(runnable_list).tcb_list, TCB, tcb_link) {
-      tcb_lock(next_tcb);
-      if (next_tcb->state == THREAD_STATE_READY && next_tcb->remaining_time_slice <= 0) {
-        refill_time_slice(next_tcb);
-        refilled = 1;
-      }
-      tcb_unlock(next_tcb);
-    }
-
-    if (refilled)
-      goto retry;
-
-#if 0
-    // if there is only one thread in runnable list, then select it
-    if (per_cpu(runnable_list).count == 1) {
-      found_tcb = dl_list_first(&per_cpu(runnable_list).tcb_list, TCB, tcb_link);
-    }
-    else {
-      found_tcb = g_idle_thread_list[cid];
-    }
-#else
-    if (per_cpu(runnable_list).count == 1) {
-      found_tcb = dl_list_first(&per_cpu(runnable_list).tcb_list, TCB, tcb_link);
-    }
-    else if(atomic_get(&curr_tcb->intention) & THREAD_INTENTION_READY) {
-      found_tcb = curr_tcb;
-    }
-    else {
-      found_tcb = g_idle_thread_list[cid];;
-    }
-
-    if(found_tcb->remaining_time_slice <= 0) {
-      refill_time_slice(found_tcb);
-    }
-#endif
-
-  }
-
-  return found_tcb;
-}
-#endif
 
 // handle Thread Load Balancing
 // 각 코어별 최저 thread 개수에 따른 thread 할당
@@ -1321,6 +1178,9 @@ BOOL schedule(QWORD intention)
 }
 
 
+/**
+ * Schedule to a specific thread
+ */
 BOOL schedule_to(int next_tid, QWORD intention)
 {
   TCB *curr = NULL;
@@ -1353,21 +1213,15 @@ BOOL schedule_to(int next_tid, QWORD intention)
     g_running_thread_list[cid] = next;
   } 
   else {
-
     put_tcb(next);
     next = select_next_thread();
 
-#if 1
     if (next->remaining_time_slice <= 0) {
         refill_time_slice(next);
     }
-#endif
     lapic_start_timer_oneshot(next->remaining_time_slice);
 
     if (unlikely(next == curr)) {
-      //refill_time_slice(curr);
-      //lapic_start_timer_oneshot(curr->remaining_time_slice);
-
       curr->state = THREAD_STATE_RUNNING;
       post_context_switch(curr);
 
@@ -1375,7 +1229,6 @@ BOOL schedule_to(int next_tid, QWORD intention)
     }
     get_tcb(next->id);
   }
-
 
   next->running_core = cid;
   running_thread[get_apic_id()] = next;

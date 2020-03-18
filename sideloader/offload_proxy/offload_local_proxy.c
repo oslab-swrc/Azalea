@@ -240,7 +240,7 @@ void *offload_watch(void *arg)
 
     if(watch_count++ > 1000) {
       //sleep watch thread
-      usleep(1);
+      usleep(10);
       watch_count = 0;
     }
 
@@ -340,6 +340,7 @@ void cmd(channel_t *cs)
       default:
         break;
     }
+    usleep(100);
   }
 }
 
