@@ -5,6 +5,8 @@
 #include "page.h"
 #include "utility.h"
 #include "console.h"
+#include "debug.h"
+#include <sys/lock.h>
 
 int g_ap_ready = 0;
 volatile int g_ap_count = 0;
@@ -16,11 +18,14 @@ int g_ukid;
 
 extern QWORD g_memory_start;
 
-static int list_apic_id[506] = {0, };
+static int list_apic_id[MAX_PAPIC_ID] = {-1, };
 static int curr_cpu = 0;
+static spinlock_t apic_lock;
 
 /**
- *
+ * @brief Enabling X2APIC
+ * @param none
+ * @return none
  */
 void enable_x2apic(void)
 {
@@ -35,9 +40,11 @@ void enable_x2apic(void)
 }
 
 /**
- *
+ * @brief Disabling X2APIC
+ * @param none
+ * @return none
  */
-void disable_x2apic()
+void disable_x2apic(void)
 {
   QWORD msr;
   msr = x2apic_read(IA32_APIC_BASE_MSR);
@@ -50,26 +57,34 @@ void disable_x2apic()
 }
 
 /**
- * Set physical APIC ID to the list with sequential number,
- * then return the logical CPU ID. 
+ * @brief Set physical APIC ID to the list with sequential number,
+ * @brief then return the logical CPU ID. 
+ * @param apicid - physical number of core
+ * @return Logical core number assigned 
  */
 QWORD set_apic_id(QWORD apicid)
 {
+  spinlock_lock(&apic_lock);
   list_apic_id[apicid] = curr_cpu++;
+  spinlock_unlock(&apic_lock);
 
   return curr_cpu;
 }
 
-/*
- * get physical APIC ID
+/**
+ * @brief Get physical APIC ID
+ * @param none
+ * @return Current physical core number
  */
 QWORD get_papic_id(void)
 {
   return x2apic_read(APIC_REGISTER_APIC_ID) ;
 }
 
-/*
- * get logical APIC ID
+/**
+ * @brief Get logical APIC ID
+ * @param none
+ * @return Current logical core number
  */
 QWORD get_apic_id(void)
 {
@@ -78,15 +93,15 @@ QWORD get_apic_id(void)
   return list_apic_id[papic_id];
 }
 
-/*
- * start AP
+/**
+ * @brief Startup AP cores
+ * @param none
+ * @return success (0), fail (-1)
  */
 BOOL startup_ap(void)
 {
   if (analysis_mp_config_table() == FALSE)
     return FALSE;
-
-//  enable_globallocalapic();   // apic enabled in entrypoint.S 
 
   // Enabling Local APIC of BSP
   enable_software_local_apic();
@@ -97,7 +112,9 @@ BOOL startup_ap(void)
 }
 
 /**
- * Return the number of cores
+ * @brief Return the number of cores
+ * @param none
+ * @return Starting core number
  */
 int get_cpu_num(void)
 {
