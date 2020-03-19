@@ -25,6 +25,7 @@
 #define MAX_UNIKERNEL               (100)   // Theoretically total core - linux core
 #define MAX_CORE                    (100)
 #define MAX_MEMORY                  (100)
+#define MAX_PAPIC_ID                (600)   // Maximum number of physical cores to wake
 
 // Used only start with index
 #define CPUS_PER_NODE               (24)
