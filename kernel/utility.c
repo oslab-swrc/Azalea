@@ -12,57 +12,38 @@ extern QWORD g_memory_start;
 extern QWORD g_memory_end;
 
 /**
- *  Fill input data into the memory
+ * @brief Fill memoty with a constant byte 
+ * @param address - target address to fill
+ * @param data - constant byte
+ * @param size - bytes size want to fill
+ * @return none
  */
-// TODO:
 void lk_memset(void *address, BYTE data, int size)
 {
-#if 0
-  int i = 0;
-  QWORD tmp_data = 0;
-  int remain_offset = 0;
-  QWORD addr = (QWORD) address;
-
-  // Fill 8 byte data
-  tmp_data = 0;
-  for (i=0; i<8; i++)
-    tmp_data = (tmp_data << 8) | data;
-
-  // Fill 8 byte size data
-  for (i=0; i<(size / 8); i++) {
-    *((QWORD *) addr) = tmp_data;
-    addr++;
-  }
-
-  // Fill the rest
-  remain_offset = i * 8;
-  for (i=0; i<(size % 8); i++) 
-    ((char *) addr)[remain_offset++] = data;
-#else
   int i = 0;
   QWORD tmp_data = 0;
   int remain_offset = 0;
 
-  // Fill 8 byte data
-  tmp_data = 0;
+  // Fill 8-byte data
   for (i=0; i<8; i++)
     tmp_data = (tmp_data << 8) | data;
 
-  // Fill 8 byte size data
-  for (i=0; i<(size / 8); i++) {
-    *((QWORD *) address) = tmp_data;
-    address++;
-  }
+  // Fill in 8-byte units from memory
+  for (i=0; i<(size / 8); i++)
+    ((QWORD*) address)[i] = tmp_data;
 
-  // Fill the rest
+  // If less than 8 bytes left, fill in the rest
   remain_offset = i * 8;
-  for (i=0; i<(size % 8); i++) 
-    ((char *) address)[remain_offset++] = data;
-#endif
+  for (i=0; i<(size % 8); i++)
+    ((char*) address)[remain_offset++] = data;
 }
 
 /**
- * Copy memory
+ * @brief Copy memory area
+ * @param destination - address from memory area 
+ * @param source - address to memory area
+ * @parm size - bytes size want to copy
+ * @return Size to copy
  */ 
 int lk_memcpy(void *destination, const void *source, int size)
 {
@@ -81,7 +62,13 @@ int lk_memcpy(void *destination, const void *source, int size)
 }
 
 /**
- * Compare memory 
+ * @brief Compare memory area 
+ * @param destination - first memory area to compare
+ * @param source - second memory area to compare
+ * @param size - compare thr first size of bytes
+ * @return (0) two memory area are exactly the same
+ * @return (>0) the comparison value is greater than destination
+ * @return (<0) the comparison value is less than destination
  */
 int lk_memcmp(const void *destination, const void *source, int size)
 {
