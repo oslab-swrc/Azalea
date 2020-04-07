@@ -206,7 +206,7 @@ TCB *alloc_tcb(void)
 {
   TCB *tcb = NULL;
 
-#if 0
+#if 1
   if (per_cpu(local_tcb_list).count) {
     tcb = dl_list_entry(per_cpu(local_tcb_list).tcb_list.next, TCB, tcb_link);
     dl_list_del(&tcb->tcb_link);
