@@ -103,6 +103,7 @@ check_icq:
     else {
       mfence();
       spinlock_unlock(&icq->slock);
+      get_current()->remaining_time_slice = 0;
       schedule_to((int) (ipkt->tid - g_ukid * 10000), THREAD_INTENTION_READY);
 
       goto receive_retry;

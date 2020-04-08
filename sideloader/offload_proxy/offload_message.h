@@ -10,12 +10,7 @@
 
 // structure for packet which can contain header and data.
 typedef struct io_packet_struct {
-  unsigned int magic;
-  unsigned short version_major;
-  unsigned short version_minor;
-  unsigned long packet_number;
-  unsigned long total_packet_number;  
-  unsigned long EOP;
+  unsigned long  magic;
   unsigned long tid;
   unsigned long io_function_type; 
   unsigned long param1;         

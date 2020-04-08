@@ -44,6 +44,7 @@ int g_n_nodes;
 
 // mutex to handle send_offload_message() 
 pthread_mutex_t job_mutex[MAX_MUTEX] __attribute__((aligned(L_CACHE_LINE_SIZE)));  
+pthread_mutex_t create_pool_mutex __attribute__((aligned(L_CACHE_LINE_SIZE)));  
 
 // data struct of thread argument for thread pool
 typedef struct job_mutex {
@@ -52,7 +53,8 @@ typedef struct job_mutex {
 } job_mutex_t;
 
 // pointer to thread pool 
-thread_pool_t *g_pool[MAX_NODE];
+//thread_pool_t *g_pool[MAX_NODE];
+thread_pool_t *g_pool[OFFLOAD_MAX_CHANNEL];
 
 /**
  * @brief memcpy by sizeof(unsigned long) 
@@ -190,14 +192,14 @@ void *offload_watch(void *arg)
   struct circular_queue *in_cq = NULL;
 
   int i = 0;
+  int j = 0;
 
   //thread job parameer
   job_args_t *job_args = NULL;
   int max_job_size = 0;
   int job_args_index = 0;
   int thread_pool_size = 0;
-  thread_pool_t *pool = NULL;
-  int watch_count = 0;
+  thread_pool_t *pool[64] = {NULL, };
 
   offload_channels = thread_channels->ch;
   n_channels = thread_channels->n_ch;
@@ -207,82 +209,77 @@ void *offload_watch(void *arg)
   printf("# channels: %d, # cq_element: %d\n", n_channels, n_cq_element);
 #endif
 
+
+  //create thread pool
+  //thread_pool_size = MAX_POOL_THREAD;
+  thread_pool_size = n_cq_element; // 2 times of cq length
+  pthread_mutex_lock(&create_pool_mutex);
+  for(i = 0; i < n_channels; i++) {
+    pool[i] = create_pool(thread_pool_size);
+    usleep(10);
+    g_pool[thread_channels->index * n_channels + i] = pool[i];
+  }
+  pthread_mutex_unlock(&create_pool_mutex);
+  sleep(1);
+
   //alloc memory for job parameter
-  max_job_size = n_channels * n_cq_element;
+  max_job_size = n_channels * thread_pool_size;
   job_args = (job_args_t *) malloc(max_job_size * sizeof(job_args_t));
   if (job_args == NULL) {
     printf("failed to allocate memory\n");
     exit(1);
   }
 
-  //create thread pool
-  thread_pool_size = MAX_POOL_THREAD;
-  pool = create_pool(thread_pool_size);
-  g_pool[thread_channels->index] = pool;
-  sleep(1);
-
   // initialize mutex for  send_offload_message()
   for(i = 0; i < n_channels; i++) {
     pthread_mutex_init(&(offload_channels + i)->mutex, NULL);
   }
 
+
 #define RETRY
 
 #ifdef RETRY
   int retry_count = 0;
-  int max_retry_count = 0;
 #endif
 
   job_args_index = 0;
-  watch_count = 0;
 
   while (g_offload_channel_runnable) {
-
-    if(watch_count++ > 1000) {
-      //sleep watch thread
-      usleep(10);
-      watch_count = 0;
-    }
 
     for(i = 0; i < n_channels && g_offload_channel_runnable; i++) {
         curr_channel = (struct channel_struct *) (offload_channels + i);
         in_cq = (struct circular_queue *) curr_channel->in_cq;
 
 #ifdef RETRY
-        retry_count = 0;
-        max_retry_count = cq_avail_data(in_cq);
-#endif
-retry_watch:
-
+        retry_count = cq_avail_data(in_cq);
+        for(j = 0; j <  retry_count; j++) {
+#else
         if(cq_avail_data(in_cq)) {
-          watch_count = 0;
+#endif
           ce = (cq_element *) (in_cq->data + in_cq->tail);
           in_pkt= (io_packet_t *)(ce);
 
           // copy pkt to thread args
           memcpy64((void *)&job_args[job_args_index].pkt, (void *) in_pkt, sizeof(io_packet_t));
-          job_args[job_args_index].ch = curr_channel;
 
           in_cq->tail = (in_cq->tail + 1) % in_cq->size;
 
+          job_args[job_args_index].ch = curr_channel;
+
           //add job to thread pool
-          while(WAIT_ISSUED == add_job_to_pool(pool, (void *) offload_local_proxy, (void *) &job_args[job_args_index])) {
+          while(WAIT_ISSUED == add_job_to_pool(pool[i], (void *) offload_local_proxy, (void *) &job_args[job_args_index])) {
 	    usleep(1);
           } 
 
           job_args_index = (job_args_index + 1) % max_job_size;
-
-#ifdef RETRY 
-          if(retry_count++ < max_retry_count) {
-            goto retry_watch;
-          }
-#endif
         }
     }
   }
 
   //destroy thread pool
-  destroy_pool(pool);
+  for(i = 0; i < n_channels; i++) {
+    destroy_pool(pool[i]);
+  }
 
   //free memory for job args
   free(job_args);
@@ -314,15 +311,18 @@ void cmd(channel_t *cs)
           ocq = (cs + i)->out_cq;
           icq = (cs + i)->in_cq;
           if((i%g_n_channels_per_node == 0)&& (i != 0))
-          printf("\n");
+            printf("\n");
           printf("queue state(%03d): [p->u(%3d): h:%3d t:%3d] [u->p(%3d): h:%3d t:%3d]\n", i, cq_avail_data(ocq), ocq->head, ocq->tail, cq_avail_data(icq), icq->head, icq->tail);
         }
         break;
  
       // show thread pool status
       case 't':
-        for (i = 0; i < g_n_nodes; i++) {
-          printf("thread pool: #threads: %d, #pending jobs: %d \n", (int) get_thread_count(g_pool[i]), (int) get_job_count(g_pool[i]));
+        for (i = 0; i < g_n_channels; i++) {
+          if((i%g_n_channels_per_node == 0)&& (i != 0))
+            printf("\n");
+          if(g_pool[i] != NULL)
+            printf("thread pool(%02d): #threads: %d, #pending jobs: %d \n", i, (int) get_thread_count(g_pool[i]), (int) get_job_count(g_pool[i]));
         }
         break;
  
@@ -416,6 +416,12 @@ int main(int argc, char *argv[])
     goto __end;
 
   g_offload_channel_runnable = 1;
+
+  for (i = 0; i < OFFLOAD_MAX_CHANNEL; i++) {
+    g_pool[i] = NULL;
+  }
+
+  pthread_mutex_init(&create_pool_mutex, NULL);
 
 #define MULTI_WATCH
 
