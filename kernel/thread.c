@@ -773,39 +773,26 @@ retry:
     if (atomic_get(&next_tcb->intention) & THREAD_INTENTION_EXITED) {
 
       // and if prev=next, schedule idle thread
-      if (get_current()->id == next_tcb->id) {
+      if (per_cpu(runnable_list).count == 1) {
         refill_time_slice(g_idle_thread_list[cid]);
 
+        tcb_unlock(next_tcb);
         return g_idle_thread_list[cid];
       }
 
-      if (thread_exit(next_tcb) == -1) {
-        tcb_unlock(next_tcb);
-        continue;
-      }
-
-      per_cpu(runnable_list).count--;
-      dl_list_del_init(&next_tcb->tcb_link);
-
       tcb_unlock(next_tcb);
-
-      // Destroy TCB
-      put_tcb(next_tcb);
       continue;
     } else if (atomic_get(&next_tcb->intention) & THREAD_INTENTION_BLOCKED) {
-      per_cpu(runnable_list).count--;
-      dl_list_del_init(&next_tcb->tcb_link);
 
-      next_tcb->state = THREAD_STATE_BLOCKED;
-      /*atomic_and(~THREAD_INTENTION_BLOCKED, &next_tcb->intention);*/
-      atomic_set(&next_tcb->intention, atomic_get(&next_tcb->intention) & ~THREAD_INTENTION_BLOCKED);
+      // and if prev=next, schedule idle thread
+      if (per_cpu(runnable_list).count == 1) {
+        refill_time_slice(g_idle_thread_list[cid]);
 
-      dl_list_add_tail(&next_tcb->tcb_link,
-                       &per_cpu(blocked_list).tcb_list);
-      per_cpu(blocked_list).count++;
+        tcb_unlock(next_tcb);
+        return g_idle_thread_list[cid];
+      }
 
       tcb_unlock(next_tcb);
-
       continue;
     }
 
@@ -850,10 +837,13 @@ retry:
       goto retry;
 
     // if there is only one thread in runnable list, then select it
-    if (per_cpu(runnable_list).count == 1)
+    if (per_cpu(runnable_list).count == 1) {
       found_tcb = dl_list_first(&per_cpu(runnable_list).tcb_list, TCB, tcb_link);
-    else
+      g_running_thread_list[cid] = found_tcb;
+    }
+    else {
       found_tcb = g_idle_thread_list[cid];
+    }
   }
 
   return found_tcb;
