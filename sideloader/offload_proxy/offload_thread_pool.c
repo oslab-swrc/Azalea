@@ -14,6 +14,7 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <string.h>
 #include "offload_thread_pool.h" // API header
 
 /* The core function which is executed in each thread.
@@ -161,7 +162,14 @@ static void *thread_executor(void *pl){
 /* This method adds 'threads' number of new threads
  * to the argument pool. See header for more details.
  */
+#define THREADSTACK  65536
+
 thread_pool_status add_threads_to_pool(thread_pool_t *pool, uint64_t threads){
+	pthread_attr_t  attrs;
+	pthread_attr_init(&attrs);
+	pthread_attr_setstacksize(&attrs, THREADSTACK);
+
+
 	if(pool==NULL){ // Sanity check
 		printf("\n[THREADPOOL:ADD:ERROR] Pool is not initialized!");
 		return POOL_NOT_INITIALIZED;
@@ -191,7 +199,8 @@ thread_pool_status add_threads_to_pool(thread_pool_t *pool, uint64_t threads){
 
 		thread_list_t *new_thread = (thread_list_t *)malloc(sizeof(thread_list_t)); // Allocate a new thread
 		new_thread->next = NULL;
-		temp = pthread_create(&new_thread->thread, NULL, thread_executor, (void *)pool); // Start the thread
+		//temp = pthread_create(&new_thread->thread, NULL, thread_executor, (void *)pool); // Start the thread
+		temp = pthread_create(&new_thread->thread, &attrs, thread_executor, (void *)pool); // Start the thread
 		if(temp){
 			printf("\n[THREADPOOL:ADD:ERROR] Unable to create thread %" PRIu64 "(error code %d)!", (i+1), temp);
 			pthread_mutex_lock(&pool->condmutex);
@@ -211,6 +220,9 @@ thread_pool_status add_threads_to_pool(thread_pool_t *pool, uint64_t threads){
 			pool->rear_threads = new_thread; // This is definitely the last thread
 		}
 	}
+
+	pthread_attr_destroy(&attrs);
+
 	return rc;
 }
 
@@ -346,7 +358,8 @@ thread_pool_status add_job_to_pool(thread_pool_t *pool, void (*func)(void *args)
 #endif
 
 	new_job->function = func; // Initialize the function
-	new_job->args = args; // Initialize the argument
+	//new_job->args = args; // Initialize the argument
+	memcpy((void *) new_job->args, (void *) args, sizeof(job_args_t)); // copy the argument
 	new_job->next = NULL; // Reset the link
 
 #ifdef DEBUG

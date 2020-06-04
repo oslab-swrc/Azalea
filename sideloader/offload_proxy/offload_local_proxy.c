@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "arch.h"
 #include "offload_channel.h"
@@ -40,7 +41,7 @@ int g_n_channels;
 int g_n_nodes;
 
 // the max number of threas in thread pool
- #define MAX_POOL_THREAD	2048 
+#define MAX_POOL_THREAD	1024 
 
 // mutex to handle send_offload_message() 
 pthread_mutex_t job_mutex[MAX_MUTEX] __attribute__((aligned(L_CACHE_LINE_SIZE)));  
@@ -192,12 +193,9 @@ void *offload_watch(void *arg)
   struct circular_queue *in_cq = NULL;
 
   int i = 0;
-  int j = 0;
 
   //thread job parameer
-  job_args_t *job_args = NULL;
-  int max_job_size = 0;
-  int job_args_index = 0;
+  job_args_t job_args;
   int thread_pool_size = 0;
   thread_pool_t *pool[64] = {NULL, };
 
@@ -212,7 +210,7 @@ void *offload_watch(void *arg)
 
   //create thread pool
   //thread_pool_size = MAX_POOL_THREAD;
-  thread_pool_size = n_cq_element; // 2 times of cq length
+  thread_pool_size = n_cq_element * 2; // 2 times of cq length
   pthread_mutex_lock(&create_pool_mutex);
   for(i = 0; i < n_channels; i++) {
     pool[i] = create_pool(thread_pool_size);
@@ -222,27 +220,17 @@ void *offload_watch(void *arg)
   pthread_mutex_unlock(&create_pool_mutex);
   sleep(1);
 
-  //alloc memory for job parameter
-  max_job_size = n_channels * thread_pool_size;
-  job_args = (job_args_t *) malloc(max_job_size * sizeof(job_args_t));
-  if (job_args == NULL) {
-    printf("failed to allocate memory\n");
-    exit(1);
-  }
-
   // initialize mutex for  send_offload_message()
   for(i = 0; i < n_channels; i++) {
     pthread_mutex_init(&(offload_channels + i)->mutex, NULL);
   }
 
 
-#define RETRY
+//#define RETRY
 
 #ifdef RETRY
   int retry_count = 0;
 #endif
-
-  job_args_index = 0;
 
   while (g_offload_channel_runnable) {
 
@@ -260,18 +248,20 @@ void *offload_watch(void *arg)
           in_pkt= (io_packet_t *)(ce);
 
           // copy pkt to thread args
+#if 0
           memcpy64((void *)&job_args[job_args_index].pkt, (void *) in_pkt, sizeof(io_packet_t));
+#else
+          memcpy((void *)&job_args.pkt, (void *) in_pkt, sizeof(io_packet_t));
+#endif
 
           in_cq->tail = (in_cq->tail + 1) % in_cq->size;
 
-          job_args[job_args_index].ch = curr_channel;
+          job_args.ch = curr_channel;
 
           //add job to thread pool
-          while(WAIT_ISSUED == add_job_to_pool(pool[i], (void *) offload_local_proxy, (void *) &job_args[job_args_index])) {
+          while(WAIT_ISSUED == add_job_to_pool(pool[i], (void *) offload_local_proxy, (void *) &job_args)) {
 	    usleep(1);
           } 
-
-          job_args_index = (job_args_index + 1) % max_job_size;
         }
     }
   }
@@ -280,9 +270,6 @@ void *offload_watch(void *arg)
   for(i = 0; i < n_channels; i++) {
     destroy_pool(pool[i]);
   }
-
-  //free memory for job args
-  free(job_args);
 
   pthread_exit((void *)0);
   return (NULL);
@@ -454,7 +441,7 @@ int main(int argc, char *argv[])
   }
 
   // end of logic
-  if (munmap_channels(offload_channels, g_n_channels) < 0)
+  if (munmap_channels() < 0)
       err++;
 
   if (err) {

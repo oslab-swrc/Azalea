@@ -16,6 +16,7 @@
 #include "offload_thread_pool.h"
 
 //#define DEBUG
+//#define IOVEC_RW
 
 /**
  * @brief execute open system call
@@ -190,7 +191,7 @@ void sys_off_read(job_args_t *job_args)
 
   // execute read
 
-#if 1
+#ifdef IOVEC_RW
   sret = do_sys_off_read_v(fd, pa, count);
 #else
   sret = read(fd, (void *) get_va(pa), (size_t) count);
@@ -283,7 +284,7 @@ void sys_off_write(job_args_t *job_args)
   count = (int) in_pkt->param3;
 
   // execute write
-#if 1
+#ifdef IOVEC_RW
   sret = do_sys_off_write_v(fd, pa, count);
 #else
   sret = write(fd, (void *) get_va(pa), (size_t) count);
@@ -465,11 +466,16 @@ void sys_off_unlink(job_args_t *job_args)
   path = (char *) get_va(in_pkt->param1);
 
   // execute unlink
-  iret = unlink(path);
+  if(access(path, F_OK) == 0) {
+    iret = unlink(path);
+    // check error
+    if(iret == -1)
+      fprintf(stderr, "FIO UNLINK: %s, %s\n", strerror(errno), path);
+  }
+  else {
+    iret = 0;
+  }
 
-  // check error
-  if(iret == -1)
-    fprintf(stderr, "FIO UNLINK: %s, %s\n", strerror(errno), path);
 
   // retrun ret
   pthread_mutex_lock(&ch->mutex);

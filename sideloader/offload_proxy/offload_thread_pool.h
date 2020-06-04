@@ -44,16 +44,6 @@ typedef struct threadList {
 	struct threadList *next; // Link to next thread
 } thread_list_t;
 
-/* A singly linked list of worker functions. This
- * list is implemented as a queue to manage the
- * execution in the pool.
- */
-typedef struct Job {
-	void (*function)(void *); // The worker function
-	void *args; // Argument to the function
-	struct Job *next; // Link to next Job
-} job_t;
-
 /* 
  * the args for the worker function
  */
@@ -61,6 +51,18 @@ typedef struct JobArgs {
    channel_t *ch;
    io_packet_t pkt;
 } job_args_t;
+
+/* A singly linked list of worker functions. This
+ * list is implemented as a queue to manage the
+ * execution in the pool.
+ */
+typedef struct Job {
+	void (*function)(void *); // The worker function
+	//void *args; // Argument to the function
+	job_args_t args[1]; // Argument to the function
+	struct Job *next; // Link to next Job
+} job_t;
+
 
 /* The core pool structure. This is the only
  * user accessible structure in the API. It contains

@@ -15,6 +15,10 @@ unsigned long g_kernels_mem_base_pa = 0;
 unsigned long g_mmap_channel_mem_base_va = 0;
 unsigned long g_channel_mem_base_pa = 0;
 
+// offload channel address
+unsigned long g_mmap_offload_channels_va = 0;
+unsigned long g_mmap_offload_channels_len = 0;
+
 // offload channel info address
 unsigned long g_mmap_offload_channels_info_va = 0;
 
@@ -30,27 +34,24 @@ unsigned long g_offload_locks_va = 0;
  * @param n_offload_channels channel number
  * @return success (0), fail (-1)
  */
-int munmap_channels(channel_t *offload_channels, int n_offload_channels)
+int munmap_channels(void)
 {
-  int offload_channels_offset = 0;
   int err = 0;
 
   // munmap channel
-  for(offload_channels_offset = 0; offload_channels_offset < n_offload_channels; offload_channels_offset++) {
-    if(munmap(offload_channels[offload_channels_offset].out_cq, offload_channels[offload_channels_offset].out_cq_len) < 0) {
-      printf("munmap failed.\n");
-      err++;
-    }
-    if(munmap(offload_channels[offload_channels_offset].in_cq, offload_channels[offload_channels_offset].in_cq_len) < 0) {
+  if(g_mmap_offload_channels_va != 0) {
+    if(munmap((void *) g_mmap_offload_channels_va, (size_t) g_mmap_offload_channels_len) < 0) {
       printf("munmap failed.\n");
       err++;
     }
   }
 
   // munmap channel informaiton
-  if(munmap((void *) g_mmap_offload_channels_info_va, (size_t) PAGE_SIZE_4K) < 0) {
-    printf("munmap failed.\n");
-    err++;
+  if(g_mmap_offload_channels_info_va != 0) {
+    if(munmap((void *) g_mmap_offload_channels_info_va, (size_t) PAGE_SIZE_4K) < 0) {
+      printf("munmap failed.\n");
+      err++;
+    }
   }
 
 #ifdef OFFLOAD_LOCK_ENABLE
@@ -65,7 +66,7 @@ int munmap_channels(channel_t *offload_channels, int n_offload_channels)
   if(err)
     return -1;
 
-	return 0;
+  return 0;
 }
 
 /**
@@ -83,14 +84,13 @@ int mmap_channels(channel_t *offload_channels, int n_unikernels, int n_offload_c
   int offload_fd = 0;
 
   unsigned long in_cq_base = 0;
-  unsigned long in_cq_base_pa = 0;
   unsigned long in_cq_base_pa_len = 0;
 
   unsigned long out_cq_base = 0;
-  unsigned long out_cq_base_pa = 0;
   unsigned long out_cq_base_pa_len = 0;
 
   unsigned long *offload_channels_info = NULL;
+
 
   offload_fd = open("/dev/lk", O_RDWR) ;
   if (offload_fd < 0) {
@@ -118,23 +118,19 @@ int mmap_channels(channel_t *offload_channels, int n_unikernels, int n_offload_c
   offload_channels_info++; // skip node id 
   //*(offload_channels_info) = (unsigned long) 0; // node id initialization
 
+  g_mmap_offload_channels_len = (unsigned long) (opages  + ipages) * (unsigned long) PAGE_SIZE_4K * n_offload_channels;
+  g_mmap_offload_channels_va = (unsigned long) mmap(NULL, g_mmap_offload_channels_len, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, (unsigned long) OFFLOAD_CHANNEL_BASE_PA);
+  if(g_mmap_offload_channels_va == (unsigned long) MAP_FAILED ) {
+    printf("offload channel mmap failed.\n") ;
+    close(offload_fd) ;
+
+    return 0;
+  }
+
   for(offload_channels_offset = 0; offload_channels_offset < n_offload_channels; offload_channels_offset++) {
     // mmap ocq of ith channel
-    out_cq_base_pa = (unsigned long) OFFLOAD_CHANNEL_BASE_PA + (unsigned long) offload_channels_offset * (unsigned long) (opages + ipages) * (unsigned long) PAGE_SIZE_4K;
-#ifdef DEBUG
-    printf("%02dth channel out_cq pa %lx ", offload_channels_offset, out_cq_base_pa);
-#endif
+    out_cq_base = (unsigned long) g_mmap_offload_channels_va + (unsigned long) offload_channels_offset * (unsigned long) (opages + ipages) * (unsigned long) PAGE_SIZE_4K;
     out_cq_base_pa_len = (unsigned long) opages * (unsigned long) PAGE_SIZE_4K;
-    out_cq_base = (unsigned long) mmap(NULL, out_cq_base_pa_len, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, out_cq_base_pa);
-
-    if(out_cq_base == (unsigned long) MAP_FAILED ) {
-      printf("mmap failed.\n") ;
-      munmap_channels(offload_channels, offload_channels_offset);
-      close(offload_fd) ;
-
-      return 0;
-    }
-
     offload_channels[offload_channels_offset].out_cq = (struct circular_queue *)(out_cq_base);
     offload_channels[offload_channels_offset].out_cq_len = out_cq_base_pa_len;
 
@@ -145,22 +141,8 @@ int mmap_channels(channel_t *offload_channels, int n_unikernels, int n_offload_c
     /*mutex_init(offload_channels[offload_channels_offset].out_cq);*/
 
     // mmap icq of ith channel
-    in_cq_base_pa = (unsigned long) out_cq_base_pa + (unsigned long) (opages * PAGE_SIZE_4K);
-#ifdef DEBUG
-    printf("channel  in_cq pa %lx\n", in_cq_base_pa);
-#endif
+    in_cq_base = (unsigned long) out_cq_base + (unsigned long) (opages * PAGE_SIZE_4K);
     in_cq_base_pa_len = (unsigned long) ipages * (unsigned long) PAGE_SIZE_4K;
-    in_cq_base = (unsigned long) mmap(NULL, in_cq_base_pa_len, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, in_cq_base_pa);
-
-    if(in_cq_base == (unsigned long) MAP_FAILED ) {
-      printf("mmap failed.\n") ;
-      munmap(offload_channels[offload_channels_offset].out_cq, offload_channels[offload_channels_offset].out_cq_len);
-      munmap_channels(offload_channels, offload_channels_offset);
-      close(offload_fd) ;
- 
-      return 0;
-    }
-
     offload_channels[offload_channels_offset].in_cq = (struct circular_queue *)(in_cq_base);
     offload_channels[offload_channels_offset].in_cq_len = in_cq_base_pa_len;
 
