@@ -13,7 +13,7 @@
 //#define NO_TCB_LOCK
 
 #define MAX_PROCESSOR_COUNT		288
-#define CONFIG_NUM_THREAD		2048
+#define CONFIG_NUM_THREAD		32767
 #define MAX_PAGEFAULT_SIZE      1024
 
 #define LK_CMD_PAGEFAULT        0x51
