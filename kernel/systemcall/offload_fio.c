@@ -16,6 +16,7 @@
 #include "thread.h"
 
 //#define DEBUG
+//#define IOVEC_RW
 
 extern QWORD g_memory_start;
 
@@ -130,8 +131,8 @@ QWORD mytid = -1;
 
 ssize_t ret_count = 0;
 
-struct iovec iov[MAX_IOV_NUM];
-int iovcnt = 0;
+//struct iovec iov[MAX_IOV_NUM];
+//int iovcnt = 0;
 
   if(count <= 0) return (-1);
 
@@ -144,8 +145,12 @@ int iovcnt = 0;
   current = get_current(); 
   mytid = current->id;
   
+#ifdef IOVEC_RW
   get_iovec(buf, count, iov, &iovcnt);
   send_offload_message(ocq, mytid, SYSCALL_sys_read, fd, get_pa((QWORD) iov), iovcnt, 0, 0, 0); 
+#else
+  send_offload_message(ocq, mytid, SYSCALL_sys_read, fd, get_pa((QWORD) buf), count, 0, 0, 0); 
+#endif
   ret_count = receive_offload_message(icq, mytid, SYSCALL_sys_read);
 
   return (ret_count);
@@ -170,8 +175,8 @@ QWORD mytid = -1;
 
 ssize_t ret_count = 0;
 
-struct iovec iov[MAX_IOV_NUM];
-int iovcnt = 0;
+//struct iovec iov[MAX_IOV_NUM];
+//int iovcnt = 0;
 
   if(count <= 0) return (-1);
 
@@ -184,8 +189,12 @@ int iovcnt = 0;
   current = get_current();
   mytid = current->id;
 
+#ifdef IOVEC_RW
   get_iovec(buf, count, iov, &iovcnt);
   send_offload_message(ocq, mytid, SYSCALL_sys_write, fd, get_pa((QWORD) iov), iovcnt, 0, 0, 0);
+#else
+  send_offload_message(ocq, mytid, SYSCALL_sys_write, fd, get_pa((QWORD) buf), count, 0, 0, 0);
+#endif
   ret_count = receive_offload_message(icq, mytid, SYSCALL_sys_write);
 
   return (ret_count);
@@ -210,6 +219,10 @@ QWORD mytid = -1;
   ch = get_offload_channel(-1);
   if(ch == NULL) {
           return -1;
+  }
+
+  if(fd < 3) {
+    return -1;
   }
 
   icq = ch->in;
@@ -245,7 +258,11 @@ QWORD mytid = -1;
 
   ch = get_offload_channel(-1);
   if(ch == NULL) {
-          return -1;
+    return -1;
+  }
+
+  if(fd < 3) {
+    return -1;
   }
 
   icq = ch->in;
