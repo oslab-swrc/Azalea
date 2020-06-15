@@ -45,13 +45,21 @@ void kernel_pagetables_init(QWORD address)
   set_page_entry_data(&(pdpt_entry[0]), address+0x2000, PAGE_FLAGS_DEFAULT | PAGE_FLAGS_US); 
   set_page_entry_data(&(pdpt_entry[3]), address+0x3000, PAGE_FLAGS_DEFAULT | PAGE_FLAGS_US); 
 
-  // PD entry (0)
+  // PD entry (0, booting, shared memory)
   pd_entry = (PD_ENTRY*) va(address+0x2000); 
 
+  //   0GB ~ 0GB + 2MB 
   set_page_entry_data(&(pd_entry[0]), 0, (PAGE_FLAGS_DEFAULT | PAGE_FLAGS_PS));
 
+  //   0GB + 2MB ~ 1GB
+  mapping_address = g_shared_memory + PAGE_SIZE_2M;
+  for (i=1; i<PAGE_MAX_ENTRY_COUNT; i++) {
+    set_page_entry_data(&(pd_entry[i]), mapping_address, (PAGE_FLAGS_DEFAULT | PAGE_FLAGS_PS));
+
+    mapping_address += PAGE_SIZE_2M;
+  }
+
   // PDPT entry (2nd~3th, shared memory)
-  mapping_address = g_shared_memory;
   for (i=1; i<3; i++) { 
     set_page_entry_data(&(pdpt_entry[i]), mapping_address, (PAGE_FLAGS_DEFAULT | PAGE_FLAGS_PS | PAGE_FLAGS_US)); 
     mapping_address += PAGE_SIZE_1G;

@@ -102,8 +102,8 @@ int mmap_channels(channel_t *offload_channels, int n_unikernels, int n_offload_c
 #ifdef DEBUG
   printf("channel info pa    %lx\n", (unsigned long) OFFLOAD_CHANNEL_INFO_PA);
   printf("channel base pa    %lx\n", (unsigned long) OFFLOAD_CHANNEL_BASE_PA);
-  printf("share memory start %lx\n", ((unsigned long) (UNIKERNEL_START - SHARED_MEMORY_SIZE + CHANNEL_START_OFFSET) << 30));
-  printf("share memory end   %lx\n", ((unsigned long) (UNIKERNEL_START - SHARED_MEMORY_SIZE + CHANNEL_START_OFFSET) << 30) + (unsigned long) 0x40000000);
+  printf("share memory start %lx\n", SHARED_MEMORY_START);
+  printf("share memory end   %lx\n", SHARED_MEMORY_START + SHARED_MEMORY_SIZE);
 #endif
 
   g_mmap_offload_channels_info_va = (unsigned long) mmap(NULL, (size_t) PAGE_SIZE_4K, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, (unsigned long) OFFLOAD_CHANNEL_INFO_PA);
@@ -194,7 +194,7 @@ unsigned long mmap_unikernels_memory(int n_unikernels)
   }
 
   g_channel_mem_base_pa = (unsigned long) CONFIG_CHANNEL_PA; 
-  channel_mem_base_pa_len = ((unsigned long) (CHANNEL_SIZE)) << 30; 
+  channel_mem_base_pa_len = (unsigned long) CHANNEL_SIZE; 
 
   g_mmap_channel_mem_base_va = (unsigned long) mmap(NULL, channel_mem_base_pa_len, PROT_WRITE | PROT_READ, MAP_SHARED, offload_fd, g_channel_mem_base_pa);
 

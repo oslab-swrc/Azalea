@@ -52,8 +52,8 @@ BOOL init_offload_channel()
 	QWORD *p_node_id = NULL;
 	int i = 0;
 
-	lk_print("Shared memmory start: %q \n", (QWORD) (UNIKERNEL_START - SHARED_MEMORY_SIZE + CHANNEL_START_OFFSET) << 30);
-	lk_print("Shared memmory end  : %q \n", ((QWORD) (UNIKERNEL_START - SHARED_MEMORY_SIZE + CHANNEL_START_OFFSET) << 30) + 0x40000000);
+	lk_print("Channel memory start: %q \n", SHARED_MEMORY_START + CHANNEL_START_OFFSET);
+	lk_print("Channel memory end  : %q \n", SHARED_MEMORY_START + CHANNEL_START_OFFSET + CHANNEL_SIZE);
  
 	g_offload_channels = (channel_t *) ((QWORD) OFFLOAD_CHANNEL_STRUCT_VA);
 
