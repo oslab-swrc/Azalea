@@ -184,7 +184,7 @@ int mmap_unikernel_memory(int start_index)
   }
 
   g_channel_mem_base_pa = (unsigned long) CONFIG_CHANNEL_PA;
-  channel_mem_base_pa_len = (unsigned long) CHANNEL_SIZE << 30;
+  channel_mem_base_pa_len = (unsigned long) CHANNEL_SIZE;
 
   g_mmap_channel_mem_base_va = (unsigned long) mmap(NULL, channel_mem_base_pa_len, PROT_WRITE | PROT_READ, MAP_SHARED, console_fd, g_channel_mem_base_pa);
 
