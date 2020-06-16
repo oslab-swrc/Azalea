@@ -44,6 +44,10 @@
 #define SYSCALL_sys_brk                 532
 #define SYSCALL_sys_chdir               533
 #define SYSCALL_sys_link                534
+#define SYSCALL_sys_shmget              535
+#define SYSCALL_sys_shmat               536
+#define SYSCALL_sys_shmdt               537
+#define SYSCALL_sys_shmctl              538
 
 
 #define SYSCALL_do_exit                 550

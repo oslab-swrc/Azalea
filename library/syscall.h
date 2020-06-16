@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
+#include <sys/shm.h>
 
 #include "systemcalllist.h"
 #include "az_types.h"
@@ -166,6 +167,11 @@ int sys_unlink(const char *path);
 int sys_stat(const char *pathname, struct stat *buf);
 int sys_brk(void *addr);
 int sys_chdir(const char *path);
+
+int sys_shmget(key_t key, size_t size, int shmflg);
+void* sys_shmat(int shmid, const void *shmaddr, int shmflg);
+int sys_shmdt(const void *shmaddr);
+int sys_shmctl(int shmid, int cmd, struct shmid_ds *buf);
 
 // Network offloading related systemcalls
 int sys_gethostname(char *name, size_t len);

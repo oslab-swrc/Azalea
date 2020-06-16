@@ -43,6 +43,10 @@ _syscall1(int, sys_unlink, const char *, path);
 _syscall2(int, sys_stat, const char*, pathname, struct stat*, buf);
 _syscall1(int, sys_brk, void *, addr);
 _syscall1(int, sys_chdir, const char*, path);
+_syscall3(int, sys_shmget, key_t, key, size_t, size, int, shmflg);
+_syscall3(void*, sys_shmat, int, shmid, const void *, shmaddr, int, shmflg);
+_syscall1(int, sys_shmdt, const void *, shmaddr);
+_syscall3(int, sys_shmctl, int, shmid, int, cmd, struct shmid_ds *, buf);
 
 _syscall1(void, do_exit, int, arg);
 _syscall0(int, block_current_task);
