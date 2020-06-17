@@ -8,7 +8,7 @@
 #include "shm_mm.h"
 #include "console_function.h"
 
-#define DEBUG
+//#define DEBUG
 
 extern struct shm_info_s *g_shminfo;
 
