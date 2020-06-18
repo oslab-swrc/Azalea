@@ -41,6 +41,7 @@
 #include "console_function.h"
 #include "memory_config.h"
 #include "shm.h"
+#include "shm_mm_config.h"
 #include "utility.h"
 
 /****************************************************************************

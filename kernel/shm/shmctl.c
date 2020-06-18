@@ -42,6 +42,7 @@
 
 #include "console.h"
 #include "shm.h"
+#include "shm_mm_config.h"
 #include "thread.h"
 #include "utility.h"
 

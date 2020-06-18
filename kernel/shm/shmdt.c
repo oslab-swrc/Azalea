@@ -40,6 +40,7 @@
 #include "console_function.h"
 #include "errno.h"
 #include "shm.h"
+#include "shm_mm_config.h"
 #include "thread.h"
 
 /****************************************************************************

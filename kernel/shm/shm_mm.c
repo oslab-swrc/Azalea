@@ -6,6 +6,7 @@
 #include "console.h"
 #include "thread.h"
 #include "shm_mm.h"
+#include "shm_mm_config.h"
 #include "console_function.h"
 
 //#define DEBUG

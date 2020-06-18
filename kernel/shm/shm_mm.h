@@ -1,9 +1,6 @@
-#ifndef __MM_SHM_SHM_MMH
-#define __MM_SHM_SHM_MMH
+#ifndef __SHM_MM_H__
+#define __SHM_MM_H__
 
-/****************************************************************************
- * Included Files
- ****************************************************************************/
 #include <sys/ipc.h>
 #include <sys/lock.h>
 #include <sys/shm.h>
@@ -22,10 +19,6 @@
 #define PAGE_MASK        (((~0UL) << PAGE_BITS) & ~PG_XD)
 #define PAGE_FLOOR(addr) ((addr)                   & PAGE_MASK)
 
-#define CONFIG_SHM_SHARED_MEMORY        ((QWORD) CONFIG_SHARED_MEMORY + (QWORD) IPC_START_OFFSET)
-#define CONFIG_SHM_SHARED_MEMORY_SIZE   IPC_SIZE
-#define SHM_INFO_S_VA			CONFIG_SHM_SHARED_MEMORY
-
 void shm_free_mem_init(void);
 void* shm_alloc(QWORD size);
 BOOL shm_free( void* address);
@@ -40,4 +33,4 @@ void shm_set_bitmap_flag(int block_list_index, int offset, BYTE flag);
 BYTE shm_get_bitmap_flag(int block_list_index, int offset);
 size_t shm_get_buddy_block_size(size_t size);
 
-#endif /* __MM_SHM_SHM_MMH */
+#endif /* __SHM_MM_H__ */
