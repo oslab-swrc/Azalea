@@ -21,6 +21,7 @@
 #include "offload_fio.h"
 #include "offload_network.h"
 #include "console_function.h"
+#include "shm/shm.h"
 
 static spinlock_t a_lock;
 /**
@@ -393,6 +394,18 @@ QWORD process_systemcall(QWORD param1, QWORD param2, QWORD param3,
     break;
   case SYSCALL_sys3_rewinddir:
     sys3_off_rewinddir((DIR *)param1);
+    break;
+  case SYSCALL_sys_shmget:
+    ret_code = (QWORD) shmget((key_t) param1, (size_t) param2, (int) param3);
+    break;
+  case SYSCALL_sys_shmat:
+    ret_code = (QWORD) shmat((int) param1, (const void *) param2, (int) param3);
+    break;
+  case SYSCALL_sys_shmdt:
+    ret_code = (QWORD) shmdt((const void *) param1);
+    break;
+  case SYSCALL_sys_shmctl:
+    ret_code = (QWORD) shmctl((int) param1, (int) param2, (struct shmid_ds *) param3);
     break;
   default:
     printk("Invalid system calls");
