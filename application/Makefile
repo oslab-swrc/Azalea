@@ -1,5 +1,5 @@
 ifeq ("$(APP)", "")
-  TARGETS := helloworld
+  TARGETS := heater
 else
   TARGETS := $(APP)
 endif
@@ -11,7 +11,7 @@ SUBDIRS := $(wildcard */)
 all:
 	@echo "*** Target APP: $(TARGETS)"
 	for DIRS in $(SUBDIRS); do \
-		make -C $$DIRS;\
+		make -C $$DIRS NR=$(NR);\
 	done
 	@cp $(TARGETS)/uapp.elf .
 
