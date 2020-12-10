@@ -1,6 +1,7 @@
 #!/bin/bash
 
-UTIL_DIR=../sideloader/utils
+RELATIVE_PATH=`dirname "$0"`
+UTIL_DIR=${RELATIVE_PATH}/../sideloader/utils
 
 cpu=0
 memory=0
@@ -56,8 +57,8 @@ else
 	exit 0
 fi
 
-insmod ../sideloader/lk/lk.ko
-$UTIL_DIR/lkload ../disk.img $index $cpu 0 $memory 0
+insmod ${RELATIVE_PATH}/../sideloader/lk/lk.ko
+$UTIL_DIR/lkload ${RELATIVE_PATH}/../disk.img $index $cpu 0 $memory 0
 
 for ((I = 0; I < $cpu; I++))
 do 
