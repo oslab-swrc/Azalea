@@ -22,6 +22,7 @@
 #define LK_CMD_THREAD           0x54
 #define LK_CMD_CONSOLE          0x55
 #define LK_CMD_LOG              0x56
+#define LK_CMD_IPOCAP           0x57
 
 // init state
 #define INIT_IA32E_START_STAT               0x01
