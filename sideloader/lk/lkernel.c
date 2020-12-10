@@ -511,7 +511,14 @@ static long lk_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
     printk (KERN_INFO "LOG copied\n");
     break; 
-
+  case LK_CMD_IPOCAP:
+    retu = copy_from_user ( &(g_stat_addr->plimit), (const void __user *) arg, sizeof(int) );
+    if (retu) {
+      printk (KERN_INFO "LK_CMD_IPOCAP: copy_to_user error\n");
+      return -EINVAL;
+    }
+    printk (KERN_INFO "IPOCAP: set plimit to %d\n", * (int *) arg);
+    break;
   default:
     break;
   }

@@ -21,8 +21,9 @@
 #include "stat.h"
 #include "console_function.h"
 #include "console_mmap.h"
+#include "ipocap.h"
 
-#define	OFFLOAD_ENABLE
+//#define	OFFLOAD_ENABLE
 
 static void main_for_ap(void);
 BOOL start_ap(void);
@@ -69,6 +70,8 @@ void Main(int boot_mode)
   g_memory_end = (*(QWORD*) (CONFIG_MEM_END + CONFIG_PAGE_OFFSET)) << 30;
   g_shared_memory = ((QWORD) (UNIKERNEL_START-SHARED_MEMORY_SIZE)) << 30;
 
+  rapl_init_energy_unit();
+  
   if (boot_mode == 0) { // AP mode
     while(g_ap_ready == 0)
       pause();

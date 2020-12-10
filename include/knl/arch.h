@@ -28,11 +28,11 @@
 #define MAX_PAPIC_ID                (600)   // Maximum number of physical cores to wake
 
 // Used only start with index
-#define CPUS_PER_NODE               (24)
+#define CPUS_PER_NODE               (6)
 #define MEMORYS_PER_NODE            (10)
 
 // Shared Memory Layout
-#define UNIKERNEL_START             (128)
+#define UNIKERNEL_START             (12)
 #define SHARED_MEMORY_SIZE          (3)     // 3GB (unit: GB), DO NOT MODIFY
 
 #define SHARED_MEMORY_START         ((unsigned long) (UNIKERNEL_START - SHARED_MEMORY_SIZE) << 30)

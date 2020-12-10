@@ -15,6 +15,7 @@ typedef struct {
 } Unikernel;
 
 typedef struct {
+  int plimit;                         // power limit (Watt).
   int core_used[MAX_CORE];            // core allocation info.
   int core_load[MAX_CORE];            // core load info.
   int memory_used[MAX_MEMORY];        // memory allocation info.

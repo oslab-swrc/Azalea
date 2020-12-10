@@ -32,7 +32,7 @@ library:
 
 application:
 	@echo "===== Build Application start    ====="
-	make -C application $(VERBOSE) APP=$(APP)
+	make -C application $(VERBOSE) APP=$(APP) NR=${NR}
 	@echo "===== Build Application complete ====="
 	@echo
 
