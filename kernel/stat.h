@@ -17,6 +17,7 @@ typedef struct {
 } Unikernel;
 
 typedef struct {
+  int plimit;                         // power limit (Watt).
   int core_used[MAX_CORE];            // core allocation info.
   int core_load[MAX_CORE];            // core load info.
   int memory_used[MAX_MEMORY];        // memory allocation info.
@@ -30,5 +31,10 @@ void set_mem_info(QWORD mem_size);
 void set_cpu_num(int core_num);
 void set_cpu_load(int pid, QWORD core_load);
 void get_cpu_numm();
+
+static inline int get_plimit(void) {
+  const STAT_AREA * stat_area = (STAT_AREA *) (CONFIG_SHARED_MEMORY + STAT_START_OFFSET);
+  return (stat_area->plimit) * 1000; //mw 
+}
 
 #endif  /* __STAT_H__ */

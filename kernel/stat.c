@@ -1,8 +1,8 @@
 #include <sys/lock.h>
+#include "memory_config.h"
 #include "stat.h"
 #include "console.h"
 #include "arch.h"
-#include "memory_config.h"
 
 // Global unikernel id
 extern int g_ukid;
@@ -18,6 +18,7 @@ static spinlock_t stat_lock;
 void stat_init(void)
 {
   g_stat_area = (STAT_AREA *) (CONFIG_SHARED_MEMORY + STAT_START_OFFSET); 
+  g_stat_area->plimit = 0;
 }
 
 /**

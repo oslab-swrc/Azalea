@@ -680,12 +680,13 @@ int create_thread(QWORD ip, QWORD argv, int core_mask)
   tcb_lock(thr);
 
   stack_address = az_alloc(CONFIG_STACK_SIZE);
-  lk_print("Thread created: %d, stack: %q, %q\n", thr->id, stack_address, thr->stack);
 
   init_tcb(thr, (QWORD) stack_address, THREAD_INIT_CREATE);
   
   thr->running_core = core_mask;
   set_core(thr, &cst, core_mask);
+
+  lk_print("T Create: %d, on %q, stack: %q\n", thr->id, thr->running_core, stack_address);
 
   // Initialize context of the thread
   if (ip == 0)

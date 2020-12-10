@@ -4,13 +4,13 @@
 #include <sys/types.h>
 #include "az_types.h"
 
-inline static unsigned long long rdtsc(void)
+static inline QWORD rdtsc(void)
 {
-  unsigned int lo, hi;
+  DWORD lo, hi;
 
   asm volatile ("rdtsc" : "=a"(lo), "=d"(hi) :: "memory");
 
-  return ((unsigned long long)hi << 32ULL | (unsigned long long)lo);
+  return (QWORD) ( lo | ((QWORD) hi)  << 32);
 }
 
 // Funtions
