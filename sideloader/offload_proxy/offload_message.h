@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Copyright (c) 2021 Electronics and Telecommunications Research Institute
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #ifndef __OFFLOAD_MESSAGE_H__
 #define __OFFLOAD_MESSAGE_H__
 

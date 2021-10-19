@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Copyright(c)2008 All rights reserved by kkamagui
+//
+// SPDX-License-Identifier: MIT
+
 /**
  *  file    ImageMaker.c
  *  date    2008/12/16

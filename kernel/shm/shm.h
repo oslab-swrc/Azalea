@@ -1,3 +1,7 @@
+// Copyright (C) 2014 Gregory Nutt. All rights reserved.
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 /****************************************************************************
  * mm/shm/shm.h
  *

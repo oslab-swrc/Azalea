@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Copyright (c) 2021 Electronics and Telecommunications Research Institute
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include <sys/lock.h>
 #include "thread.h"
 #include "assemblyutility.h"

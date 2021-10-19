@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Copyright (c) 2021 Electronics and Telecommunications Research Institute
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #include "memory.h"
 #include "memory_config.h"
 #include "console.h"

@@ -1,6 +1,10 @@
-       #include <sys/types.h>
-       #include <sys/stat.h>
-       #include <fcntl.h>
+// SPDX-FileCopyrightText: Copyright (c) 2021 Electronics and Telecommunications Research Institute
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 #include "../../include/qemu/arch.h"

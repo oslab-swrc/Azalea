@@ -1,3 +1,7 @@
+// Copyright (C) 2017  Subhranil Mukherjee (https://github.com/iamsubhranil)
+//
+// SPDX-License-Identifier: GPL-3.0-only
+
 /*   MyThreads : A small, efficient, and fast threadpool implementation in C
  *   Copyright (C) 2017  Subhranil Mukherjee (https://github.com/iamsubhranil)
  *

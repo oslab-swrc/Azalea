@@ -1,7 +1,11 @@
+// Copyright (c) 2009, Jouni Malinen <j@w1.fi>
+//
+// SPDX-License-Identifier: BSD-3-Clause
+
 /*
  * Doubly-linked list
  * Copyright (c) 2009, Jouni Malinen <j@w1.fi>
- *  
+ *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
@@ -13,7 +17,7 @@
  /*
   * struct dl_list - Doubly-linked list
   */
- struct dl_list {
+ s
   struct dl_list *next;
   struct dl_list *prev;
  };

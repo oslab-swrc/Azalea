@@ -2,7 +2,9 @@
 
 Azalea OS is an operating system (OS) research project. This repository contains the prototype of Azalea OS for the Intel  X86 based manycore system. Azalea OS consists of unikernel for a simple kernel for fast processing of applications and Full-Kernel for providing full capability of Linux. 
 
-We have released this prototype under an open-source license to enable collaboration with parties outside. Most parts of Azalea OS are available to you under MIT while some parts are also available to you under the GNU General Public License (GPL) version 2. Please feel free to explore the source code and the documentation provided here
+We have released this prototype under an open-source license to enable collaboration with parties outside. It is composed of two packages: Azalea, Newlib
+(LICENSE) Most parts of Azalea's codes are under GPL 3.0-or-later license, and some codes follow the BSD 3-clause, GPL-3.0-only, MIT.
+(LICENSE.newlib) Each file in Newlib may have its own copyright/license that is embedded in the code. Unless otherwise noted in the code, the specified license will apply to the content of the newlib directory (include/newlib/)
 
 ## Overview
 
