@@ -1,4 +1,4 @@
-// Copyright (C) 2014 Gregory Nutt. All rights reserved.
+// Copyright (C) 2021 Portions Copyright (c) 2021 Electronics and Telecommunications Research Institute
 //
 // SPDX-License-Identifier: BSD-3-Clause
 

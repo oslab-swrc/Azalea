@@ -1,4 +1,4 @@
-// Copyright (C) 2017  Subhranil Mukherjee (https://github.com/iamsubhranil)
+// Copyright (C) 2021 Portions Copyright (c) 2021 Electronics and Telecommunications Research Institute
 //
 // SPDX-License-Identifier: GPL-3.0-only
 
