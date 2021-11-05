@@ -1,0 +1,4335 @@
+diff --git a/arpa/inet.h b/arpa/inet.h
+new file mode 100644
+index 0000000..82bcf35
+--- /dev/null
++++ b/arpa/inet.h
+@@ -0,0 +1,156 @@
++/*
++ * Copyright (c) 1983, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ * -
++ * Portions Copyright (c) 1993 by Digital Equipment Corporation.
++ *
++ * Permission to use, copy, modify, and distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies, and that
++ * the name of Digital Equipment Corporation not be used in advertising or
++ * publicity pertaining to distribution of the document or software without
++ * specific, written prior permission.
++ * 
++ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL
++ * WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES
++ * OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL EQUIPMENT
++ * CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
++ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
++ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
++ * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
++ * SOFTWARE.
++ *
++ *	@(#)inet.h	8.1 (Berkeley) 6/2/93
++ *	From: Id: inet.h,v 8.5 1997/01/29 08:48:09 vixie Exp $
++ * $FreeBSD: src/include/arpa/inet.h,v 1.22 2002/04/10 10:51:53 mike Exp $
++ */
++
++#ifndef _ARPA_INET_H_
++#define	_ARPA_INET_H_
++
++/* External definitions for functions in inet(3), addr2ascii(3) */
++
++#include <sys/cdefs.h>
++#include <sys/types.h>
++#include <machine/ansi.h>
++
++/* Required for byteorder(3) functions. */
++#include <machine/endian.h>
++
++#define	INET_ADDRSTRLEN		16
++#define	INET6_ADDRSTRLEN	46
++
++#ifndef _UINT16_T_DECLARED
++typedef	__uint16_t	uint16_t;
++#define	_UINT16_T_DECLARED
++#endif
++
++#ifndef _UINT32_T_DECLARED
++typedef	__uint32_t	uint32_t;
++#define	_UINT32_T_DECLARED
++#endif
++
++#ifndef	_IN_ADDR_T_DECLARED
++typedef	uint32_t	in_addr_t;
++#define	_IN_ADDR_T_DECLARED
++#endif
++
++#ifndef	_IN_PORT_T_DECLARED
++typedef	uint16_t	in_port_t;
++#define	_IN_PORT_T_DECLARED
++#endif
++
++#ifndef _POSIX_SOURCE
++#ifdef	_BSD_SIZE_T_
++typedef	_BSD_SIZE_T_	size_t;
++#undef	_BSD_SIZE_T_
++#endif
++#endif /* !_POSIX_SOURCE */
++
++/*
++ * XXX socklen_t is used by a POSIX.1-2001 interface, but not required by
++ * POSIX.1-2001.
++ */
++
++
++#ifndef __socklen_t_defined
++typedef unsigned int socklen_t;
++#define __socklen_t_defined 1
++#endif
++
++#ifdef	_BSD_SOCKLEN_T_
++typedef	_BSD_SOCKLEN_T_	socklen_t;
++#undef	_BSD_SOCKLEN_T_
++#endif
++
++#ifndef _STRUCT_IN_ADDR_DECLARED
++struct in_addr {
++	in_addr_t s_addr;
++};
++#define	_STRUCT_IN_ADDR_DECLARED
++#endif
++
++#define	inet_addr	__inet_addr
++#define	inet_aton	__inet_aton
++#define	inet_lnaof	__inet_lnaof
++#define	inet_makeaddr	__inet_makeaddr
++#define	inet_neta	__inet_neta
++#define	inet_netof	__inet_netof
++#define	inet_network	__inet_network
++#define	inet_net_ntop	__inet_net_ntop
++#define	inet_net_pton	__inet_net_pton
++#define	inet_ntoa	__inet_ntoa
++#define	inet_pton	__inet_pton
++#define	inet_ntop	__inet_ntop
++#define	inet_nsap_addr	__inet_nsap_addr
++#define	inet_nsap_ntoa	__inet_nsap_ntoa
++
++__BEGIN_DECLS
++in_addr_t	 inet_addr(const char *);
++char		*inet_ntoa(struct in_addr);
++const char	*inet_ntop(int, const void *, char *, socklen_t);
++int		 inet_pton(int, const char *, void *);
++
++int		 ascii2addr(int, const char *, void *);
++char		*addr2ascii(int, const void *, int, char *);
++int		 inet_aton(const char *, struct in_addr *);
++in_addr_t	 inet_lnaof(struct in_addr);
++struct in_addr	 inet_makeaddr(in_addr_t, in_addr_t);
++char *		 inet_neta(in_addr_t, char *, size_t);
++in_addr_t	 inet_netof(struct in_addr);
++in_addr_t	 inet_network(const char *);
++char		*inet_net_ntop(int, const void *, int, char *, size_t);
++int		 inet_net_pton(int, const char *, void *, size_t);
++unsigned	 inet_nsap_addr(const char *, unsigned char *, int);
++char		*inet_nsap_ntoa(int, const unsigned char *, char *);
++__END_DECLS
++
++#endif /* !_ARPA_INET_H_ */
+diff --git a/ctype.h b/ctype.h
+index f74b349..1cee695 100644
+--- a/ctype.h
++++ b/ctype.h
+@@ -66,7 +66,12 @@ extern int toascii_l (int __c, locale_t __l);
+ #define _X	0100
+ #define	_B	0200
+ 
++#ifdef __HAVE_LOCALE_INFO__
+ const char *__locale_ctype_ptr (void);
++#else
++#define __locale_ctype_ptr()	_ctype_
++#endif
++
+ # define __CTYPE_PTR	(__locale_ctype_ptr ())
+ 
+ #ifndef __cplusplus
+@@ -100,7 +105,11 @@ const char *__locale_ctype_ptr (void);
+ #endif
+ 
+ #if __POSIX_VISIBLE >= 200809
++#ifdef __HAVE_LOCALE_INFO__
+ const char *__locale_ctype_ptr_l (locale_t);
++#else
++#define __locale_ctype_ptr_l(l)	_ctype_
++#endif
+ #define __ctype_lookup_l(__c,__l) ((__locale_ctype_ptr_l(__l)+sizeof(""[__c]))[(int)(__c)])
+ 
+ #define	isalpha_l(__c,__l)	(__ctype_lookup_l(__c,__l)&(_U|_L))
+diff --git a/dirent.h b/dirent.h
+index 6135b9f..6e3d452 100644
+--- a/dirent.h
++++ b/dirent.h
+@@ -1,16 +1,404 @@
+-#ifndef _DIRENT_H_
+-#define _DIRENT_H_
+-#ifdef __cplusplus
+-extern "C" {
++/* Copyright (C) 1991-2000,2003-2005,2009,2010,2011,2012
++   Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++/*
++ *	POSIX Standard: 5.1.2 Directory Operations	<dirent.h>
++ */
++
++#ifndef	_DIRENT_H
++#define	_DIRENT_H	1
++
++#include <features.h>
++
++__BEGIN_DECLS
++
++#include <sys/types.h>
++
++#ifdef __USE_XOPEN
++# ifndef __ino_t_defined
++#  ifndef __USE_FILE_OFFSET64
++typedef __ino_t ino_t;
++#  else
++typedef __ino64_t ino_t;
++#  endif
++#  define __ino_t_defined
++# endif
++# if defined __USE_LARGEFILE64 && !defined __ino64_t_defined
++typedef __ino64_t ino64_t;
++#  define __ino64_t_defined
++# endif
+ #endif
+-#include <sys/cdefs.h>
++
++/* This file defines `struct dirent'.
++
++   It defines the macro `_DIRENT_HAVE_D_NAMLEN' iff there is a `d_namlen'
++   member that gives the length of `d_name'.
++
++   It defines the macro `_DIRENT_HAVE_D_RECLEN' iff there is a `d_reclen'
++   member that gives the size of the entire directory entry.
++
++   It defines the macro `_DIRENT_HAVE_D_OFF' iff there is a `d_off'
++   member that gives the file offset of the next directory entry.
++
++   It defines the macro `_DIRENT_HAVE_D_TYPE' iff there is a `d_type'
++   member that gives the type of the file.
++ */
++
+ #include <sys/dirent.h>
+ 
+-#if !defined(MAXNAMLEN) && __BSD_VISIBLE
+-#define MAXNAMLEN 1024
++#if (defined __USE_BSD || defined __USE_MISC) && !defined d_fileno
++# define d_ino	d_fileno		 /* Backward compatibility.  */
++#endif
++
++/* These macros extract size information from a `struct dirent *'.
++   They may evaluate their argument multiple times, so it must not
++   have side effects.  Each of these may involve a relatively costly
++   call to `strlen' on some systems, so these values should be cached.
++
++   _D_EXACT_NAMLEN (DP)	returns the length of DP->d_name, not including
++   its terminating null character.
++
++   _D_ALLOC_NAMLEN (DP)	returns a size at least (_D_EXACT_NAMLEN (DP) + 1);
++   that is, the allocation size needed to hold the DP->d_name string.
++   Use this macro when you don't need the exact length, just an upper bound.
++   This macro is less likely to require calling `strlen' than _D_EXACT_NAMLEN.
++   */
++
++#ifdef _DIRENT_HAVE_D_NAMLEN
++# define _D_EXACT_NAMLEN(d) ((d)->d_namlen)
++# define _D_ALLOC_NAMLEN(d) (_D_EXACT_NAMLEN (d) + 1)
++#else
++# define _D_EXACT_NAMLEN(d) (strlen ((d)->d_name))
++# ifdef _DIRENT_HAVE_D_RECLEN
++#  define _D_ALLOC_NAMLEN(d) (((char *) (d) + (d)->d_reclen) - &(d)->d_name[0])
++# else
++#  define _D_ALLOC_NAMLEN(d) (sizeof (d)->d_name > 1 ? sizeof (d)->d_name : \
++			      _D_EXACT_NAMLEN (d) + 1)
++# endif
++#endif
++
++
++#ifdef __USE_BSD
++/* File types for `d_type'.  */
++enum
++  {
++    DT_UNKNOWN = 0,
++# define DT_UNKNOWN	DT_UNKNOWN
++    DT_FIFO = 1,
++# define DT_FIFO	DT_FIFO
++    DT_CHR = 2,
++# define DT_CHR		DT_CHR
++    DT_DIR = 4,
++# define DT_DIR		DT_DIR
++    DT_BLK = 6,
++# define DT_BLK		DT_BLK
++    DT_REG = 8,
++# define DT_REG		DT_REG
++    DT_LNK = 10,
++# define DT_LNK		DT_LNK
++    DT_SOCK = 12,
++# define DT_SOCK	DT_SOCK
++    DT_WHT = 14
++# define DT_WHT		DT_WHT
++  };
++
++/* Convert between stat structure types and directory types.  */
++# define IFTODT(mode)	(((mode) & 0170000) >> 12)
++# define DTTOIF(dirtype)	((dirtype) << 12)
++#endif
++
++
++/* This is the data type of directory stream objects.
++   The actual structure is opaque to users.  */
++typedef struct __dirstream DIR;
++
++/* Open a directory stream on NAME.
++   Return a DIR stream on the directory, or NULL if it could not be opened.
++
++   This function is a possible cancellation point and therefore not
++   marked with __THROW.  */
++extern DIR *opendir (const char *__name) __nonnull ((1));
++
++#ifdef __USE_XOPEN2K8
++/* Same as opendir, but open the stream on the file descriptor FD.
++
++   This function is a possible cancellation point and therefore not
++   marked with __THROW.  */
++extern DIR *fdopendir (int __fd);
++#endif
++
++/* Close the directory stream DIRP.
++   Return 0 if successful, -1 if not.
++
++   This function is a possible cancellation point and therefore not
++   marked with __THROW.  */
++extern int closedir (DIR *__dirp) __nonnull ((1));
++
++/* Read a directory entry from DIRP.  Return a pointer to a `struct
++   dirent' describing the entry, or NULL for EOF or error.  The
++   storage returned may be overwritten by a later readdir call on the
++   same DIR stream.
++
++   If the Large File Support API is selected we have to use the
++   appropriate interface.
++
++   This function is a possible cancellation point and therefore not
++   marked with __THROW.  */
++#ifndef __USE_FILE_OFFSET64
++extern struct dirent *readdir (DIR *__dirp) __nonnull ((1));
++#else
++# ifdef __REDIRECT
++extern struct dirent *__REDIRECT (readdir, (DIR *__dirp), readdir64)
++     __nonnull ((1));
++# else
++#  define readdir readdir64
++# endif
+ #endif
+ 
+-#ifdef __cplusplus
+-}
++#ifdef __USE_LARGEFILE64
++extern struct dirent64 *readdir64 (DIR *__dirp) __nonnull ((1));
+ #endif
+-#endif /*_DIRENT_H_*/
++
++#if defined __USE_POSIX || defined __USE_MISC
++/* Reentrant version of `readdir'.  Return in RESULT a pointer to the
++   next entry.
++
++   This function is a possible cancellation point and therefore not
++   marked with __THROW.  */
++# ifndef __USE_FILE_OFFSET64
++extern int readdir_r (DIR *__restrict __dirp,
++		      struct dirent *__restrict __entry,
++		      struct dirent **__restrict __result)
++     __nonnull ((1, 2, 3));
++# else
++#  ifdef __REDIRECT
++extern int __REDIRECT (readdir_r,
++		       (DIR *__restrict __dirp,
++			struct dirent *__restrict __entry,
++			struct dirent **__restrict __result),
++		       readdir64_r) __nonnull ((1, 2, 3));
++#  else
++#   define readdir_r readdir64_r
++#  endif
++# endif
++
++# ifdef __USE_LARGEFILE64
++extern int readdir64_r (DIR *__restrict __dirp,
++			struct dirent64 *__restrict __entry,
++			struct dirent64 **__restrict __result)
++     __nonnull ((1, 2, 3));
++# endif
++#endif	/* POSIX or misc */
++
++/* Rewind DIRP to the beginning of the directory.  */
++extern void rewinddir (DIR *__dirp) __THROW __nonnull ((1));
++
++#if defined __USE_BSD || defined __USE_MISC || defined __USE_XOPEN
++# include <bits/types.h>
++
++/* Seek to position POS on DIRP.  */
++extern void seekdir (DIR *__dirp, long int __pos) __THROW __nonnull ((1));
++
++/* Return the current position of DIRP.  */
++extern long int telldir (DIR *__dirp) __THROW __nonnull ((1));
++#endif
++
++#if defined __USE_BSD || defined __USE_MISC || defined __USE_XOPEN2K8
++
++/* Return the file descriptor used by DIRP.  */
++extern int dirfd (DIR *__dirp) __THROW __nonnull ((1));
++
++# if defined __OPTIMIZE__ && defined _DIR_dirfd
++#  define dirfd(dirp)	_DIR_dirfd (dirp)
++# endif
++
++# if defined __USE_BSD || defined __USE_MISC
++#  ifndef MAXNAMLEN
++/* Get the definitions of the POSIX.1 limits.  */
++#  include <bits/posix1_lim.h>
++
++/* `MAXNAMLEN' is the BSD name for what POSIX calls `NAME_MAX'.  */
++#   ifdef NAME_MAX
++#    define MAXNAMLEN	NAME_MAX
++#   else
++#    define MAXNAMLEN	255
++#   endif
++#  endif
++# endif
++
++# define __need_size_t
++# include <stddef.h>
++
++/* Scan the directory DIR, calling SELECTOR on each directory entry.
++   Entries for which SELECT returns nonzero are individually malloc'd,
++   sorted using qsort with CMP, and collected in a malloc'd array in
++   *NAMELIST.  Returns the number of entries selected, or -1 on error.
++
++   This function is a cancellation point and therefore not marked with
++   __THROW.  */
++# ifndef __USE_FILE_OFFSET64
++extern int scandir (const char *__restrict __dir,
++		    struct dirent ***__restrict __namelist,
++		    int (*__selector) (const struct dirent *),
++		    int (*__cmp) (const struct dirent **,
++				  const struct dirent **))
++     __nonnull ((1, 2));
++# else
++#  ifdef __REDIRECT
++extern int __REDIRECT (scandir,
++		       (const char *__restrict __dir,
++			struct dirent ***__restrict __namelist,
++			int (*__selector) (const struct dirent *),
++			int (*__cmp) (const struct dirent **,
++				      const struct dirent **)),
++		       scandir64) __nonnull ((1, 2));
++#  else
++#   define scandir scandir64
++#  endif
++# endif
++
++# if defined __USE_GNU && defined __USE_LARGEFILE64
++/* This function is like `scandir' but it uses the 64bit dirent structure.
++   Please note that the CMP function must now work with struct dirent64 **.  */
++extern int scandir64 (const char *__restrict __dir,
++		      struct dirent64 ***__restrict __namelist,
++		      int (*__selector) (const struct dirent64 *),
++		      int (*__cmp) (const struct dirent64 **,
++				    const struct dirent64 **))
++     __nonnull ((1, 2));
++# endif
++
++# ifdef __USE_GNU
++/* Similar to `scandir' but a relative DIR name is interpreted relative
++   to the directory for which DFD is a descriptor.
++
++   This function is a cancellation point and therefore not marked with
++   __THROW.  */
++#  ifndef __USE_FILE_OFFSET64
++extern int scandirat (int __dfd, const char *__restrict __dir,
++		      struct dirent ***__restrict __namelist,
++		      int (*__selector) (const struct dirent *),
++		      int (*__cmp) (const struct dirent **,
++				    const struct dirent **))
++     __nonnull ((2, 3));
++#  else
++#   ifdef __REDIRECT
++extern int __REDIRECT (scandirat,
++		       (int __dfd, const char *__restrict __dir,
++			struct dirent ***__restrict __namelist,
++			int (*__selector) (const struct dirent *),
++			int (*__cmp) (const struct dirent **,
++				      const struct dirent **)),
++		       scandirat64) __nonnull ((2, 3));
++#   else
++#    define scandirat scandirat64
++#   endif
++#  endif
++
++/* This function is like `scandir' but it uses the 64bit dirent structure.
++   Please note that the CMP function must now work with struct dirent64 **.  */
++extern int scandirat64 (int __dfd, const char *__restrict __dir,
++			struct dirent64 ***__restrict __namelist,
++			int (*__selector) (const struct dirent64 *),
++			int (*__cmp) (const struct dirent64 **,
++				      const struct dirent64 **))
++     __nonnull ((2, 3));
++# endif
++
++/* Function to compare two `struct dirent's alphabetically.  */
++# ifndef __USE_FILE_OFFSET64
++extern int alphasort (const struct dirent **__e1,
++		      const struct dirent **__e2)
++     __THROW __attribute_pure__ __nonnull ((1, 2));
++# else
++#  ifdef __REDIRECT
++extern int __REDIRECT_NTH (alphasort,
++			   (const struct dirent **__e1,
++			    const struct dirent **__e2),
++			   alphasort64) __attribute_pure__ __nonnull ((1, 2));
++#  else
++#   define alphasort alphasort64
++#  endif
++# endif
++
++# if defined __USE_GNU && defined __USE_LARGEFILE64
++extern int alphasort64 (const struct dirent64 **__e1,
++			const struct dirent64 **__e2)
++     __THROW __attribute_pure__ __nonnull ((1, 2));
++# endif
++#endif /* Use BSD or misc or XPG7.  */
++
++
++#if defined __USE_BSD || defined __USE_MISC
++/* Read directory entries from FD into BUF, reading at most NBYTES.
++   Reading starts at offset *BASEP, and *BASEP is updated with the new
++   position after reading.  Returns the number of bytes read; zero when at
++   end of directory; or -1 for errors.  */
++# ifndef __USE_FILE_OFFSET64
++extern __ssize_t getdirentries (int __fd, char *__restrict __buf,
++				size_t __nbytes,
++				__off_t *__restrict __basep)
++     __THROW __nonnull ((2, 4));
++# else
++#  ifdef __REDIRECT
++extern __ssize_t __REDIRECT_NTH (getdirentries,
++				 (int __fd, char *__restrict __buf,
++				  size_t __nbytes,
++				  __off64_t *__restrict __basep),
++				 getdirentries64) __nonnull ((2, 4));
++#  else
++#   define getdirentries getdirentries64
++#  endif
++# endif
++
++# ifdef __USE_LARGEFILE64
++extern __ssize_t getdirentries64 (int __fd, char *__restrict __buf,
++				  size_t __nbytes,
++				  __off64_t *__restrict __basep)
++     __THROW __nonnull ((2, 4));
++# endif
++#endif /* Use BSD or misc.  */
++
++#ifdef __USE_GNU
++/* Function to compare two `struct dirent's by name & version.  */
++# ifndef __USE_FILE_OFFSET64
++extern int versionsort (const struct dirent **__e1,
++			const struct dirent **__e2)
++     __THROW __attribute_pure__ __nonnull ((1, 2));
++# else
++#  ifdef __REDIRECT
++extern int __REDIRECT_NTH (versionsort,
++			   (const struct dirent **__e1,
++			    const struct dirent **__e2),
++			   versionsort64)
++     __attribute_pure__ __nonnull ((1, 2));
++#  else
++#   define versionsort versionsort64
++#  endif
++# endif
++
++# ifdef __USE_LARGEFILE64
++extern int versionsort64 (const struct dirent64 **__e1,
++			  const struct dirent64 **__e2)
++     __THROW __attribute_pure__ __nonnull ((1, 2));
++# endif
++#endif /* Use GNU.  */
++
++__END_DECLS
++
++#endif /* dirent.h  */
+diff --git a/getopt.h b/getopt.h
+index 9bced42..ac88524 100644
+--- a/getopt.h
++++ b/getopt.h
+@@ -129,7 +129,7 @@ extern "C"
+ 
+   /* The GETOPT_DATA_INITIALIZER macro is used to initialize a statically-
+      allocated variable of type struct getopt_data.  */
+-  #define GETOPT_DATA_INITIALIZER	{0,0,0,0,0}
++  #define GETOPT_DATA_INITIALIZER	{0,0,0,0,0,0,0}
+ 
+   /* These #defines are to make accessing the reentrant functions easier.  */
+   #define getopt_r		__getopt_r
+@@ -142,6 +142,7 @@ extern "C"
+   {
+     char *optarg;
+     int optind, opterr, optopt, optwhere;
++    int permute_from, num_nonopts;
+   } getopt_data;
+ 
+ #endif /* __need_getopt_newlib */
+diff --git a/langinfo.h b/langinfo.h
+index 59381d6..d2b7a03 100644
+--- a/langinfo.h
++++ b/langinfo.h
+@@ -29,16 +29,18 @@
+ #ifndef _LANGINFO_H_
+ #define	_LANGINFO_H_
+ 
+-#include <newlib.h>
+-#include <sys/config.h>
+ #include <sys/cdefs.h>
++#include <sys/_types.h>
+ #if __POSIX_VISIBLE >= 200809
+ #include <xlocale.h>
+ #endif
+ 
+-typedef int nl_item;
++#ifndef _NL_ITEM_DECLARED
++typedef __nl_item nl_item;
++#define _NL_ITEM_DECLARED
++#endif
+ 
+-enum __nl_item
++enum
+ {
+   /* POSIX and BSD defined items have to stick to the original values
+      to maintain backward compatibility. */
+diff --git a/limits.h b/limits.h
+index dd09c1c..893f108 100644
+--- a/limits.h
++++ b/limits.h
+@@ -3,6 +3,7 @@
+ 
+ #include <newlib.h>
+ #include <sys/cdefs.h>
++#include <sys/syslimits.h>
+ 
+ # ifdef _MB_LEN_MAX
+ #  define MB_LEN_MAX	_MB_LEN_MAX
+diff --git a/machine/ieeefp.h b/machine/ieeefp.h
+index b1b4466..a409752 100644
+--- a/machine/ieeefp.h
++++ b/machine/ieeefp.h
+@@ -78,7 +78,9 @@
+ # else
+ #  define __IEEE_BIG_ENDIAN
+ # endif
+-# define __OBSOLETE_MATH_DEFAULT 0
++# if __ARM_FP & 0x8
++#  define __OBSOLETE_MATH_DEFAULT 0
++# endif
+ #else
+ # define __IEEE_BIG_ENDIAN
+ # ifdef __ARMEL__
+@@ -205,6 +207,10 @@
+ #define __IEEE_BIG_ENDIAN
+ #endif
+ 
++#ifdef __nvptx__
++#define __IEEE_LITTLE_ENDIAN
++#endif
++
+ #if defined(_C4x) || defined(_C3x)
+ #define __IEEE_BIG_ENDIAN
+ #define _DOUBLE_IS_32BITS
+@@ -446,6 +452,10 @@
+ #define __IEEE_BIG_ENDIAN
+ #endif
+ 
++#ifdef __CYGWIN__
++#define __OBSOLETE_MATH_DEFAULT 0
++#endif
++
+ #ifndef __OBSOLETE_MATH_DEFAULT
+ /* Use old math code by default.  */
+ #define __OBSOLETE_MATH_DEFAULT 1
+diff --git a/malloc.h b/malloc.h
+index e12a132..a9dc5bc 100644
+--- a/malloc.h
++++ b/malloc.h
+@@ -133,6 +133,10 @@ extern int malloc_trim (size_t);
+ extern int _malloc_trim_r (struct _reent *, size_t);
+ #endif
+ 
++extern void __malloc_lock(struct _reent *);
++
++extern void __malloc_unlock(struct _reent *);
++
+ /* A compatibility routine for an earlier version of the allocator.  */
+ 
+ extern void mstats (char *);
+diff --git a/netdb.h b/netdb.h
+new file mode 100644
+index 0000000..7950298
+--- /dev/null
++++ b/netdb.h
+@@ -0,0 +1,291 @@
++/*-
++ * Copyright (c) 1980, 1983, 1988, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ * -
++ * Portions Copyright (c) 1993 by Digital Equipment Corporation.
++ *
++ * Permission to use, copy, modify, and distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies, and that
++ * the name of Digital Equipment Corporation not be used in advertising or
++ * publicity pertaining to distribution of the document or software without
++ * specific, written prior permission.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" AND DIGITAL EQUIPMENT CORP. DISCLAIMS ALL
++ * WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES
++ * OF MERCHANTABILITY AND FITNESS.   IN NO EVENT SHALL DIGITAL EQUIPMENT
++ * CORPORATION BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL
++ * DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
++ * PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
++ * ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
++ * SOFTWARE.
++ * -
++ * --Copyright--
++ */
++
++/*
++ *      @(#)netdb.h	8.1 (Berkeley) 6/2/93
++ *      From: Id: netdb.h,v 8.9 1996/11/19 08:39:29 vixie Exp $
++ * $FreeBSD: src/include/netdb.h,v 1.23 2002/03/23 17:24:53 imp Exp $
++ */
++
++#ifndef _NETDB_H_
++#define _NETDB_H_
++
++#include <sys/cdefs.h>
++#include <sys/types.h>
++#include <machine/ansi.h>
++#include <stdio.h>
++
++#ifndef __socklen_t_defined
++typedef unsigned int socklen_t;
++#define __socklen_t_defined 1
++#endif
++
++#ifdef	_BSD_SOCKLEN_T_
++typedef	_BSD_SOCKLEN_T_	socklen_t;
++#undef	_BSD_SOCKLEN_T_
++#endif
++
++#ifndef _PATH_HEQUIV
++# define	_PATH_HEQUIV	"/etc/hosts.equiv"
++#endif
++#define	_PATH_HOSTS	"/etc/hosts"
++#define	_PATH_NETWORKS	"/etc/networks"
++#define	_PATH_PROTOCOLS	"/etc/protocols"
++#define	_PATH_SERVICES	"/etc/services"
++#define _PATH_NSSWITCH_CONF  "/etc/nsswitch.conf"
++
++
++extern int *__h_errno_location(void);
++
++#define h_errno (*(__h_errno_location()))
++
++#define	MAXALIASES	35
++  /* For now, only support one return address. */
++#define MAXADDRS         2
++/*
++ * Structures returned by network data base library.  All addresses are
++ * supplied in host order, and returned in network order (suitable for
++ * use in system calls).
++ */
++struct hostent {
++  char	*h_name;	/* official name of host */
++  char	**h_aliases;	/* alias list */
++  int	h_addrtype;	/* host address type */
++  int	h_length;	/* length of address */
++  char	**h_addr_list;	/* list of addresses from name server */
++  char *h_addr;         /* address, for backward compatibility */
++  /* private data, for re-entrancy */
++  char *__host_addrs[MAXADDRS];
++  char *__host_aliases[MAXALIASES];
++  unsigned int __host_addr[4];
++};
++
++/*
++ * Assumption here is that a network number
++ * fits in an unsigned long -- probably a poor one.
++ */
++struct netent {
++	char		*n_name;	/* official name of net */
++	char		**n_aliases;	/* alias list */
++	int		n_addrtype;	/* net address type */
++	unsigned long	n_net;		/* network # */
++};
++
++struct servent {
++	char	*s_name;	/* official service name */
++	char	**s_aliases;	/* alias list */
++	int	s_port;		/* port # */
++	char	*s_proto;	/* protocol to use */
++};
++
++struct protoent {
++	char	*p_name;	/* official protocol name */
++	char	**p_aliases;	/* alias list */
++	int	p_proto;	/* protocol # */
++};
++
++struct addrinfo {
++	int	ai_flags;	/* AI_PASSIVE, AI_CANONNAME, AI_NUMERICHOST */
++	int	ai_family;	/* PF_xxx */
++	int	ai_socktype;	/* SOCK_xxx */
++	int	ai_protocol;	/* 0 or IPPROTO_xxx for IPv4 and IPv6 */
++	size_t	ai_addrlen;	/* length of ai_addr */
++	char	*ai_canonname;	/* canonical name for hostname */
++	struct	sockaddr *ai_addr;	/* binary address */
++	struct	addrinfo *ai_next;	/* next structure in linked list */
++};
++
++/*
++ * Error return codes from gethostbyname() and gethostbyaddr()
++ * (left in extern int h_errno).
++ */
++
++#define	NETDB_INTERNAL	-1	/* see errno */
++#define	NETDB_SUCCESS	0	/* no problem */
++#define	HOST_NOT_FOUND	1 /* Authoritative Answer Host not found */
++#define	TRY_AGAIN	2 /* Non-Authoritative Host not found, or SERVERFAIL */
++#define	NO_RECOVERY	3 /* Non recoverable errors, FORMERR, REFUSED, NOTIMP */
++#define	NO_DATA		4 /* Valid name, no data record of requested type */
++#define	NO_ADDRESS	NO_DATA		/* no address, look for MX record */
++
++/*
++ * Error return codes from getaddrinfo()
++ */
++/* Error values for `getaddrinfo' function.  */
++# define EAI_BADFLAGS     -1    /* Invalid value for `ai_flags' field.  */
++# define EAI_NONAME       -2    /* NAME or SERVICE is unknown.  */
++# define EAI_AGAIN        -3    /* Temporary failure in name resolution.  */
++# define EAI_FAIL         -4    /* Non-recoverable failure in name res.  */
++# define EAI_NODATA       -5    /* No address associated with NAME.  */
++# define EAI_FAMILY       -6    /* `ai_family' not supported.  */
++# define EAI_SOCKTYPE     -7    /* `ai_socktype' not supported.  */
++# define EAI_SERVICE      -8    /* SERVICE not supported for `ai_socktype'.  */
++# define EAI_ADDRFAMILY   -9    /* Address family for NAME not supported.  */
++# define EAI_MEMORY       -10   /* Memory allocation failure.  */
++# define EAI_SYSTEM       -11   /* System error returned in `errno'.  */
++# define EAI_OVERFLOW     -12   /* Argument buffer overflow.  */
++# ifdef __USE_GNU
++#  define EAI_INPROGRESS  -100  /* Processing request in progress.  */
++#  define EAI_CANCELED    -101  /* Request canceled.  */
++#  define EAI_NOTCANCELED -102  /* Request not canceled.  */
++#  define EAI_ALLDONE     -103  /* All requests done.  */
++#  define EAI_INTR        -104  /* Interrupted by a signal.  */
++#  define EAI_IDN_ENCODE  -105  /* IDN encoding failed.  */
++# endif
++
++/*
++ * Flag values for getaddrinfo()
++ */
++#define	AI_PASSIVE	0x00000001 /* get address to use bind() */
++#define	AI_CANONNAME	0x00000002 /* fill ai_canonname */
++#define	AI_NUMERICHOST	0x00000004 /* prevent name resolution */
++#define AI_NUMERICSERV  0x00000008 /* don't use name resolution. */
++/* valid flags for addrinfo */
++#define AI_MASK \
++    (AI_PASSIVE | AI_CANONNAME | AI_NUMERICHOST | AI_ADDRCONFIG)
++
++#define	AI_ALL		0x00000100 /* IPv6 and IPv4-mapped (with AI_V4MAPPED) */
++#define	AI_V4MAPPED_CFG	0x00000200 /* accept IPv4-mapped if kernel supports */
++#define	AI_ADDRCONFIG	0x00000400 /* only if any address is assigned */
++#define	AI_V4MAPPED	0x00000800 /* accept IPv4-mapped IPv6 address */
++/* special recommended flags for getipnodebyname */
++#define	AI_DEFAULT	(AI_V4MAPPED_CFG | AI_ADDRCONFIG)
++
++/*
++ * Constants for getnameinfo()
++ */
++#define	NI_MAXHOST	1025
++#define	NI_MAXSERV	32
++
++/*
++ * Flag values for getnameinfo()
++ */
++#define	NI_NOFQDN	0x00000001
++#define	NI_NUMERICHOST	0x00000002
++#define	NI_NAMEREQD	0x00000004
++#define	NI_NUMERICSERV	0x00000008
++#define	NI_DGRAM	0x00000010
++#define NI_WITHSCOPEID	0x00000020
++
++/*
++ * Scope delimit character
++ */
++#define	SCOPE_DELIMITER	'%'
++
++__BEGIN_DECLS
++void		endhostent(void);
++void		endhostent_r(FILE **, int *);
++void		endnetent(void);
++void		endnetgrent(void);
++void		endprotoent(void);
++void		endservent(void);
++void		freehostent(struct hostent *);
++struct hostent	*gethostbyaddr(const void *, socklen_t, int);
++struct hostent	*gethostbyname(const char *);
++struct hostent	*gethostbyname2(const char *, int);
++struct hostent	*gethostent(void);
++int             gethostent_r(struct hostent *, char *, int, int *, FILE **);
++struct hostent	*getipnodebyaddr(const void *, size_t, int, int *);
++struct hostent	*getipnodebyname(const char *, int, int, int *);
++struct netent	*getnetbyaddr(uint32_t, int);
++struct netent	*getnetbyname(const char *);
++struct netent	*getnetent(void);
++int		getnetgrent(char **, char **, char **);
++struct protoent	*getprotobyname(const char *);
++struct protoent	*getprotobynumber(int);
++struct protoent	*getprotoent(void);
++struct servent	*getservbyname(const char *, const char *);
++struct servent	*getservbyport(int, const char *);
++struct servent	*getservent(void);
++void		herror(const char *);
++__const char	*hstrerror(int);
++int		innetgr(const char *, const char *, const char *, const char *);
++void		sethostent(int);
++void		sethostent_r(int, FILE **, int *);
++/* void		sethostfile(const char *); */
++void		setnetent(int);
++void		setprotoent(int);
++int		getaddrinfo(const char *__restrict, const char *__restrict,
++			    const struct addrinfo *__restrict,
++			    struct addrinfo **__restrict);
++int		getnameinfo(const struct sockaddr *__restrict, socklen_t,
++			    char *__restrict, socklen_t, char *__restrict,
++			    socklen_t, unsigned int);
++void		freeaddrinfo(struct addrinfo *);
++char		*gai_strerror(int);
++int		setnetgrent(const char *);
++void		setservent(int);
++
++/*
++ * PRIVATE functions specific to the FreeBSD implementation
++ */
++
++/* DO NOT USE THESE, THEY ARE SUBJECT TO CHANGE AND ARE NOT PORTABLE!!! */
++void	_sethosthtent(int);
++void	_sethosthtent_r(int, FILE **, int *);
++void	_endhosthtent(void);
++void	_endhosthtent_r(FILE **, int *);
++void	_sethostdnsent(int);
++void	_endhostdnsent(void);
++void	_setnethtent(int);
++void	_endnethtent(void);
++void	_setnetdnsent(int);
++void	_endnetdnsent(void);
++struct hostent * _gethostbynisname(const char *, int);
++struct hostent * _gethostbynisaddr(const char *, int, int);
++void _map_v4v6_address(const char *, char *);
++void _map_v4v6_hostent(struct hostent *, char **, int *);
++__END_DECLS
++
++#endif /* !_NETDB_H_ */
+diff --git a/netinet/in.h b/netinet/in.h
+new file mode 100644
+index 0000000..19bc3f1
+--- /dev/null
++++ b/netinet/in.h
+@@ -0,0 +1,569 @@
++/*
++ * Copyright (c) 1982, 1986, 1990, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)in.h	8.3 (Berkeley) 1/3/94
++ * $FreeBSD: src/sys/netinet/in.h,v 1.68 2002/04/24 01:26:11 mike Exp $
++ */
++
++#ifndef _NETINET_IN_H_
++#define _NETINET_IN_H_
++
++#include <sys/cdefs.h>
++#include <sys/config.h>
++#include <sys/_types.h>
++#include <machine/endian.h>
++
++/* Protocols common to RFC 1700, POSIX, and X/Open. */
++#define	IPPROTO_IP		0		/* dummy for IP */
++#define	IPPROTO_ICMP		1		/* control message protocol */
++#define	IPPROTO_TCP		6		/* tcp */
++#define	IPPROTO_UDP		17		/* user datagram protocol */
++
++#define	INADDR_ANY		(u_int32_t)0x00000000
++#define	INADDR_BROADCAST	(u_int32_t)0xffffffff	/* must be masked */
++
++#ifndef _UINT8_T_DECLARED
++typedef	__uint8_t		uint8_t;
++#define	_UINT8_T_DECLARED
++#endif
++
++#ifndef _UINT16_T_DECLARED
++typedef	__uint16_t		uint16_t;
++#define	_UINT16_T_DECLARED
++#endif
++
++#ifndef _UINT32_T_DECLARED
++typedef	__uint32_t		uint32_t;
++#define	_UINT32_T_DECLARED
++#endif
++
++#ifndef _IN_ADDR_T_DECLARED
++typedef	uint32_t		in_addr_t;
++#define	_IN_ADDR_T_DECLARED
++#endif
++
++#ifndef _IN_PORT_T_DECLARED
++typedef	uint16_t		in_port_t;
++#define	_IN_PORT_T_DECLARED
++#endif
++
++typedef unsigned short sa_family_t;
++
++#ifdef _BSD_SA_FAMILY_T_
++typedef	_BSD_SA_FAMILY_T_	sa_family_t;
++#undef _BSD_SA_FAMILY_T_ 
++#endif
++
++/* Internet address (a structure for historical reasons). */
++#ifndef	_STRUCT_IN_ADDR_DECLARED
++struct in_addr {
++	in_addr_t s_addr;
++};
++#define	_STRUCT_IN_ADDR_DECLARED
++#endif
++
++/* Socket address, internet style. */
++struct sockaddr_in {
++	sa_family_t	sin_family;
++	in_port_t	sin_port;
++	struct	in_addr sin_addr;
++	char	sin_zero[8];
++};
++
++#if __POSIX_VISIBLE >= 200112
++#define	IPPROTO_RAW		255		/* raw IP packet */
++#define	INET_ADDRSTRLEN		16
++#endif
++
++#define __BSD_VISIBLE 1
++#if __BSD_VISIBLE
++/*
++ * Constants and structures defined by the internet system,
++ * Per RFC 790, September 1981, and numerous additions.
++ */
++
++/*
++ * Protocols (RFC 1700)
++ */
++#define	IPPROTO_HOPOPTS		0		/* IP6 hop-by-hop options */
++#define	IPPROTO_IGMP		2		/* group mgmt protocol */
++#define	IPPROTO_GGP		3		/* gateway^2 (deprecated) */
++#define IPPROTO_IPV4		4 		/* IPv4 encapsulation */
++#define IPPROTO_IPIP		IPPROTO_IPV4	/* for compatibility */
++#define	IPPROTO_ST		7		/* Stream protocol II */
++#define	IPPROTO_EGP		8		/* exterior gateway protocol */
++#define	IPPROTO_PIGP		9		/* private interior gateway */
++#define	IPPROTO_RCCMON		10		/* BBN RCC Monitoring */
++#define	IPPROTO_NVPII		11		/* network voice protocol*/
++#define	IPPROTO_PUP		12		/* pup */
++#define	IPPROTO_ARGUS		13		/* Argus */
++#define	IPPROTO_EMCON		14		/* EMCON */
++#define	IPPROTO_XNET		15		/* Cross Net Debugger */
++#define	IPPROTO_CHAOS		16		/* Chaos*/
++#define	IPPROTO_MUX		18		/* Multiplexing */
++#define	IPPROTO_MEAS		19		/* DCN Measurement Subsystems */
++#define	IPPROTO_HMP		20		/* Host Monitoring */
++#define	IPPROTO_PRM		21		/* Packet Radio Measurement */
++#define	IPPROTO_IDP		22		/* xns idp */
++#define	IPPROTO_TRUNK1		23		/* Trunk-1 */
++#define	IPPROTO_TRUNK2		24		/* Trunk-2 */
++#define	IPPROTO_LEAF1		25		/* Leaf-1 */
++#define	IPPROTO_LEAF2		26		/* Leaf-2 */
++#define	IPPROTO_RDP		27		/* Reliable Data */
++#define	IPPROTO_IRTP		28		/* Reliable Transaction */
++#define	IPPROTO_TP		29 		/* tp-4 w/ class negotiation */
++#define	IPPROTO_BLT		30		/* Bulk Data Transfer */
++#define	IPPROTO_NSP		31		/* Network Services */
++#define	IPPROTO_INP		32		/* Merit Internodal */
++#define	IPPROTO_SEP		33		/* Sequential Exchange */
++#define	IPPROTO_3PC		34		/* Third Party Connect */
++#define	IPPROTO_IDPR		35		/* InterDomain Policy Routing */
++#define	IPPROTO_XTP		36		/* XTP */
++#define	IPPROTO_DDP		37		/* Datagram Delivery */
++#define	IPPROTO_CMTP		38		/* Control Message Transport */
++#define	IPPROTO_TPXX		39		/* TP++ Transport */
++#define	IPPROTO_IL		40		/* IL transport protocol */
++#define	IPPROTO_IPV6		41		/* IP6 header */
++#define	IPPROTO_SDRP		42		/* Source Demand Routing */
++#define	IPPROTO_ROUTING		43		/* IP6 routing header */
++#define	IPPROTO_FRAGMENT	44		/* IP6 fragmentation header */
++#define	IPPROTO_IDRP		45		/* InterDomain Routing*/
++#define	IPPROTO_RSVP		46 		/* resource reservation */
++#define	IPPROTO_GRE		47		/* General Routing Encap. */
++#define	IPPROTO_MHRP		48		/* Mobile Host Routing */
++#define	IPPROTO_BHA		49		/* BHA */
++#define	IPPROTO_ESP		50		/* IP6 Encap Sec. Payload */
++#define	IPPROTO_AH		51		/* IP6 Auth Header */
++#define	IPPROTO_INLSP		52		/* Integ. Net Layer Security */
++#define	IPPROTO_SWIPE		53		/* IP with encryption */
++#define	IPPROTO_NHRP		54		/* Next Hop Resolution */
++#define IPPROTO_MOBILE		55		/* IP Mobility */
++#define IPPROTO_TLSP		56		/* Transport Layer Security */
++#define IPPROTO_SKIP		57		/* SKIP */
++#define	IPPROTO_ICMPV6		58		/* ICMP6 */
++#define	IPPROTO_NONE		59		/* IP6 no next header */
++#define	IPPROTO_DSTOPTS		60		/* IP6 destination option */
++#define	IPPROTO_AHIP		61		/* any host internal protocol */
++#define	IPPROTO_CFTP		62		/* CFTP */
++#define	IPPROTO_HELLO		63		/* "hello" routing protocol */
++#define	IPPROTO_SATEXPAK	64		/* SATNET/Backroom EXPAK */
++#define	IPPROTO_KRYPTOLAN	65		/* Kryptolan */
++#define	IPPROTO_RVD		66		/* Remote Virtual Disk */
++#define	IPPROTO_IPPC		67		/* Pluribus Packet Core */
++#define	IPPROTO_ADFS		68		/* Any distributed FS */
++#define	IPPROTO_SATMON		69		/* Satnet Monitoring */
++#define	IPPROTO_VISA		70		/* VISA Protocol */
++#define	IPPROTO_IPCV		71		/* Packet Core Utility */
++#define	IPPROTO_CPNX		72		/* Comp. Prot. Net. Executive */
++#define	IPPROTO_CPHB		73		/* Comp. Prot. HeartBeat */
++#define	IPPROTO_WSN		74		/* Wang Span Network */
++#define	IPPROTO_PVP		75		/* Packet Video Protocol */
++#define	IPPROTO_BRSATMON	76		/* BackRoom SATNET Monitoring */
++#define	IPPROTO_ND		77		/* Sun net disk proto (temp.) */
++#define	IPPROTO_WBMON		78		/* WIDEBAND Monitoring */
++#define	IPPROTO_WBEXPAK		79		/* WIDEBAND EXPAK */
++#define	IPPROTO_EON		80		/* ISO cnlp */
++#define	IPPROTO_VMTP		81		/* VMTP */
++#define	IPPROTO_SVMTP		82		/* Secure VMTP */
++#define	IPPROTO_VINES		83		/* Banyon VINES */
++#define	IPPROTO_TTP		84		/* TTP */
++#define	IPPROTO_IGP		85		/* NSFNET-IGP */
++#define	IPPROTO_DGP		86		/* dissimilar gateway prot. */
++#define	IPPROTO_TCF		87		/* TCF */
++#define	IPPROTO_IGRP		88		/* Cisco/GXS IGRP */
++#define	IPPROTO_OSPFIGP		89		/* OSPFIGP */
++#define	IPPROTO_SRPC		90		/* Strite RPC protocol */
++#define	IPPROTO_LARP		91		/* Locus Address Resoloution */
++#define	IPPROTO_MTP		92		/* Multicast Transport */
++#define	IPPROTO_AX25		93		/* AX.25 Frames */
++#define	IPPROTO_IPEIP		94		/* IP encapsulated in IP */
++#define	IPPROTO_MICP		95		/* Mobile Int.ing control */
++#define	IPPROTO_SCCSP		96		/* Semaphore Comm. security */
++#define	IPPROTO_ETHERIP		97		/* Ethernet IP encapsulation */
++#define	IPPROTO_ENCAP		98		/* encapsulation header */
++#define	IPPROTO_APES		99		/* any private encr. scheme */
++#define	IPPROTO_GMTP		100		/* GMTP*/
++#define	IPPROTO_IPCOMP		108		/* payload compression (IPComp) */
++/* 101-254: Partly Unassigned */
++#define	IPPROTO_PIM		103		/* Protocol Independent Mcast */
++#define	IPPROTO_PGM		113		/* PGM */
++/* 255: Reserved */
++/* BSD Private, local use, namespace incursion */
++#define	IPPROTO_DIVERT		254		/* divert pseudo-protocol */
++#define	IPPROTO_MAX		256
++
++/* last return value of *_input(), meaning "all job for this pkt is done".  */
++#define	IPPROTO_DONE		257
++
++/*
++ * Local port number conventions:
++ *
++ * When a user does a bind(2) or connect(2) with a port number of zero,
++ * a non-conflicting local port address is chosen.
++ * The default range is IPPORT_HIFIRSTAUTO through
++ * IPPORT_HILASTAUTO, although that is settable by sysctl.
++ *
++ * A user may set the IPPROTO_IP option IP_PORTRANGE to change this
++ * default assignment range.
++ *
++ * The value IP_PORTRANGE_DEFAULT causes the default behavior.
++ *
++ * The value IP_PORTRANGE_HIGH changes the range of candidate port numbers
++ * into the "high" range.  These are reserved for client outbound connections
++ * which do not want to be filtered by any firewalls.  Note that by default
++ * this is the same as IP_PORTRANGE_DEFAULT.
++ *
++ * The value IP_PORTRANGE_LOW changes the range to the "low" are
++ * that is (by convention) restricted to privileged processes.  This
++ * convention is based on "vouchsafe" principles only.  It is only secure
++ * if you trust the remote host to restrict these ports.
++ *
++ * The default range of ports and the high range can be changed by
++ * sysctl(3).  (net.inet.ip.port{hi,low}{first,last}_auto)
++ *
++ * Changing those values has bad security implications if you are
++ * using a a stateless firewall that is allowing packets outside of that
++ * range in order to allow transparent outgoing connections.
++ *
++ * Such a firewall configuration will generally depend on the use of these
++ * default values.  If you change them, you may find your Security
++ * Administrator looking for you with a heavy object.
++ *
++ * For a slightly more orthodox text view on this:
++ *
++ *            ftp://ftp.isi.edu/in-notes/iana/assignments/port-numbers
++ *
++ *    port numbers are divided into three ranges:
++ *
++ *                0 -  1023 Well Known Ports
++ *             1024 - 49151 Registered Ports
++ *            49152 - 65535 Dynamic and/or Private Ports
++ *
++ */
++
++/*
++ * Ports < IPPORT_RESERVED are reserved for
++ * privileged processes (e.g. root).         (IP_PORTRANGE_LOW)
++ */
++#define	IPPORT_RESERVED		1024
++
++/*
++ * Default local port range, used by both IP_PORTRANGE_DEFAULT
++ * and IP_PORTRANGE_HIGH.
++ */
++#define	IPPORT_HIFIRSTAUTO	49152
++#define	IPPORT_HILASTAUTO	65535
++
++/*
++ * Scanning for a free reserved port return a value below IPPORT_RESERVED,
++ * but higher than IPPORT_RESERVEDSTART.  Traditionally the start value was
++ * 512, but that conflicts with some well-known-services that firewalls may
++ * have a fit if we use.
++ */
++#define IPPORT_RESERVEDSTART	600
++
++#define	IPPORT_MAX		65535
++
++#ifndef _UINT8_T_DECLARED
++typedef	__uint8_t		uint8_t;
++#define	_UINT8_T_DECLARED
++#endif
++
++#ifndef _UINT16_T_DECLARED
++typedef	__uint16_t		uint16_t;
++#define	_UINT16_T_DECLARED
++#endif
++
++#ifndef _UINT32_T_DECLARED
++typedef	__uint32_t		uint32_t;
++#define	_UINT32_T_DECLARED
++#endif
++
++#ifndef _IN_ADDR_T_DECLARED
++typedef	uint32_t		in_addr_t;
++#define	_IN_ADDR_T_DECLARED
++#endif
++
++#ifndef _IN_PORT_T_DECLARED
++typedef	uint16_t		in_port_t;
++#define	_IN_PORT_T_DECLARED
++#endif
++
++#ifdef _BSD_SA_FAMILY_T_
++typedef	_BSD_SA_FAMILY_T_	sa_family_t;
++#undef _BSD_SA_FAMILY_T_
++#endif
++
++/*
++ * Internet address (a structure for historical reasons)
++ */
++#ifndef	_STRUCT_IN_ADDR_DECLARED
++struct in_addr {
++	in_addr_t s_addr;
++};
++#define	_STRUCT_IN_ADDR_DECLARED
++#endif
++
++/*
++ * Definitions of bits in internet address integers.
++ * On subnets, the decomposition of addresses to host and net parts
++ * is done according to subnet mask, not the masks here.
++ */
++#define	IN_CLASSA(i)		(((u_int32_t)(i) & 0x80000000) == 0)
++#define	IN_CLASSA_NET		0xff000000
++#define	IN_CLASSA_NSHIFT	24
++#define	IN_CLASSA_HOST		0x00ffffff
++#define	IN_CLASSA_MAX		128
++
++#define	IN_CLASSB(i)		(((u_int32_t)(i) & 0xc0000000) == 0x80000000)
++#define	IN_CLASSB_NET		0xffff0000
++#define	IN_CLASSB_NSHIFT	16
++#define	IN_CLASSB_HOST		0x0000ffff
++#define	IN_CLASSB_MAX		65536
++
++#define	IN_CLASSC(i)		(((u_int32_t)(i) & 0xe0000000) == 0xc0000000)
++#define	IN_CLASSC_NET		0xffffff00
++#define	IN_CLASSC_NSHIFT	8
++#define	IN_CLASSC_HOST		0x000000ff
++
++#define	IN_CLASSD(i)		(((u_int32_t)(i) & 0xf0000000) == 0xe0000000)
++#define	IN_CLASSD_NET		0xf0000000	/* These ones aren't really */
++#define	IN_CLASSD_NSHIFT	28		/* net and host fields, but */
++#define	IN_CLASSD_HOST		0x0fffffff	/* routing needn't know.    */
++#define	IN_MULTICAST(i)		IN_CLASSD(i)
++
++#define	IN_EXPERIMENTAL(i)	(((u_int32_t)(i) & 0xf0000000) == 0xf0000000)
++#define	IN_BADCLASS(i)		(((u_int32_t)(i) & 0xf0000000) == 0xf0000000)
++
++#define	INADDR_LOOPBACK		(u_int32_t)0x7f000001
++#ifndef _KERNEL
++#define	INADDR_NONE		0xffffffff		/* -1 return */
++#endif
++
++#define	INADDR_UNSPEC_GROUP	(u_int32_t)0xe0000000	/* 224.0.0.0 */
++#define	INADDR_ALLHOSTS_GROUP	(u_int32_t)0xe0000001	/* 224.0.0.1 */
++#define	INADDR_ALLRTRS_GROUP	(u_int32_t)0xe0000002	/* 224.0.0.2 */
++#define	INADDR_MAX_LOCAL_GROUP	(u_int32_t)0xe00000ff	/* 224.0.0.255 */
++
++#define	IN_LOOPBACKNET		127			/* official! */
++
++/*
++ * Options for use with [gs]etsockopt at the IP level.
++ * First word of comment is data type; bool is stored in int.
++ */
++#define	IP_OPTIONS		1    /* buf/ip_opts; set/get IP options */
++#define	IP_HDRINCL		2    /* int; header is included with data */
++#define	IP_TOS			3    /* int; IP type of service and preced. */
++#define	IP_TTL			4    /* int; IP time to live */
++#define	IP_RECVOPTS		5    /* bool; receive all IP opts w/dgram */
++#define	IP_RECVRETOPTS		6    /* bool; receive IP opts for response */
++#define	IP_RECVDSTADDR		7    /* bool; receive IP dst addr w/dgram */
++#define	IP_RETOPTS		8    /* ip_opts; set/get IP options */
++#define	IP_MULTICAST_IF		9    /* u_char; set/get IP multicast i/f  */
++#define	IP_MULTICAST_TTL	10   /* u_char; set/get IP multicast ttl */
++#define	IP_MULTICAST_LOOP	11   /* u_char; set/get IP multicast loopback */
++#define	IP_ADD_MEMBERSHIP	12   /* ip_mreq; add an IP group membership */
++#define	IP_DROP_MEMBERSHIP	13   /* ip_mreq; drop an IP group membership */
++#define IP_MULTICAST_VIF	14   /* set/get IP mcast virt. iface */
++#define IP_RSVP_ON		15   /* enable RSVP in kernel */
++#define IP_RSVP_OFF		16   /* disable RSVP in kernel */
++#define IP_RSVP_VIF_ON		17   /* set RSVP per-vif socket */
++#define IP_RSVP_VIF_OFF		18   /* unset RSVP per-vif socket */
++#define IP_PORTRANGE		19   /* int; range to choose for unspec port */
++#define	IP_RECVIF		20   /* bool; receive reception if w/dgram */
++/* for IPSEC */
++#define	IP_IPSEC_POLICY		21   /* int; set/get security policy */
++#define	IP_FAITH		22   /* bool; accept FAITH'ed connections */
++
++#define	IP_FW_ADD     		50   /* add a firewall rule to chain */
++#define	IP_FW_DEL    		51   /* delete a firewall rule from chain */
++#define	IP_FW_FLUSH   		52   /* flush firewall rule chain */
++#define	IP_FW_ZERO    		53   /* clear single/all firewall counter(s) */
++#define	IP_FW_GET     		54   /* get entire firewall rule chain */
++#define	IP_FW_RESETLOG		55   /* reset logging counters */
++
++#define	IP_DUMMYNET_CONFIGURE	60   /* add/configure a dummynet pipe */
++#define	IP_DUMMYNET_DEL		61   /* delete a dummynet pipe from chain */
++#define	IP_DUMMYNET_FLUSH	62   /* flush dummynet */
++#define	IP_DUMMYNET_GET		64   /* get entire dummynet pipes */
++
++/*
++ * Defaults and limits for options
++ */
++#define	IP_DEFAULT_MULTICAST_TTL  1	/* normally limit m'casts to 1 hop  */
++#define	IP_DEFAULT_MULTICAST_LOOP 1	/* normally hear sends if a member  */
++#define	IP_MAX_MEMBERSHIPS	20	/* per socket */
++
++/*
++ * Argument structure for IP_ADD_MEMBERSHIP and IP_DROP_MEMBERSHIP.
++ */
++struct ip_mreq {
++	struct	in_addr imr_multiaddr;	/* IP multicast address of group */
++	struct	in_addr imr_interface;	/* local IP address of interface */
++};
++
++/*
++ * Argument for IP_PORTRANGE:
++ * - which range to search when port is unspecified at bind() or connect()
++ */
++#define	IP_PORTRANGE_DEFAULT	0	/* default range */
++#define	IP_PORTRANGE_HIGH	1	/* "high" - request firewall bypass */
++#define	IP_PORTRANGE_LOW	2	/* "low" - vouchsafe security */
++
++/*
++ * Definitions for inet sysctl operations.
++ *
++ * Third level is protocol number.
++ * Fourth level is desired variable within that protocol.
++ */
++#define	IPPROTO_MAXID	(IPPROTO_AH + 1)	/* don't list to IPPROTO_MAX */
++
++#define	CTL_IPPROTO_NAMES { \
++	{ "ip", CTLTYPE_NODE }, \
++	{ "icmp", CTLTYPE_NODE }, \
++	{ "igmp", CTLTYPE_NODE }, \
++	{ "ggp", CTLTYPE_NODE }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ "tcp", CTLTYPE_NODE }, \
++	{ 0, 0 }, \
++	{ "egp", CTLTYPE_NODE }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ "pup", CTLTYPE_NODE }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ "udp", CTLTYPE_NODE }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ "idp", CTLTYPE_NODE }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ "ipsec", CTLTYPE_NODE }, \
++}
++
++/*
++ * Names for IP sysctl objects
++ */
++#define	IPCTL_FORWARDING	1	/* act as router */
++#define	IPCTL_SENDREDIRECTS	2	/* may send redirects when forwarding */
++#define	IPCTL_DEFTTL		3	/* default TTL */
++#ifdef notyet
++#define	IPCTL_DEFMTU		4	/* default MTU */
++#endif
++#define IPCTL_RTEXPIRE		5	/* cloned route expiration time */
++#define IPCTL_RTMINEXPIRE	6	/* min value for expiration time */
++#define IPCTL_RTMAXCACHE	7	/* trigger level for dynamic expire */
++#define	IPCTL_SOURCEROUTE	8	/* may perform source routes */
++#define	IPCTL_DIRECTEDBROADCAST	9	/* may re-broadcast received packets */
++#define IPCTL_INTRQMAXLEN	10	/* max length of netisr queue */
++#define	IPCTL_INTRQDROPS	11	/* number of netisr q drops */
++#define	IPCTL_STATS		12	/* ipstat structure */
++#define	IPCTL_ACCEPTSOURCEROUTE	13	/* may accept source routed packets */
++#define	IPCTL_FASTFORWARDING	14	/* use fast IP forwarding code */
++#define	IPCTL_KEEPFAITH		15	/* FAITH IPv4->IPv6 translater ctl */
++#define	IPCTL_GIF_TTL		16	/* default TTL for gif encap packet */
++#define	IPCTL_MAXID		17
++
++#define	IPCTL_NAMES { \
++	{ 0, 0 }, \
++	{ "forwarding", CTLTYPE_INT }, \
++	{ "redirect", CTLTYPE_INT }, \
++	{ "ttl", CTLTYPE_INT }, \
++	{ "mtu", CTLTYPE_INT }, \
++	{ "rtexpire", CTLTYPE_INT }, \
++	{ "rtminexpire", CTLTYPE_INT }, \
++	{ "rtmaxcache", CTLTYPE_INT }, \
++	{ "sourceroute", CTLTYPE_INT }, \
++ 	{ "directed-broadcast", CTLTYPE_INT }, \
++	{ "intr-queue-maxlen", CTLTYPE_INT }, \
++	{ "intr-queue-drops", CTLTYPE_INT }, \
++	{ "stats", CTLTYPE_STRUCT }, \
++	{ "accept_sourceroute", CTLTYPE_INT }, \
++	{ "fastforwarding", CTLTYPE_INT }, \
++}
++
++#endif /* __BSD_VISIBLE */
++
++#ifdef _KERNEL
++
++struct ifnet; struct mbuf;	/* forward declarations for Standard C */
++
++int	 in_broadcast(struct in_addr, struct ifnet *);
++int	 in_canforward(struct in_addr);
++int	 in_localaddr(struct in_addr);
++char 	*inet_ntoa(struct in_addr); /* in libkern */
++char	*inet_ntoa_r(struct in_addr ina, char *buf); /* in libkern */
++
++#define satosin(sa)	((struct sockaddr_in *)(sa))
++#define sintosa(sin)	((struct sockaddr *)(sin))
++#define ifatoia(ifa)	((struct in_ifaddr *)(ifa))
++
++#endif /* _KERNEL */
++
++/* INET6 stuff */
++#define	__KAME_NETINET_IN_H_INCLUDED_
++#include <netinet6/in6.h>
++#undef __KAME_NETINET_IN_H_INCLUDED_
++
++#endif /* !_NETINET_IN_H_*/
+diff --git a/netinet6/in6.h b/netinet6/in6.h
+new file mode 100644
+index 0000000..e4d1c1c
+--- /dev/null
++++ b/netinet6/in6.h
+@@ -0,0 +1,651 @@
++/*	$FreeBSD: src/sys/netinet6/in6.h,v 1.19 2002/04/19 04:46:22 suz Exp $	*/
++/*	$KAME: in6.h,v 1.89 2001/05/27 13:28:35 itojun Exp $	*/
++
++/*
++ * Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. Neither the name of the project nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ */
++
++/*
++ * Copyright (c) 1982, 1986, 1990, 1993
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)in.h	8.3 (Berkeley) 1/3/94
++ */
++
++#ifndef __KAME_NETINET_IN_H_INCLUDED_
++#error "do not include netinet6/in6.h directly, include netinet/in.h.  see RFC2553"
++#endif
++
++#ifndef _NETINET6_IN6_H_
++#define _NETINET6_IN6_H_
++
++#include <sys/types.h>
++
++/*
++ * Identification of the network protocol stack
++ * for *BSD-current/release: http://www.kame.net/dev/cvsweb.cgi/kame/COVERAGE
++ * has the table of implementation/integration differences.
++ */
++#define __KAME__
++#define __KAME_VERSION		"20010528/FreeBSD"
++
++/*
++ * Local port number conventions:
++ *
++ * Ports < IPPORT_RESERVED are reserved for privileged processes (e.g. root),
++ * unless a kernel is compiled with IPNOPRIVPORTS defined.
++ *
++ * When a user does a bind(2) or connect(2) with a port number of zero,
++ * a non-conflicting local port address is chosen.
++ *
++ * The default range is IPPORT_ANONMIN to IPPORT_ANONMAX, although
++ * that is settable by sysctl(3); net.inet.ip.anonportmin and
++ * net.inet.ip.anonportmax respectively.
++ *
++ * A user may set the IPPROTO_IP option IP_PORTRANGE to change this
++ * default assignment range.
++ *
++ * The value IP_PORTRANGE_DEFAULT causes the default behavior.
++ *
++ * The value IP_PORTRANGE_HIGH is the same as IP_PORTRANGE_DEFAULT,
++ * and exists only for FreeBSD compatibility purposes.
++ *
++ * The value IP_PORTRANGE_LOW changes the range to the "low" are
++ * that is (by convention) restricted to privileged processes.
++ * This convention is based on "vouchsafe" principles only.
++ * It is only secure if you trust the remote host to restrict these ports.
++ * The range is IPPORT_RESERVEDMIN to IPPORT_RESERVEDMAX.
++ */
++
++#define	IPV6PORT_RESERVED	1024
++#define	IPV6PORT_ANONMIN	49152
++#define	IPV6PORT_ANONMAX	65535
++#define	IPV6PORT_RESERVEDMIN	600
++#define	IPV6PORT_RESERVEDMAX	(IPV6PORT_RESERVED-1)
++
++/*
++ * IPv6 address
++ */
++struct in6_addr {
++	union {
++		uint8_t   __u6_addr8[16];
++		uint16_t  __u6_addr16[8];
++		uint32_t  __u6_addr32[4];
++	} __u6_addr;			/* 128-bit IP6 address */
++};
++
++#define s6_addr   __u6_addr.__u6_addr8
++#ifdef _KERNEL	/* XXX nonstandard */
++#define s6_addr8  __u6_addr.__u6_addr8
++#define s6_addr16 __u6_addr.__u6_addr16
++#define s6_addr32 __u6_addr.__u6_addr32
++#endif
++
++#define INET6_ADDRSTRLEN	46
++
++/*
++ * Socket address for IPv6
++ */
++#ifndef _XOPEN_SOURCE
++#define SIN6_LEN
++#endif
++struct sockaddr_in6 {
++	uint8_t	sin6_family;	/* AF_INET6 (sa_family_t) */
++	uint16_t	sin6_port;	/* Transport layer port # (in_port_t)*/
++	uint32_t	sin6_flowinfo;	/* IP6 flow information */
++	struct in6_addr	sin6_addr;	/* IP6 address */
++	uint32_t	sin6_scope_id;	/* scope zone index */
++};
++
++/*
++ * Local definition for masks
++ */
++#ifdef _KERNEL	/* XXX nonstandard */
++#define IN6MASK0	{{{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }}}
++#define IN6MASK32	{{{ 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, \
++			    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }}}
++#define IN6MASK64	{{{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, \
++			    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }}}
++#define IN6MASK96	{{{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, \
++			    0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00 }}}
++#define IN6MASK128	{{{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, \
++			    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff }}}
++#endif
++
++#ifdef _KERNEL
++extern const struct sockaddr_in6 sa6_any;
++
++extern const struct in6_addr in6mask0;
++extern const struct in6_addr in6mask32;
++extern const struct in6_addr in6mask64;
++extern const struct in6_addr in6mask96;
++extern const struct in6_addr in6mask128;
++#endif /* _KERNEL */
++
++/*
++ * Macros started with IPV6_ADDR is KAME local
++ */
++#ifdef _KERNEL	/* XXX nonstandard */
++#if BYTE_ORDER == BIG_ENDIAN
++#define IPV6_ADDR_INT32_ONE	1
++#define IPV6_ADDR_INT32_TWO	2
++#define IPV6_ADDR_INT32_MNL	0xff010000
++#define IPV6_ADDR_INT32_MLL	0xff020000
++#define IPV6_ADDR_INT32_SMP	0x0000ffff
++#define IPV6_ADDR_INT16_ULL	0xfe80
++#define IPV6_ADDR_INT16_USL	0xfec0
++#define IPV6_ADDR_INT16_MLL	0xff02
++#elif BYTE_ORDER == LITTLE_ENDIAN
++#define IPV6_ADDR_INT32_ONE	0x01000000
++#define IPV6_ADDR_INT32_TWO	0x02000000
++#define IPV6_ADDR_INT32_MNL	0x000001ff
++#define IPV6_ADDR_INT32_MLL	0x000002ff
++#define IPV6_ADDR_INT32_SMP	0xffff0000
++#define IPV6_ADDR_INT16_ULL	0x80fe
++#define IPV6_ADDR_INT16_USL	0xc0fe
++#define IPV6_ADDR_INT16_MLL	0x02ff
++#endif
++#endif
++
++/*
++ * Definition of some useful macros to handle IP6 addresses
++ */
++#define IN6ADDR_ANY_INIT \
++	{{{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
++	    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }}}
++#define IN6ADDR_LOOPBACK_INIT \
++	{{{ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
++	    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }}}
++#define IN6ADDR_NODELOCAL_ALLNODES_INIT \
++	{{{ 0xff, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
++	    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }}}
++#define IN6ADDR_LINKLOCAL_ALLNODES_INIT \
++	{{{ 0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
++	    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 }}}
++#define IN6ADDR_LINKLOCAL_ALLROUTERS_INIT \
++	{{{ 0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
++	    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02 }}}
++
++extern const struct in6_addr in6addr_any;
++extern const struct in6_addr in6addr_loopback;
++extern const struct in6_addr in6addr_nodelocal_allnodes;
++extern const struct in6_addr in6addr_linklocal_allnodes;
++extern const struct in6_addr in6addr_linklocal_allrouters;
++
++/*
++ * Equality
++ * NOTE: Some of kernel programming environment (for example, openbsd/sparc)
++ * does not supply memcmp().  For userland memcmp() is preferred as it is
++ * in ANSI standard.
++ */
++#ifdef _KERNEL
++#define IN6_ARE_ADDR_EQUAL(a, b)			\
++    (bcmp(&(a)->s6_addr[0], &(b)->s6_addr[0], sizeof(struct in6_addr)) == 0)
++#else
++#define IN6_ARE_ADDR_EQUAL(a, b)			\
++    (memcmp(&(a)->s6_addr[0], &(b)->s6_addr[0], sizeof(struct in6_addr)) == 0)
++#endif
++
++#ifdef _KERNEL			/* non standard */
++/* see if two addresses are equal in a scope-conscious manner. */
++#define SA6_ARE_ADDR_EQUAL(a, b) \
++	(((a)->sin6_scope_id == 0 || (b)->sin6_scope_id == 0 || \
++	  ((a)->sin6_scope_id == (b)->sin6_scope_id)) && \
++	 (bcmp(&(a)->sin6_addr, &(b)->sin6_addr, sizeof(struct in6_addr)) == 0))
++#endif
++
++/*
++ * Unspecified
++ */
++#define IN6_IS_ADDR_UNSPECIFIED(a)	\
++	((*(const uint32_t *)(const void *)(&(a)->s6_addr[0]) == 0) &&	\
++	 (*(const uint32_t *)(const void *)(&(a)->s6_addr[4]) == 0) &&	\
++	 (*(const uint32_t *)(const void *)(&(a)->s6_addr[8]) == 0) &&	\
++	 (*(const uint32_t *)(const void *)(&(a)->s6_addr[12]) == 0))
++
++/*
++ * Loopback
++ */
++#define IN6_IS_ADDR_LOOPBACK(a)		\
++	((*(const uint32_t *)(const void *)(&(a)->s6_addr[0]) == 0) &&	\
++	 (*(const uint32_t *)(const void *)(&(a)->s6_addr[4]) == 0) &&	\
++	 (*(const uint32_t *)(const void *)(&(a)->s6_addr[8]) == 0) &&	\
++	 (*(const uint32_t *)(const void *)(&(a)->s6_addr[12]) == ntohl(1)))
++
++/*
++ * IPv4 compatible
++ */
++#define IN6_IS_ADDR_V4COMPAT(a)		\
++	((*(const uint32_t *)(const void *)(&(a)->s6_addr[0]) == 0) &&	\
++	 (*(const uint32_t *)(const void *)(&(a)->s6_addr[4]) == 0) &&	\
++	 (*(const uint32_t *)(const void *)(&(a)->s6_addr[8]) == 0) &&	\
++	 (*(const uint32_t *)(const void *)(&(a)->s6_addr[12]) != 0) &&	\
++	 (*(const uint32_t *)(const void *)(&(a)->s6_addr[12]) != ntohl(1)))
++
++/*
++ * Mapped
++ */
++#define IN6_IS_ADDR_V4MAPPED(a)		      \
++	((*(const uint32_t *)(const void *)(&(a)->s6_addr[0]) == 0) &&	\
++	 (*(const uint32_t *)(const void *)(&(a)->s6_addr[4]) == 0) &&	\
++	 (*(const uint32_t *)(const void *)(&(a)->s6_addr[8]) == ntohl(0x0000ffff)))
++
++/*
++ * KAME Scope Values
++ */
++
++#ifdef _KERNEL	/* XXX nonstandard */
++#define IPV6_ADDR_SCOPE_NODELOCAL	0x01
++#define IPV6_ADDR_SCOPE_LINKLOCAL	0x02
++#define IPV6_ADDR_SCOPE_SITELOCAL	0x05
++#define IPV6_ADDR_SCOPE_ORGLOCAL	0x08	/* just used in this file */
++#define IPV6_ADDR_SCOPE_GLOBAL		0x0e
++#else
++#define __IPV6_ADDR_SCOPE_NODELOCAL	0x01
++#define __IPV6_ADDR_SCOPE_LINKLOCAL	0x02
++#define __IPV6_ADDR_SCOPE_SITELOCAL	0x05
++#define __IPV6_ADDR_SCOPE_ORGLOCAL	0x08	/* just used in this file */
++#define __IPV6_ADDR_SCOPE_GLOBAL	0x0e
++#endif
++
++/*
++ * Unicast Scope
++ * Note that we must check topmost 10 bits only, not 16 bits (see RFC2373).
++ */
++#define IN6_IS_ADDR_LINKLOCAL(a)	\
++	(((a)->s6_addr[0] == 0xfe) && (((a)->s6_addr[1] & 0xc0) == 0x80))
++#define IN6_IS_ADDR_SITELOCAL(a)	\
++	(((a)->s6_addr[0] == 0xfe) && (((a)->s6_addr[1] & 0xc0) == 0xc0))
++
++/*
++ * Multicast
++ */
++#define IN6_IS_ADDR_MULTICAST(a)	((a)->s6_addr[0] == 0xff)
++
++#ifdef _KERNEL	/* XXX nonstandard */
++#define IPV6_ADDR_MC_SCOPE(a)		((a)->s6_addr[1] & 0x0f)
++#else
++#define __IPV6_ADDR_MC_SCOPE(a)		((a)->s6_addr[1] & 0x0f)
++#endif
++
++/*
++ * Multicast Scope
++ */
++#ifdef _KERNEL	/* refers nonstandard items */
++#define IN6_IS_ADDR_MC_NODELOCAL(a)	\
++	(IN6_IS_ADDR_MULTICAST(a) &&	\
++	 (IPV6_ADDR_MC_SCOPE(a) == IPV6_ADDR_SCOPE_NODELOCAL))
++#define IN6_IS_ADDR_MC_LINKLOCAL(a)	\
++	(IN6_IS_ADDR_MULTICAST(a) &&	\
++	 (IPV6_ADDR_MC_SCOPE(a) == IPV6_ADDR_SCOPE_LINKLOCAL))
++#define IN6_IS_ADDR_MC_SITELOCAL(a)	\
++	(IN6_IS_ADDR_MULTICAST(a) && 	\
++	 (IPV6_ADDR_MC_SCOPE(a) == IPV6_ADDR_SCOPE_SITELOCAL))
++#define IN6_IS_ADDR_MC_ORGLOCAL(a)	\
++	(IN6_IS_ADDR_MULTICAST(a) &&	\
++	 (IPV6_ADDR_MC_SCOPE(a) == IPV6_ADDR_SCOPE_ORGLOCAL))
++#define IN6_IS_ADDR_MC_GLOBAL(a)	\
++	(IN6_IS_ADDR_MULTICAST(a) &&	\
++	 (IPV6_ADDR_MC_SCOPE(a) == IPV6_ADDR_SCOPE_GLOBAL))
++#else
++#define IN6_IS_ADDR_MC_NODELOCAL(a)	\
++	(IN6_IS_ADDR_MULTICAST(a) &&	\
++	 (__IPV6_ADDR_MC_SCOPE(a) == __IPV6_ADDR_SCOPE_NODELOCAL))
++#define IN6_IS_ADDR_MC_LINKLOCAL(a)	\
++	(IN6_IS_ADDR_MULTICAST(a) &&	\
++	 (__IPV6_ADDR_MC_SCOPE(a) == __IPV6_ADDR_SCOPE_LINKLOCAL))
++#define IN6_IS_ADDR_MC_SITELOCAL(a)	\
++	(IN6_IS_ADDR_MULTICAST(a) && 	\
++	 (__IPV6_ADDR_MC_SCOPE(a) == __IPV6_ADDR_SCOPE_SITELOCAL))
++#define IN6_IS_ADDR_MC_ORGLOCAL(a)	\
++	(IN6_IS_ADDR_MULTICAST(a) &&	\
++	 (__IPV6_ADDR_MC_SCOPE(a) == __IPV6_ADDR_SCOPE_ORGLOCAL))
++#define IN6_IS_ADDR_MC_GLOBAL(a)	\
++	(IN6_IS_ADDR_MULTICAST(a) &&	\
++	 (__IPV6_ADDR_MC_SCOPE(a) == __IPV6_ADDR_SCOPE_GLOBAL))
++#endif
++
++#ifdef _KERNEL	/* nonstandard */
++/*
++ * KAME Scope
++ */
++#define IN6_IS_SCOPE_LINKLOCAL(a)	\
++	((IN6_IS_ADDR_LINKLOCAL(a)) ||	\
++	 (IN6_IS_ADDR_MC_LINKLOCAL(a)))
++
++#define IFA6_IS_DEPRECATED(a) \
++	((a)->ia6_lifetime.ia6t_preferred != 0 && \
++	 (a)->ia6_lifetime.ia6t_preferred < time_second)
++#define IFA6_IS_INVALID(a) \
++	((a)->ia6_lifetime.ia6t_expire != 0 && \
++	 (a)->ia6_lifetime.ia6t_expire < time_second)
++#endif /* _KERNEL */
++
++/*
++ * IP6 route structure
++ */
++#ifndef _XOPEN_SOURCE
++struct route_in6 {
++	struct	rtentry *ro_rt;
++	struct	sockaddr_in6 ro_dst;
++};
++#endif
++
++/*
++ * Options for use with [gs]etsockopt at the IPV6 level.
++ * First word of comment is data type; bool is stored in int.
++ */
++/* no hdrincl */
++#if 0 /* the followings are relic in IPv4 and hence are disabled */
++#define IPV6_OPTIONS		1  /* buf/ip6_opts; set/get IP6 options */
++#define IPV6_RECVOPTS		5  /* bool; receive all IP6 opts w/dgram */
++#define IPV6_RECVRETOPTS	6  /* bool; receive IP6 opts for response */
++#define IPV6_RECVDSTADDR	7  /* bool; receive IP6 dst addr w/dgram */
++#define IPV6_RETOPTS		8  /* ip6_opts; set/get IP6 options */
++#endif
++#define IPV6_SOCKOPT_RESERVED1	3  /* reserved for future use */
++#define IPV6_UNICAST_HOPS	4  /* int; IP6 hops */
++#define IPV6_MULTICAST_IF	9  /* u_char; set/get IP6 multicast i/f  */
++#define IPV6_MULTICAST_HOPS	10 /* u_char; set/get IP6 multicast hops */
++#define IPV6_MULTICAST_LOOP	11 /* u_char; set/get IP6 multicast loopback */
++#define IPV6_JOIN_GROUP		12 /* ip6_mreq; join a group membership */
++#define IPV6_LEAVE_GROUP	13 /* ip6_mreq; leave a group membership */
++#define IPV6_PORTRANGE		14 /* int; range to choose for unspec port */
++#define ICMP6_FILTER		18 /* icmp6_filter; icmp6 filter */
++/* RFC2292 options */
++#define IPV6_PKTINFO		19 /* bool; send/recv if, src/dst addr */
++#define IPV6_HOPLIMIT		20 /* bool; hop limit */
++#define IPV6_NEXTHOP		21 /* bool; next hop addr */
++#define IPV6_HOPOPTS		22 /* bool; hop-by-hop option */
++#define IPV6_DSTOPTS		23 /* bool; destination option */
++#define IPV6_RTHDR		24 /* bool; routing header */
++#define IPV6_PKTOPTIONS		25 /* buf/cmsghdr; set/get IPv6 options */
++
++#define IPV6_CHECKSUM		26 /* int; checksum offset for raw socket */
++#define IPV6_V6ONLY		27 /* bool; only bind INET6 at wildcard bind */
++#ifndef _KERNEL
++#define IPV6_BINDV6ONLY		IPV6_V6ONLY
++#endif
++
++#if 1 /* IPSEC */
++#define IPV6_IPSEC_POLICY	28 /* struct; get/set security policy */
++#endif
++#define IPV6_FAITH		29 /* bool; accept FAITH'ed connections */
++
++#if 1 /* IPV6FIREWALL */
++#define IPV6_FW_ADD		30 /* add a firewall rule to chain */
++#define IPV6_FW_DEL		31 /* delete a firewall rule from chain */
++#define IPV6_FW_FLUSH		32 /* flush firewall rule chain */
++#define IPV6_FW_ZERO		33 /* clear single/all firewall counter(s) */
++#define IPV6_FW_GET		34 /* get entire firewall rule chain */
++#endif
++
++/* to define items, should talk with KAME guys first, for *BSD compatibility */
++
++#define IPV6_RTHDR_LOOSE     0 /* this hop need not be a neighbor. XXX old spec */
++#define IPV6_RTHDR_STRICT    1 /* this hop must be a neighbor. XXX old spec */
++#define IPV6_RTHDR_TYPE_0    0 /* IPv6 routing header type 0 */
++
++/*
++ * Defaults and limits for options
++ */
++#define IPV6_DEFAULT_MULTICAST_HOPS 1	/* normally limit m'casts to 1 hop */
++#define IPV6_DEFAULT_MULTICAST_LOOP 1	/* normally hear sends if a member */
++
++/*
++ * Argument structure for IPV6_JOIN_GROUP and IPV6_LEAVE_GROUP.
++ */
++struct ipv6_mreq {
++	struct in6_addr	ipv6mr_multiaddr;
++	unsigned int	ipv6mr_interface;
++};
++
++/*
++ * IPV6_PKTINFO: Packet information(RFC2292 sec 5)
++ */
++struct in6_pktinfo {
++	struct in6_addr	ipi6_addr;	/* src/dst IPv6 address */
++	unsigned int	ipi6_ifindex;	/* send/recv interface index */
++};
++
++/*
++ * Argument for IPV6_PORTRANGE:
++ * - which range to search when port is unspecified at bind() or connect()
++ */
++#define	IPV6_PORTRANGE_DEFAULT	0	/* default range */
++#define	IPV6_PORTRANGE_HIGH	1	/* "high" - request firewall bypass */
++#define	IPV6_PORTRANGE_LOW	2	/* "low" - vouchsafe security */
++
++#ifndef _XOPEN_SOURCE
++/*
++ * Definitions for inet6 sysctl operations.
++ *
++ * Third level is protocol number.
++ * Fourth level is desired variable within that protocol.
++ */
++#define IPV6PROTO_MAXID	(IPPROTO_PIM + 1)	/* don't list to IPV6PROTO_MAX */
++
++#define CTL_IPV6PROTO_NAMES { \
++	{ 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, \
++	{ 0, 0 }, \
++	{ "tcp6", CTLTYPE_NODE }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ "udp6", CTLTYPE_NODE }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, \
++	{ 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, \
++	{ 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, \
++	{ 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, \
++	{ 0, 0 }, \
++	{ "ip6", CTLTYPE_NODE }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, \
++	{ 0, 0 }, \
++	{ "ipsec6", CTLTYPE_NODE }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ "icmp6", CTLTYPE_NODE }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, \
++	{ 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, \
++	{ 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, \
++	{ 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, \
++	{ 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, \
++	{ 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, \
++	{ 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, \
++	{ 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ 0, 0 }, \
++	{ "pim6", CTLTYPE_NODE }, \
++}
++
++/*
++ * Names for IP sysctl objects
++ */
++#define IPV6CTL_FORWARDING	1	/* act as router */
++#define IPV6CTL_SENDREDIRECTS	2	/* may send redirects when forwarding*/
++#define IPV6CTL_DEFHLIM		3	/* default Hop-Limit */
++#ifdef notyet
++#define IPV6CTL_DEFMTU		4	/* default MTU */
++#endif
++#define IPV6CTL_FORWSRCRT	5	/* forward source-routed dgrams */
++#define IPV6CTL_STATS		6	/* stats */
++#define IPV6CTL_MRTSTATS	7	/* multicast forwarding stats */
++#define IPV6CTL_MRTPROTO	8	/* multicast routing protocol */
++#define IPV6CTL_MAXFRAGPACKETS	9	/* max packets reassembly queue */
++#define IPV6CTL_SOURCECHECK	10	/* verify source route and intf */
++#define IPV6CTL_SOURCECHECK_LOGINT 11	/* minimume logging interval */
++#define IPV6CTL_ACCEPT_RTADV	12
++#define IPV6CTL_KEEPFAITH	13
++#define IPV6CTL_LOG_INTERVAL	14
++#define IPV6CTL_HDRNESTLIMIT	15
++#define IPV6CTL_DAD_COUNT	16
++#define IPV6CTL_AUTO_FLOWLABEL	17
++#define IPV6CTL_DEFMCASTHLIM	18
++#define IPV6CTL_GIF_HLIM	19	/* default HLIM for gif encap packet */
++#define IPV6CTL_KAME_VERSION	20
++#define IPV6CTL_USE_DEPRECATED	21	/* use deprecated addr (RFC2462 5.5.4) */
++#define IPV6CTL_RR_PRUNE	22	/* walk timer for router renumbering */
++#if 0	/* obsolete */
++#define IPV6CTL_MAPPED_ADDR	23
++#endif
++#define IPV6CTL_V6ONLY		24
++#define IPV6CTL_RTEXPIRE	25	/* cloned route expiration time */
++#define IPV6CTL_RTMINEXPIRE	26	/* min value for expiration time */
++#define IPV6CTL_RTMAXCACHE	27	/* trigger level for dynamic expire */
++
++#define IPV6CTL_USETEMPADDR	32	/* use temporary addresses (RFC3041) */
++#define IPV6CTL_TEMPPLTIME	33	/* preferred lifetime for tmpaddrs */
++#define IPV6CTL_TEMPVLTIME	34	/* valid lifetime for tmpaddrs */
++#define IPV6CTL_AUTO_LINKLOCAL	35	/* automatic link-local addr assign */
++#define IPV6CTL_RIP6STATS	36	/* raw_ip6 stats */
++
++/* New entries should be added here from current IPV6CTL_MAXID value. */
++/* to define items, should talk with KAME guys first, for *BSD compatibility */
++#define IPV6CTL_MAXID		37
++
++#endif /* !_XOPEN_SOURCE */
++
++/*
++ * Redefinition of mbuf flags
++ */
++#define	M_AUTHIPHDR	M_PROTO2
++#define	M_DECRYPTED	M_PROTO3
++#define	M_LOOP		M_PROTO4
++#define	M_AUTHIPDGM	M_PROTO5
++
++#ifdef _KERNEL
++struct cmsghdr;
++
++int	in6_cksum __P((struct mbuf *, uint8_t, uint32_t, uint32_t));
++int	in6_localaddr __P((struct in6_addr *));
++int	in6_addrscope __P((struct in6_addr *));
++struct	in6_ifaddr *in6_ifawithscope __P((struct ifnet *, struct in6_addr *));
++struct	in6_ifaddr *in6_ifawithifp __P((struct ifnet *, struct in6_addr *));
++extern void in6_if_up __P((struct ifnet *));
++struct sockaddr;
++extern	u_char	ip6_protox[];
++
++void	in6_sin6_2_sin __P((struct sockaddr_in *sin,
++			    struct sockaddr_in6 *sin6));
++void	in6_sin_2_v4mapsin6 __P((struct sockaddr_in *sin,
++				 struct sockaddr_in6 *sin6));
++void	in6_sin6_2_sin_in_sock __P((struct sockaddr *nam));
++void	in6_sin_2_v4mapsin6_in_sock __P((struct sockaddr **nam));
++
++#define	satosin6(sa)	((struct sockaddr_in6 *)(sa))
++#define	sin6tosa(sin6)	((struct sockaddr *)(sin6))
++#define	ifatoia6(ifa)	((struct in6_ifaddr *)(ifa))
++
++extern int	(*faithprefix_p)(struct in6_addr *);
++#endif /* _KERNEL */
++
++__BEGIN_DECLS
++struct cmsghdr;
++
++extern int inet6_option_space __P((int));
++extern int inet6_option_init __P((void *, struct cmsghdr **, int));
++extern int inet6_option_append __P((struct cmsghdr *, const uint8_t *,
++	int, int));
++extern uint8_t *inet6_option_alloc __P((struct cmsghdr *, int, int, int));
++extern int inet6_option_next __P((const struct cmsghdr *, uint8_t **));
++extern int inet6_option_find __P((const struct cmsghdr *, uint8_t **, int));
++
++extern size_t inet6_rthdr_space __P((int, int));
++extern struct cmsghdr *inet6_rthdr_init __P((void *, int));
++extern int inet6_rthdr_add __P((struct cmsghdr *, const struct in6_addr *,
++		unsigned int));
++extern int inet6_rthdr_lasthop __P((struct cmsghdr *, unsigned int));
++#if 0 /* not implemented yet */
++extern int inet6_rthdr_reverse __P((const struct cmsghdr *, struct cmsghdr *));
++#endif
++extern int inet6_rthdr_segments __P((const struct cmsghdr *));
++extern struct in6_addr *inet6_rthdr_getaddr __P((struct cmsghdr *, int));
++extern int inet6_rthdr_getflags __P((const struct cmsghdr *, int));
++
++extern int inet6_opt_init __P((void *, size_t));
++extern int inet6_opt_append __P((void *, size_t, int, uint8_t,
++				 size_t, uint8_t, void **));
++extern int inet6_opt_finish __P((void *, size_t, int));
++extern int inet6_opt_set_val __P((void *, size_t, void *, int));
++
++extern int inet6_opt_next __P((void *, size_t, int, uint8_t *,
++			       size_t *, void **));
++extern int inet6_opt_find __P((void *, size_t, int, uint8_t,
++			  size_t *, void **));
++extern int inet6_opt_get_val __P((void *, size_t, void *, int));
++extern size_t inet6_rth_space __P((int, int));
++extern void *inet6_rth_init __P((void *, int, int, int));
++extern int inet6_rth_add __P((void *, const struct in6_addr *));
++extern int inet6_rth_reverse __P((const void *, void *));
++extern int inet6_rth_segments __P((const void *));
++extern struct in6_addr *inet6_rth_getaddr __P((const void *, int));
++__END_DECLS
++
++#endif /* !_NETINET6_IN6_H_ */
+diff --git a/pthread.h b/pthread.h
+index 3dee1c9..c9d24d6 100644
+--- a/pthread.h
++++ b/pthread.h
+@@ -156,7 +156,7 @@ int	pthread_attr_getschedparam (const pthread_attr_t *__attr,
+ int	pthread_getschedparam (pthread_t __pthread, int *__policy,
+ 			       struct sched_param *__param);
+ int	pthread_setschedparam (pthread_t __pthread, int __policy,
+-			       struct sched_param *__param);
++			       const struct sched_param *__param);
+ 
+ /* Set Scheduling Priority of a Thread */
+ int	pthread_setschedprio (pthread_t thread, int prio);
+@@ -190,7 +190,7 @@ int	pthread_mutexattr_getprioceiling (const pthread_mutexattr_t *__attr,
+ 
+ int	pthread_mutex_setprioceiling (pthread_mutex_t *__mutex,
+ 				      int __prioceiling, int *__old_ceiling);
+-int	pthread_mutex_getprioceiling (pthread_mutex_t *__mutex,
++int	pthread_mutex_getprioceiling (const pthread_mutex_t *__restrict __mutex,
+ 				      int *__prioceiling);
+ 
+ #endif /* _POSIX_THREAD_PRIO_PROTECT */
+diff --git a/sched.h b/sched.h
+index 504ad52..1016235 100644
+--- a/sched.h
++++ b/sched.h
+@@ -90,6 +90,10 @@ int sched_yield( void );
+ 
+ #endif /* _POSIX_THREADS or _POSIX_PRIORITY_SCHEDULING */
+ 
++#if __GNU_VISIBLE
++int sched_getcpu(void);
++#endif
++
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/ssp/ssp.h b/ssp/ssp.h
+index 5c65cf4..9229086 100644
+--- a/ssp/ssp.h
++++ b/ssp/ssp.h
+@@ -51,7 +51,6 @@
+ 		__chk_fail()
+ #define __ssp_decl(rtype, fun, args) \
+ rtype __ssp_real_(fun) args __asm__(__ASMNAME(#fun)); \
+-__ssp_inline rtype fun args __asm__(__ASMNAME("__ssp_protected_" #fun)); \
+ __ssp_inline rtype fun args
+ #define __ssp_redirect_raw(rtype, fun, args, call, cond, bos) \
+ __ssp_decl(rtype, fun, args) \
+diff --git a/ssp/wchar.h b/ssp/wchar.h
+index 39033cf..d748fa2 100644
+--- a/ssp/wchar.h
++++ b/ssp/wchar.h
+@@ -75,7 +75,7 @@ __ssp_redirect_raw(size_t, wcsnrtombs, \
+     (__buf, __src, __nwc, __len, __ps), __buf != NULL, __ssp_bos)
+ #endif
+ 
+-__ssp_decl(wchar_t *, fgetws, (wchar_t *__restrict __buf, int __wlen, FILE *__restrict __fp))
++__ssp_decl(wchar_t *, fgetws, (wchar_t *__restrict __buf, int __wlen, __FILE *__restrict __fp))
+ {
+   if (__wlen > 0)
+     __ssp_check(__buf, (size_t)__wlen * sizeof(wchar_t) , __ssp_bos);
+@@ -83,7 +83,7 @@ __ssp_decl(wchar_t *, fgetws, (wchar_t *__restrict __buf, int __wlen, FILE *__re
+ }
+ 
+ #if __GNU_VISIBLE
+-__ssp_decl(wchar_t *, fgetws_unlocked, (wchar_t *__buf, int __wlen, FILE *__fp))
++__ssp_decl(wchar_t *, fgetws_unlocked, (wchar_t *__buf, int __wlen, __FILE *__fp))
+ {
+   if (__wlen > 0)
+     __ssp_check(__buf, (size_t)__wlen * sizeof(wchar_t) , __ssp_bos);
+diff --git a/stdio.h b/stdio.h
+index cbc0fa9..164d95b 100644
+--- a/stdio.h
++++ b/stdio.h
+@@ -180,13 +180,13 @@ typedef _fpos64_t fpos64_t;
+ #if __POSIX_VISIBLE
+ char *	ctermid (char *);
+ #endif
+-#if __XSI_VISIBLE && __XSI_VISIBLE < 600
++#if __GNU_VISIBLE || (__XSI_VISIBLE && __XSI_VISIBLE < 600)
+ char *	cuserid (char *);
+ #endif
+ FILE *	tmpfile (void);
+ char *	tmpnam (char *);
+ #if __BSD_VISIBLE || __XSI_VISIBLE || __POSIX_VISIBLE >= 200112
+-char *	tempnam (const char *, const char *);
++char *	tempnam (const char *, const char *) __malloc_like __result_use_check;
+ #endif
+ int	fclose (FILE *);
+ int	fflush (FILE *);
+diff --git a/stdlib.h b/stdlib.h
+index ef0e4bd..9773d36 100644
+--- a/stdlib.h
++++ b/stdlib.h
+@@ -87,7 +87,8 @@ void *	bsearch (const void *__key,
+ 		       size_t __nmemb,
+ 		       size_t __size,
+ 		       __compar_fn_t _compar);
+-void *	calloc (size_t __nmemb, size_t __size) _NOTHROW;
++void	*calloc(size_t, size_t) __malloc_like __result_use_check
++	     __alloc_size2(1, 2) _NOTHROW;
+ div_t	div (int __numer, int __denom);
+ void	exit (int __status) _ATTRIBUTE ((__noreturn__));
+ void	free (void *) _NOTHROW;
+@@ -101,7 +102,7 @@ int	getsubopt (char **, char * const *, char **);
+ #endif
+ long	labs (long);
+ ldiv_t	ldiv (long __numer, long __denom);
+-void *	malloc (size_t __size) _NOTHROW;
++void	*malloc(size_t) __malloc_like __result_use_check __alloc_size(1) _NOTHROW;
+ int	mblen (const char *, size_t);
+ int	_mblen_r (struct _reent *, const char *, size_t, _mbstate_t *);
+ int	mbtowc (wchar_t *__restrict, const char *__restrict, size_t);
+@@ -138,11 +139,10 @@ int	_mkstemps_r (struct _reent *, char *, int);
+ char *	_mktemp_r (struct _reent *, char *) _ATTRIBUTE ((__deprecated__("the use of `mktemp' is dangerous; use `mkstemp' instead")));
+ void	qsort (void *__base, size_t __nmemb, size_t __size, __compar_fn_t _compar);
+ int	rand (void);
+-void *	realloc (void *__r, size_t __size) _NOTHROW;
++void	*realloc(void *, size_t) __result_use_check __alloc_size(2) _NOTHROW;
+ #if __BSD_VISIBLE
+-void	*reallocarray(void *, size_t, size_t) __result_use_check __alloc_size(2)
+-	    __alloc_size(3);
+-void *	reallocf (void *__r, size_t __size);
++void	*reallocarray(void *, size_t, size_t) __result_use_check __alloc_size2(2, 3);
++void	*reallocf(void *, size_t) __result_use_check __alloc_size(2);
+ #endif
+ #if __BSD_VISIBLE || __XSI_VISIBLE >= 4
+ char *	realpath (const char *__restrict path, char *__restrict resolved_path);
+@@ -282,7 +282,8 @@ int	_unsetenv_r (struct _reent *, const char *__string);
+ #endif /* !__CYGWIN__ */
+ 
+ #if __POSIX_VISIBLE >= 200112
+-int __nonnull ((1)) posix_memalign (void **, size_t, size_t);
++int	posix_memalign (void **, size_t, size_t) __nonnull((1))
++	    __result_use_check;
+ #endif
+ 
+ char *	_dtoa_r (struct _reent *, double, int, int, int *, int*, char**);
+@@ -326,7 +327,7 @@ extern long double strtold (const char *__restrict, char **__restrict);
+  */
+ #if __ISO_C_VISIBLE >= 2011
+ void *	aligned_alloc(size_t, size_t) __malloc_like __alloc_align(1)
+-	    __alloc_size(2);
++	    __alloc_size(2) __result_use_check;
+ int	at_quick_exit(void (*)(void));
+ _Noreturn void
+ 	quick_exit(int);
+diff --git a/string.h b/string.h
+index 37febad..04c4d18 100644
+--- a/string.h
++++ b/string.h
+@@ -81,11 +81,11 @@ char	*strcasestr (const char *, const char *);
+ char 	*strchrnul (const char *, int);
+ #endif
+ #if __MISC_VISIBLE || __POSIX_VISIBLE >= 200809 || __XSI_VISIBLE >= 4
+-char 	*strdup (const char *);
++char 	*strdup (const char *) __malloc_like __result_use_check;
+ #endif
+ char 	*_strdup_r (struct _reent *, const char *);
+ #if __POSIX_VISIBLE >= 200809
+-char 	*strndup (const char *, size_t);
++char 	*strndup (const char *, size_t) __malloc_like __result_use_check;
+ #endif
+ char 	*_strndup_r (struct _reent *, const char *, size_t);
+ 
+diff --git a/sys/_asm-generic_fcntl.h b/sys/_asm-generic_fcntl.h
+new file mode 100644
+index 0000000..7543b3e
+--- /dev/null
++++ b/sys/_asm-generic_fcntl.h
+@@ -0,0 +1,220 @@
++#ifndef _ASM_GENERIC_FCNTL_H
++#define _ASM_GENERIC_FCNTL_H
++
++#include <linux/types.h>
++
++/*
++ * FMODE_EXEC is 0x20
++ * FMODE_NONOTIFY is 0x1000000
++ * These cannot be used by userspace O_* until internal and external open
++ * flags are split.
++ * -Eric Paris
++ */
++
++/*
++ * When introducing new O_* bits, please check its uniqueness in fcntl_init().
++ */
++
++#define O_ACCMODE	00000003
++#define O_RDONLY	00000000
++#define O_WRONLY	00000001
++#define O_RDWR		00000002
++#ifndef O_CREAT
++#define O_CREAT		00000100	/* not fcntl */
++#endif
++#ifndef O_EXCL
++#define O_EXCL		00000200	/* not fcntl */
++#endif
++#ifndef O_NOCTTY
++#define O_NOCTTY	00000400	/* not fcntl */
++#endif
++#ifndef O_TRUNC
++#define O_TRUNC		00001000	/* not fcntl */
++#endif
++#ifndef O_APPEND
++#define O_APPEND	00002000
++#endif
++#ifndef O_NONBLOCK
++#define O_NONBLOCK	00004000
++#endif
++#ifndef O_DSYNC
++#define O_DSYNC		00010000	/* used to be O_SYNC, see below */
++#endif
++#ifndef FASYNC
++#define FASYNC		00020000	/* fcntl, for BSD compatibility */
++#endif
++#ifndef O_DIRECT
++#define O_DIRECT	00040000	/* direct disk access hint */
++#endif
++#ifndef O_LARGEFILE
++#define O_LARGEFILE	00100000
++#endif
++#ifndef O_DIRECTORY
++#define O_DIRECTORY	00200000	/* must be a directory */
++#endif
++#ifndef O_NOFOLLOW
++#define O_NOFOLLOW	00400000	/* don't follow links */
++#endif
++#ifndef O_NOATIME
++#define O_NOATIME	01000000
++#endif
++#ifndef O_CLOEXEC
++#define O_CLOEXEC	02000000	/* set close_on_exec */
++#endif
++
++/*
++ * Before Linux 2.6.33 only O_DSYNC semantics were implemented, but using
++ * the O_SYNC flag.  We continue to use the existing numerical value
++ * for O_DSYNC semantics now, but using the correct symbolic name for it.
++ * This new value is used to request true Posix O_SYNC semantics.  It is
++ * defined in this strange way to make sure applications compiled against
++ * new headers get at least O_DSYNC semantics on older kernels.
++ *
++ * This has the nice side-effect that we can simply test for O_DSYNC
++ * wherever we do not care if O_DSYNC or O_SYNC is used.
++ *
++ * Note: __O_SYNC must never be used directly.
++ */
++#ifndef O_SYNC
++#define __O_SYNC	04000000
++#define O_SYNC		(__O_SYNC|O_DSYNC)
++#endif
++
++#ifndef O_PATH
++#define O_PATH		010000000
++#endif
++
++#ifndef __O_TMPFILE
++#define __O_TMPFILE	020000000
++#endif
++
++/* a horrid kludge trying to make sure that this will fail on old kernels */
++#define O_TMPFILE (__O_TMPFILE | O_DIRECTORY)
++#define O_TMPFILE_MASK (__O_TMPFILE | O_DIRECTORY | O_CREAT)      
++
++#ifndef O_NDELAY
++#define O_NDELAY	O_NONBLOCK
++#endif
++
++#define F_DUPFD		0	/* dup */
++#define F_GETFD		1	/* get close_on_exec */
++#define F_SETFD		2	/* set/clear close_on_exec */
++#define F_GETFL		3	/* get file->f_flags */
++#define F_SETFL		4	/* set file->f_flags */
++#ifndef F_GETLK
++#define F_GETLK		5
++#define F_SETLK		6
++#define F_SETLKW	7
++#endif
++#ifndef F_SETOWN
++#define F_SETOWN	8	/* for sockets. */
++#define F_GETOWN	9	/* for sockets. */
++#endif
++#ifndef F_SETSIG
++#define F_SETSIG	10	/* for sockets. */
++#define F_GETSIG	11	/* for sockets. */
++#endif
++
++#ifndef CONFIG_64BIT
++#ifndef F_GETLK64
++#define F_GETLK64	12	/*  using 'struct flock64' */
++#define F_SETLK64	13
++#define F_SETLKW64	14
++#endif
++#endif
++
++#ifndef F_SETOWN_EX
++#define F_SETOWN_EX	15
++#define F_GETOWN_EX	16
++#endif
++
++#ifndef F_GETOWNER_UIDS
++#define F_GETOWNER_UIDS	17
++#endif
++
++/*
++ * Open File Description Locks
++ *
++ * Usually record locks held by a process are released on *any* close and are
++ * not inherited across a fork().
++ *
++ * These cmd values will set locks that conflict with process-associated
++ * record  locks, but are "owned" by the open file description, not the
++ * process. This means that they are inherited across fork() like BSD (flock)
++ * locks, and they are only released automatically when the last reference to
++ * the the open file against which they were acquired is put.
++ */
++#define F_OFD_GETLK	36
++#define F_OFD_SETLK	37
++#define F_OFD_SETLKW	38
++
++#define F_OWNER_TID	0
++#define F_OWNER_PID	1
++#define F_OWNER_PGRP	2
++
++struct f_owner_ex {
++	int	type;
++	__kernel_pid_t	pid;
++};
++
++/* for F_[GET|SET]FL */
++#define FD_CLOEXEC	1	/* actually anything with low bit set goes */
++
++/* for posix fcntl() and lockf() */
++#ifndef F_RDLCK
++#define F_RDLCK		0
++#define F_WRLCK		1
++#define F_UNLCK		2
++#endif
++
++/* for old implementation of bsd flock () */
++#ifndef F_EXLCK
++#define F_EXLCK		4	/* or 3 */
++#define F_SHLCK		8	/* or 4 */
++#endif
++
++/* operations for bsd flock(), also used by the kernel implementation */
++#define LOCK_SH		1	/* shared lock */
++#define LOCK_EX		2	/* exclusive lock */
++#define LOCK_NB		4	/* or'd with one of the above to prevent
++				   blocking */
++#define LOCK_UN		8	/* remove lock */
++
++#define LOCK_MAND	32	/* This is a mandatory flock ... */
++#define LOCK_READ	64	/* which allows concurrent read operations */
++#define LOCK_WRITE	128	/* which allows concurrent write operations */
++#define LOCK_RW		192	/* which allows concurrent read & write ops */
++
++#define F_LINUX_SPECIFIC_BASE	1024
++
++#ifndef HAVE_ARCH_STRUCT_FLOCK
++#ifndef __ARCH_FLOCK_PAD
++#define __ARCH_FLOCK_PAD
++#endif
++
++struct flock {
++	short	l_type;
++	short	l_whence;
++	__kernel_off_t	l_start;
++	__kernel_off_t	l_len;
++	__kernel_pid_t	l_pid;
++	__ARCH_FLOCK_PAD
++};
++#endif
++
++#ifndef HAVE_ARCH_STRUCT_FLOCK64
++#ifndef __ARCH_FLOCK64_PAD
++#define __ARCH_FLOCK64_PAD
++#endif
++
++struct flock64 {
++	short  l_type;
++	short  l_whence;
++	__kernel_loff_t l_start;
++	__kernel_loff_t l_len;
++	__kernel_pid_t  l_pid;
++	__ARCH_FLOCK64_PAD
++};
++#endif
++
++#endif /* _ASM_GENERIC_FCNTL_H */
+diff --git a/sys/_default_fcntl.h b/sys/_default_fcntl.h
+index 33b4622..3d3a2b7 100644
+--- a/sys/_default_fcntl.h
++++ b/sys/_default_fcntl.h
+@@ -1,9 +1,9 @@
+-
+ #ifndef	_SYS__DEFAULT_FCNTL_H_
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+ #define	_SYS__DEFAULT_FCNTL_H_
++#include <sys/_asm-generic_fcntl.h>
+ #include <_ansi.h>
+ #include <sys/cdefs.h>
+ #define	_FOPEN		(-1)	/* from sys/file.h, kernel use only */
+@@ -23,14 +23,28 @@ extern "C" {
+ #define	_FNONBLOCK	0x4000	/* non blocking I/O (POSIX style) */
+ #define	_FNDELAY	_FNONBLOCK	/* non blocking I/O (4.2 style) */
+ #define	_FNOCTTY	0x8000	/* don't assign a ctty on this open */
++#if defined (__CYGWIN__)
++#define	_FBINARY	0x10000
++#define	_FTEXT		0x20000
++#endif
++#define	_FNOINHERIT	0x40000
++#define	_FDIRECT	0x80000
++#define	_FNOFOLLOW	0x100000
++#define	_FDIRECTORY	0x200000
++#define	_FEXECSRCH	0x400000
++#if defined (__CYGWIN__)
++#define	_FTMPFILE	0x800000
++#define	_FNOATIME	0x1000000
++#endif
+ 
+-#define	O_ACCMODE	(O_RDONLY|O_WRONLY|O_RDWR)
++//#define	O_ACCMODE	(O_RDONLY|O_WRONLY|O_RDWR)
+ 
+ /*
+  * Flag values for open(2) and fcntl(2)
+  * The kernel adds 1 to the open modes to turn it into some
+  * combination of FREAD and FWRITE.
+  */
++#if 0
+ #define	O_RDONLY	0		/* +1 == FREAD */
+ #define	O_WRONLY	1		/* +1 == FWRITE */
+ #define	O_RDWR		2		/* +1 == FREAD|FWRITE */
+@@ -39,39 +53,39 @@ extern "C" {
+ #define	O_TRUNC		_FTRUNC
+ #define	O_EXCL		_FEXCL
+ #define O_SYNC		_FSYNC
++#endif
+ /*	O_NDELAY	_FNDELAY 	set in include/fcntl.h */
+ /*	O_NDELAY	_FNBIO 		set in include/fcntl.h */
++#if 0
+ #define	O_NONBLOCK	_FNONBLOCK
+ #define	O_NOCTTY	_FNOCTTY
+-/* For machines which care - */
+-#if defined (__CYGWIN__)
+-#define _FBINARY        0x10000
+-#define _FTEXT          0x20000
+-#define _FNOINHERIT	0x40000
+-#define _FDIRECT        0x80000
+-#define _FNOFOLLOW      0x100000
+-#define _FDIRECTORY     0x200000
+-#define _FEXECSRCH      0x400000
+-#define _FTMPFILE       0x800000
+-#define _FNOATIME       0x1000000
++#endif
+ 
++/* POSIX-1.2008 specific flags */
++#if __POSIX_VISIBLE >= 200809
++#if 0
++#define	O_CLOEXEC	_FNOINHERIT
++#define	O_NOFOLLOW	_FNOFOLLOW
++#define	O_DIRECTORY	_FDIRECTORY
++#endif
++#define	O_EXEC		_FEXECSRCH
++#define	O_SEARCH	_FEXECSRCH
++#endif
++
++#if __BSD_VISIBLE
++#if 0
++#define	O_DIRECT	_FDIRECT
++#endif
++#endif
++
++#if defined (__CYGWIN__)
+ #define O_BINARY	_FBINARY
+ #define O_TEXT		_FTEXT
+ #define O_DSYNC         _FSYNC
+ #define O_RSYNC         _FSYNC
+-#define O_EXEC          _FEXECSRCH
+-#define O_SEARCH        _FEXECSRCH
+-
+-/* POSIX-1.2008 specific flags */
+-#if __POSIX_VISIBLE >= 200809
+-#define O_CLOEXEC	_FNOINHERIT
+-#define O_NOFOLLOW      _FNOFOLLOW
+-#define O_DIRECTORY     _FDIRECTORY
+-#endif
+ 
+ /* Linux-specific flags */
+ #if __GNU_VISIBLE
+-#define O_DIRECT        _FDIRECT
+ #define O_TMPFILE	_FTMPFILE
+ #define O_NOATIME	_FNOATIME
+ #endif
+@@ -84,7 +98,7 @@ extern "C" {
+  */
+ #define	FAPPEND		_FAPPEND
+ #define	FSYNC		_FSYNC
+-#define	FASYNC		_FASYNC
++//#define	FASYNC		_FASYNC
+ #define	FNBIO		_FNBIO
+ #define	FNONBIO		_FNONBLOCK	/* XXX fix to be NONBLOCK everywhere */
+ #define	FNDELAY		_FNDELAY
+@@ -125,12 +139,16 @@ extern "C" {
+ #define	F_GETFL		3	/* Get file flags */
+ #define	F_SETFL		4	/* Set file flags */
+ #if __BSD_VISIBLE || __POSIX_VISIBLE >= 200112
++#if 0
+ #define	F_GETOWN 	5	/* Get owner - for ASYNC */
+ #define	F_SETOWN 	6	/* Set owner - for ASYNC */
++#endif
+ #endif /* __BSD_VISIBLE || __POSIX_VISIBLE >= 200112 */
++#if 0
+ #define	F_GETLK  	7	/* Get record-locking information */
+ #define	F_SETLK  	8	/* Set or Clear a record-lock (Non-Blocking) */
+ #define	F_SETLKW 	9	/* Set or Clear a record-lock (Blocking) */
++#endif
+ #if __MISC_VISIBLE
+ #define	F_RGETLK 	10	/* Test a remote lock to see if it is blocked */
+ #define	F_RSETLK 	11	/* Set or unlock a remote lock */
+@@ -142,9 +160,11 @@ extern "C" {
+ #endif
+ 
+ /* fcntl(2) flags (l_type field of flock structure) */
++#if 0
+ #define	F_RDLCK		1	/* read lock */
+ #define	F_WRLCK		2	/* write lock */
+ #define	F_UNLCK		3	/* remove lock(s) */
++#endif
+ #if __MISC_VISIBLE
+ #define	F_UNLKSYS	4	/* remove remote locks for a given system */
+ #endif	/* __MISC_VISIBLE */
+@@ -162,16 +182,19 @@ extern "C" {
+ 
+ #if __BSD_VISIBLE
+ /* lock operations for flock(2) */
++#if 0
+ #define	LOCK_SH		0x01		/* shared file lock */
+ #define	LOCK_EX		0x02		/* exclusive file lock */
+ #define	LOCK_NB		0x04		/* don't block when locking */
+ #define	LOCK_UN		0x08		/* unlock file */
+ #endif
++#endif
+ 
+ /*#include <sys/stdtypes.h>*/
+ 
+ #ifndef __CYGWIN__
+ /* file segment locking set data type - information passed to system by user */
++#if 0
+ struct flock {
+ 	short	l_type;		/* F_RDLCK, F_WRLCK, or F_UNLCK */
+ 	short	l_whence;	/* flag to choose starting offset */
+@@ -180,6 +203,7 @@ struct flock {
+ 	short	l_pid;		/* returned with F_GETLK */
+ 	short	l_xxx;		/* reserved for future use */
+ };
++#endif
+ #endif /* __CYGWIN__ */
+ 
+ #if __MISC_VISIBLE
+diff --git a/sys/_types.h b/sys/_types.h
+index 72e1dc1..fc10531 100644
+--- a/sys/_types.h
++++ b/sys/_types.h
+@@ -193,7 +193,10 @@ typedef	_CLOCK_T_	__clock_t;
+ #endif
+ typedef	_TIME_T_	__time_t;
+ 
++#ifndef __machine_clockid_t_defined
+ #define	_CLOCKID_T_ 	unsigned long
++#endif
++
+ typedef	_CLOCKID_T_	__clockid_t;
+ 
+ #define	_TIMER_T_	unsigned long
+@@ -207,6 +210,7 @@ typedef	__uint8_t	__sa_family_t;
+ typedef	__uint32_t	__socklen_t;
+ #endif
+ 
++typedef	int		__nl_item;
+ typedef	unsigned short	__nlink_t;
+ typedef	long		__suseconds_t;	/* microseconds (signed) */
+ typedef	unsigned long	__useconds_t;	/* microseconds (unsigned) */
+diff --git a/sys/cdefs.h b/sys/cdefs.h
+index fc564a5..ccb47ea 100644
+--- a/sys/cdefs.h
++++ b/sys/cdefs.h
+@@ -3,6 +3,8 @@
+ /* Written 2000 by Werner Almesberger */
+ 
+ /*-
++ * SPDX-License-Identifier: BSD-3-Clause
++ *
+  * Copyright (c) 1991, 1993
+  *	The Regents of the University of California.  All rights reserved.
+  *
+@@ -225,17 +227,6 @@
+  * for a given compiler, let the compile fail if it is told to use
+  * a feature that we cannot live without.
+  */
+-#ifdef lint
+-#define	__dead2
+-#define	__pure2
+-#define	__unused
+-#define	__packed
+-#define	__aligned(x)
+-#define	__alloc_align(x)
+-#define	__alloc_size(x)
+-#define	__section(x)
+-#define	__weak_symbol
+-#else
+ #define	__weak_symbol	__attribute__((__weak__))
+ #if !__GNUC_PREREQ__(2, 5) && !defined(__INTEL_COMPILER)
+ #define	__dead2
+@@ -259,15 +250,16 @@
+ #endif
+ #if __GNUC_PREREQ__(4, 3) || __has_attribute(__alloc_size__)
+ #define	__alloc_size(x)	__attribute__((__alloc_size__(x)))
++#define	__alloc_size2(n, x)	__attribute__((__alloc_size__(n, x)))
+ #else
+ #define	__alloc_size(x)
++#define	__alloc_size2(n, x)
+ #endif
+ #if __GNUC_PREREQ__(4, 9) || __has_attribute(__alloc_align__)
+ #define	__alloc_align(x)	__attribute__((__alloc_align__(x)))
+ #else
+ #define	__alloc_align(x)
+ #endif
+-#endif /* lint */
+ 
+ #if !__GNUC_PREREQ__(2, 95)
+ #define	__alignof(x)	__offsetof(struct { char __a; x __b; }, __b)
+@@ -277,7 +269,7 @@
+  * Keywords added in C11.
+  */
+ 
+-#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L || defined(lint)
++#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L
+ 
+ #if !__has_extension(c_alignas)
+ #if (defined(__cplusplus) && __cplusplus >= 201103L) || \
+@@ -314,7 +306,7 @@
+ #if (defined(__cplusplus) && __cplusplus >= 201103L) || \
+     __has_extension(cxx_static_assert)
+ #define	_Static_assert(x, y)	static_assert(x, y)
+-#elif __GNUC_PREREQ__(4,6)
++#elif __GNUC_PREREQ__(4,6) && !defined(__cplusplus)
+ /* Nothing, gcc 4.6 and higher has _Static_assert built-in */
+ #elif defined(__COUNTER__)
+ #define	_Static_assert(x, y)	__Static_assert(x, __COUNTER__)
+@@ -436,7 +428,7 @@
+  * software that is unaware of C99 keywords.
+  */
+ #if !(__GNUC__ == 2 && __GNUC_MINOR__ == 95)
+-#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901 || defined(lint)
++#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901
+ #define	__restrict
+ #else
+ #define	__restrict	restrict
+@@ -652,7 +644,7 @@
+  */
+ 
+ #if __has_attribute(__argument_with_type_tag__) && \
+-    __has_attribute(__type_tag_for_datatype__) && !defined(lint)
++    __has_attribute(__type_tag_for_datatype__)
+ #define	__arg_type_tag(arg_kind, arg_idx, type_tag_idx) \
+ 	    __attribute__((__argument_with_type_tag__(arg_kind, arg_idx, type_tag_idx)))
+ #define	__datatype_type_tag(kind, type) \
+diff --git a/sys/config.h b/sys/config.h
+index 2082dfd..49b62eb 100644
+--- a/sys/config.h
++++ b/sys/config.h
+@@ -108,7 +108,7 @@
+ #define _POINTER_INT short
+ #endif
+ 
+-#ifdef __v850
++#if defined(__v850) && !defined(__rtems__)
+ #define __ATTRIBUTE_IMPURE_PTR__ __attribute__((__sda__))
+ #endif
+ 
+diff --git a/sys/dirent.h b/sys/dirent.h
+index a3fb5c0..11daabe 100644
+--- a/sys/dirent.h
++++ b/sys/dirent.h
+@@ -1,13 +1,57 @@
+-/* <dirent.h> includes <sys/dirent.h>, which is this file.  On a
+-   system which supports <dirent.h>, this file is overridden by
+-   dirent.h in the libc/sys/.../sys directory.  On a system which does
+-   not support <dirent.h>, we will get this file which uses #error to force
+-   an error.  */
+-
+-#ifdef __cplusplus
+-extern "C" {
+-#endif
+-#error "<dirent.h> not supported"
+-#ifdef __cplusplus
+-}
++/* Copyright (C) 1996-2012 Free Software Foundation, Inc.
++   This file is part of the GNU C Library.
++
++   The GNU C Library is free software; you can redistribute it and/or
++   modify it under the terms of the GNU Lesser General Public
++   License as published by the Free Software Foundation; either
++   version 2.1 of the License, or (at your option) any later version.
++
++   The GNU C Library is distributed in the hope that it will be useful,
++   but WITHOUT ANY WARRANTY; without even the implied warranty of
++   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++   Lesser General Public License for more details.
++
++   You should have received a copy of the GNU Lesser General Public
++   License along with the GNU C Library; if not, see
++   <http://www.gnu.org/licenses/>.  */
++
++#ifndef _DIRENT_H
++# error "Never use <bits/dirent.h> directly; include <dirent.h> instead."
++#endif
++
++struct dirent
++  {
++#ifndef __USE_FILE_OFFSET64
++    __ino_t d_ino;
++    __off_t d_off;
++#else
++    __ino64_t d_ino;
++    __off64_t d_off;
++#endif
++    unsigned short int d_reclen;
++    unsigned char d_type;
++    char d_name[256];		/* We must not include limits.h! */
++  };
++
++#ifdef __USE_LARGEFILE64
++struct dirent64
++  {
++    __ino64_t d_ino;
++    __off64_t d_off;
++    unsigned short int d_reclen;
++    unsigned char d_type;
++    char d_name[256];		/* We must not include limits.h! */
++  };
++#endif
++
++#define d_fileno	d_ino	/* Backwards compatibility.  */
++
++#undef  _DIRENT_HAVE_D_NAMLEN
++#define _DIRENT_HAVE_D_RECLEN
++#define _DIRENT_HAVE_D_OFF
++#define _DIRENT_HAVE_D_TYPE
++
++#if defined __OFF_T_MATCHES_OFF64_T && defined __INO_T_MATCHES_INO64_T
++/* Inform libc code that these two types are effectively identical.  */
++# define _DIRENT_MATCHES_DIRENT64	1
+ #endif
+diff --git a/sys/features.h b/sys/features.h
+index 2900b33..f28dd07 100644
+--- a/sys/features.h
++++ b/sys/features.h
+@@ -425,7 +425,7 @@ extern "C" {
+ #endif
+ 
+ #define _POSIX_ADVISORY_INFO			200809L
+-/* #define _POSIX_ASYNCHRONOUS_IO		    -1 */
++#define _POSIX_ASYNCHRONOUS_IO			200809L
+ #define _POSIX_BARRIERS				200809L
+ #define _POSIX_CHOWN_RESTRICTED			     1
+ #define _POSIX_CLOCK_SELECTION			200809L
+diff --git a/sys/ipc.h b/sys/ipc.h
+new file mode 100644
+index 0000000..3d06ac3
+--- /dev/null
++++ b/sys/ipc.h
+@@ -0,0 +1,113 @@
++/****************************************************************************
++ * include/sys/ipc.h
++ *
++ *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
++ *   Author: Gregory Nutt <gnutt@nuttx.org>
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ * 3. Neither the name NuttX nor the names of its contributors may be
++ *    used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
++ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
++ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
++ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ *
++ ****************************************************************************/
++
++#ifndef __INCLUDE_SYS_IPC_H
++#define __INCLUDE_SYS_IPC_H
++
++/****************************************************************************
++ * Included Files
++ ****************************************************************************/
++
++//#include <nuttx/config.h>
++
++#include <sys/types.h>
++
++/****************************************************************************
++ * Pre-Processor Definitions
++ ****************************************************************************/
++
++/* Mode bits:  The lower order 9-bit bits are the standard mode bits */
++
++#define IPC_MODE    0x01ff     /* Mode bit mask */
++#define IPC_CREAT   (1 << 10)  /* Create entry if key does not exist */
++#define IPC_EXCL    (1 << 11)  /* Fail if key exists */
++#define IPC_NOWAIT  (1 << 12)  /* Error if request must wait */
++
++/* Keys: */
++
++#define IPC_PRIVATE 0     /* Private key */
++
++/* Control commands: */
++
++#define IPC_RMID    0    /* Remove identifier */
++#define IPC_SET     1    /* Set options */
++#define IPC_STAT    2    /* Get options */
++
++/****************************************************************************
++ * Public Type Definitions
++ ****************************************************************************/
++
++/****************************************************************************
++ * Public Data
++ ****************************************************************************/
++
++#undef EXTERN
++#if defined(__cplusplus)
++#define EXTERN extern "C"
++extern "C"
++{
++#else
++#define EXTERN extern
++#endif
++
++/* The ipc_perm structure is used by three mechanisms for XSI interprocess
++ * communication (IPC): messages, semaphores, and shared memory. All use a
++ * common structure type, ipc_perm, to pass information used in determining
++ * permission to perform an IPC operation.
++ */
++
++struct ipc_perm
++{
++#if 0 /* User and group IDs not yet supported by NuttX */
++  uid_t  uid;    /* Owner's user ID */
++  gid_t  gid;    /* Owner's group ID */
++  uid_t  cuid;   /* Creator's user ID */
++  gid_t  cgid;   /* Creator's group ID */
++#endif
++  mode_t mode;   /* Read/write permission */
++};
++
++/****************************************************************************
++ * Public Function Prototypes
++ ****************************************************************************/
++
++//key_t ftok(FAR const char *path, int id);
++
++#undef EXTERN
++#if defined(__cplusplus)
++}
++#endif
++
++#endif /* __INCLUDE_SYS_IPC_H */
+diff --git a/sys/lock.h b/sys/lock.h
+index 5289049..16460fe 100644
+--- a/sys/lock.h
++++ b/sys/lock.h
+@@ -3,67 +3,105 @@
+ 
+ /* dummy lock routines for single-threaded aps */
+ 
+-#include <newlib.h>
++typedef int _LOCK_T;
++typedef int _LOCK_RECURSIVE_T;
++
+ #include <_ansi.h>
++#if 1
++#define __LOCK_INIT(class,lock) static spinlock_t lock = SPINLOCK_INIT
++#define __LOCK_INIT_RECURSIVE(class,lock) static spinlock_t lock = SPINLOCK_INIT
++#else
++#define __LOCK_INIT(class,lock) static int lock = 0
++#define __LOCK_INIT_RECURSIVE(class,lock) static int lock = 0
++#endif
++#define __lock_init(lock) (_CAST_VOID 0)
++#define __lock_init_recursive(lock) (_CAST_VOID 0)
++#define __lock_close(lock) (_CAST_VOID 0)
++#define __lock_close_recursive(lock) (_CAST_VOID 0)
++#define __lock_acquire(lock) spinlock_lock(&lock)
++#define __lock_acquire_recursive(lock) spinlock_lock(&lock)
++#define __lock_try_acquire(lock) (_CAST_VOID 0)
++#define __lock_try_acquire_recursive(lock) (_CAST_VOID 0)
++#define __lock_release(lock) spinlock_unlock(&lock)
++#define __lock_release_recursive(lock) spinlock_unlock(&lock)
+ 
+-#if !defined(_RETARGETABLE_LOCKING)
+ 
+-typedef int _LOCK_T;
+-typedef int _LOCK_RECURSIVE_T;
++// __old and __new is for 64bit register assignement
++#define cmpxchg(ptr, old, new) ({ \
++  __typeof__(*(ptr)) __ret; \
++  __typeof__(*(ptr)) __old = old; \
++  __typeof__(*(ptr)) __new = new; \
++  volatile unsigned char *__ptr; \
++  __ptr = (volatile unsigned char *)(ptr); \
++  asm volatile("lock; cmpxchgq %2,%1\n\t" \
++    : "=a" (__ret), "+m" (*__ptr) \
++    : "r" (__new), "0" (__old) \
++    : "memory"); \
++  __ret; \
++})
++
++#define TRUE   1
++#define FALSE  0
++#define BOOL   unsigned char
++
++#define rfence() {}
++#define sfence() {}
+ 
+-#define __LOCK_INIT(class,lock) static int lock = 0;
+-#define __LOCK_INIT_RECURSIVE(class,lock) static int lock = 0;
+-#define __lock_init(lock) ((void) 0)
+-#define __lock_init_recursive(lock) ((void) 0)
+-#define __lock_close(lock) ((void) 0)
+-#define __lock_close_recursive(lock) ((void) 0)
+-#define __lock_acquire(lock) ((void) 0)
+-#define __lock_acquire_recursive(lock) ((void) 0)
+-#define __lock_try_acquire(lock) ((void) 0)
+-#define __lock_try_acquire_recursive(lock) ((void) 0)
+-#define __lock_release(lock) ((void) 0)
+-#define __lock_release_recursive(lock) ((void) 0)
++#if 0
++static inline void spinlock_init(int *lock)
++{
++  if (cmpxchg(&lock, 0, 1) != FALSE)
++    return FALSE;
++  return TRUE;
++}
++
++static inline void spinlock_lock(int *lock)
++{
++  do {
++    while (lock == TRUE)
++      __asm volatile ("pause" ::: "memory"); 
++  } while (cmpxchg(&lock, 0, 1) != FALSE);
++}
+ 
++static inline void spinlock_unlock(int *lock)
++{
++  lock = FALSE;
++}
+ #else
++// Irqsave spinlock initialization
++#define SPINLOCK_INIT { 0 }
+ 
+-#ifdef __cplusplus
+-extern "C" {
+-#endif
++typedef struct spinlock_struct {
++  volatile unsigned long lock;
++} spinlock_t __attribute__ ((aligned (8)));
++
++// Functions
+ 
+-struct __lock;
+-typedef struct __lock * _LOCK_T;
+-#define _LOCK_RECURSIVE_T _LOCK_T
+-
+-#define __LOCK_INIT(class,lock) extern struct __lock __lock_ ## lock; \
+-	class _LOCK_T lock = &__lock_ ## lock
+-#define __LOCK_INIT_RECURSIVE(class,lock) __LOCK_INIT(class,lock)
+-
+-extern void __retarget_lock_init(_LOCK_T *lock);
+-#define __lock_init(lock) __retarget_lock_init(&lock)
+-extern void __retarget_lock_init_recursive(_LOCK_T *lock);
+-#define __lock_init_recursive(lock) __retarget_lock_init_recursive(&lock)
+-extern void __retarget_lock_close(_LOCK_T lock);
+-#define __lock_close(lock) __retarget_lock_close(lock)
+-extern void __retarget_lock_close_recursive(_LOCK_T lock);
+-#define __lock_close_recursive(lock) __retarget_lock_close_recursive(lock)
+-extern void __retarget_lock_acquire(_LOCK_T lock);
+-#define __lock_acquire(lock) __retarget_lock_acquire(lock)
+-extern void __retarget_lock_acquire_recursive(_LOCK_T lock);
+-#define __lock_acquire_recursive(lock) __retarget_lock_acquire_recursive(lock)
+-extern int __retarget_lock_try_acquire(_LOCK_T lock);
+-#define __lock_try_acquire(lock) __retarget_lock_try_acquire(lock)
+-extern int __retarget_lock_try_acquire_recursive(_LOCK_T lock);
+-#define __lock_try_acquire_recursive(lock) \
+-  __retarget_lock_try_acquire_recursive(lock)
+-extern void __retarget_lock_release(_LOCK_T lock);
+-#define __lock_release(lock) __retarget_lock_release(lock)
+-extern void __retarget_lock_release_recursive(_LOCK_T lock);
+-#define __lock_release_recursive(lock) __retarget_lock_release_recursive(lock)
+-
+-#ifdef __cplusplus
++static inline void spinlock_init(spinlock_t *lock)
++{
++  lock->lock = FALSE;
+ }
+-#endif
+ 
+-#endif /* !defined(_RETARGETABLE_LOCKING) */
++static inline BOOL spinlock_trylock(spinlock_t *lock)
++{
++  if (cmpxchg(&(lock->lock), 0, 1) != FALSE)
++    return FALSE;
++  return TRUE;
++}
++
++static inline void spinlock_lock(spinlock_t *lock)
++{
++  do {
++    while (lock->lock == TRUE)
++      __asm volatile ("pause" ::: "memory"); 
++  } while (cmpxchg(&(lock->lock), 0, 1) != FALSE);
++}
++
++static inline void spinlock_unlock(spinlock_t *lock)
++{
++  lock->lock = FALSE;
++}
++#endif
+ 
+ #endif /* __SYS_LOCK_H__ */
++
+diff --git a/sys/queue.h b/sys/queue.h
+index 491bdde..6392b62 100644
+--- a/sys/queue.h
++++ b/sys/queue.h
+@@ -93,6 +93,7 @@
+  * _NEXT			+	+	+	+
+  * _PREV			-	+	-	+
+  * _LAST			-	-	+	+
++ * _LAST_FAST			-	-	-	+
+  * _FOREACH			+	+	+	+
+  * _FOREACH_FROM		+	+	+	+
+  * _FOREACH_SAFE		+	+	+	+
+@@ -820,6 +821,16 @@ struct {								\
+ #define	TAILQ_LAST(head, headname)					\
+ 	(*(((struct headname *)((head)->tqh_last))->tqh_last))
+ 
++/*
++ * The FAST function is fast in that it causes no data access other
++ * then the access to the head. The standard LAST function above
++ * will cause a data access of both the element you want and 
++ * the previous element. FAST is very useful for instances when
++ * you may want to prefetch the last data element.
++ */
++#define	TAILQ_LAST_FAST(head, type, field)			\
++    (TAILQ_EMPTY(head) ? NULL : __containerof((head)->tqh_last, QUEUE_TYPEOF(type), field.tqe_next))
++
+ #define	TAILQ_NEXT(elm, field) ((elm)->field.tqe_next)
+ 
+ #define	TAILQ_PREV(elm, headname, field)				\
+diff --git a/sys/reent.h b/sys/reent.h
+index 1ef2261..6e55e1c 100644
+--- a/sys/reent.h
++++ b/sys/reent.h
+@@ -144,7 +144,7 @@ struct __sbuf {
+  * _ub._base!=NULL) and _up and _ur save the current values of _p and _r.
+  */
+ 
+-#ifdef _REENT_SMALL
++#if defined(_REENT_SMALL) && !defined(_REENT_GLOBAL_STDIO_STREAMS)
+ /*
+  * struct __sFILE_fake is the start of a struct __sFILE, with only the
+  * minimal fields allocated.  In __sinit() we really allocate the 3
+@@ -174,9 +174,9 @@ extern void   __sinit (struct _reent *);
+ 	__sinit (ptr);				\
+     }						\
+   while (0)
+-#else
++#else /* _REENT_SMALL && !_REENT_GLOBAL_STDIO_STREAMS */
+ # define _REENT_SMALL_CHECK_INIT(ptr) /* nothing */
+-#endif
++#endif /* _REENT_SMALL && !_REENT_GLOBAL_STDIO_STREAMS */
+ 
+ struct __sFILE {
+   unsigned char *_p;	/* current position in (some) buffer */
+@@ -418,6 +418,43 @@ struct _reent
+   char *_signal_buf;                    /* strsignal */
+ };
+ 
++#ifdef _REENT_GLOBAL_STDIO_STREAMS
++extern __FILE __sf[3];
++
++# define _REENT_INIT(var) \
++  { 0, \
++    &__sf[0], \
++    &__sf[1], \
++    &__sf[2], \
++    0,   \
++    _NULL, \
++    0, \
++    0, \
++    _NULL, \
++    _NULL, \
++    _NULL, \
++    0, \
++    0, \
++    _NULL, \
++    _NULL, \
++    _NULL, \
++    _NULL, \
++    _NULL, \
++    _REENT_INIT_ATEXIT \
++    {_NULL, 0, _NULL}, \
++    _NULL, \
++    _NULL, \
++    _NULL \
++  }
++
++#define _REENT_INIT_PTR_ZEROED(var) \
++  { (var)->_stdin = &__sf[0]; \
++    (var)->_stdout = &__sf[1]; \
++    (var)->_stderr = &__sf[2]; \
++  }
++
++#else /* _REENT_GLOBAL_STDIO_STREAMS */
++
+ extern const struct __sFILE_fake __sf_fake_stdin;
+ extern const struct __sFILE_fake __sf_fake_stdout;
+ extern const struct __sFILE_fake __sf_fake_stderr;
+@@ -454,6 +491,8 @@ extern const struct __sFILE_fake __sf_fake_stderr;
+     (var)->_stderr = (__FILE *)&__sf_fake_stderr; \
+   }
+ 
++#endif /* _REENT_GLOBAL_STDIO_STREAMS */
++
+ /* Only add assert() calls if we are specified to debug.  */
+ #ifdef _REENT_CHECK_DEBUG
+ #include <assert.h>
+diff --git a/sys/select.h b/sys/select.h
+index f5dc586..1e5d895 100644
+--- a/sys/select.h
++++ b/sys/select.h
+@@ -1,14 +1,3 @@
+-/* select.h
+-   Copyright 1998, 1999, 2000, 2001, 2005, 2009 Red Hat, Inc.
+-
+-   Written by Geoffrey Noer <noer@cygnus.com>
+-
+-This file is part of Cygwin.
+-
+-This software is a copyrighted work licensed under the terms of the
+-Cygwin license.  Please consult the file "CYGWIN_LICENSE" for
+-details. */
+-
+ #ifndef _SYS_SELECT_H
+ #define _SYS_SELECT_H
+ 
+diff --git a/sys/shm.h b/sys/shm.h
+new file mode 100644
+index 0000000..3cd864f
+--- /dev/null
++++ b/sys/shm.h
+@@ -0,0 +1,114 @@
++/****************************************************************************
++ * include/sys/shm.h
++ *
++ *   Copyright (C) 2014 Gregory Nutt. All rights reserved.
++ *   Author: Gregory Nutt <gnutt@nuttx.org>
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in
++ *    the documentation and/or other materials provided with the
++ *    distribution.
++ * 3. Neither the name NuttX nor the names of its contributors may be
++ *    used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
++ * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
++ * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
++ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
++ * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
++ * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
++ * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
++ * POSSIBILITY OF SUCH DAMAGE.
++ *
++ ****************************************************************************/
++
++#ifndef __INCLUDE_SYS_SHM_H
++#define __INCLUDE_SYS_SHM_H
++
++/****************************************************************************
++ * Included Files
++ ****************************************************************************/
++
++//#include <nuttx/config.h>
++
++#include <sys/types.h>
++#include <sys/ipc.h>
++#include <time.h>
++
++/****************************************************************************
++ * Pre-Processor Definitions
++ ****************************************************************************/
++/* Definitions required by POSIX */
++
++#define SHM_RDONLY 0x01 /* Attach read-only (else read-write) */
++#define SHM_RND    0x02 /* Round attach address to SHMLBA */
++
++/* Segment low boundary address multiple */
++
++#ifdef CONFIG_SHM_SHMLBA
++#  define SHMLBA CONFIG_SHM_SHMLBA
++#else
++#  define SHMLBA 0x0
++#endif
++
++/****************************************************************************
++ * Public Type Definitions
++ ****************************************************************************/
++
++/* Unsigned integer used for the number of current attaches that must be
++ * able to store values at least as large as a type unsigned short.
++ */
++
++typedef unsigned short shmatt_t;
++
++struct shmid_ds
++{
++  struct ipc_perm shm_perm;   /* Operation permission structure */
++  size_t          shm_segsz;  /* Size of segment in bytes */
++  pid_t           shm_lpid;   /* Process ID of last shared memory operation */
++  pid_t           shm_cpid;   /* Process ID of creator */
++  shmatt_t        shm_nattch; /* Number of current attaches */
++  time_t          shm_atime;  /* Time of last shmat() */
++  time_t          shm_dtime;  /* Time of last shmdt() */
++  time_t          shm_ctime;  /* Time of last change by shmctl() */
++};
++
++/****************************************************************************
++ * Public Data
++ ****************************************************************************/
++
++#undef EXTERN
++#if defined(__cplusplus)
++#define EXTERN extern "C"
++extern "C"
++{
++#else
++#define EXTERN extern
++#endif
++
++/****************************************************************************
++ * Public Function Prototypes
++ ****************************************************************************/
++
++void *shmat(int shmid, const void *shmaddr, int shmflg);
++int shmctl(int shmid, int cmd, struct shmid_ds *buf);
++int shmdt(const void *shmaddr);
++int shmget(key_t key, size_t size, int shmflg);
++
++#undef EXTERN
++#if defined(__cplusplus)
++}
++#endif
++
++#endif /* __INCLUDE_SYS_SHM_H */
+diff --git a/sys/signal.h b/sys/signal.h
+index 7d0c594..45cc036 100644
+--- a/sys/signal.h
++++ b/sys/signal.h
+@@ -161,11 +161,11 @@ typedef struct sigaltstack {
+ #define SIG_BLOCK 1	/* set of signals to block */
+ #define SIG_UNBLOCK 2	/* set of signals to, well, unblock */
+ 
+-int sigprocmask (int how, const sigset_t *set, sigset_t *oset);
++int sigprocmask (int, const sigset_t *, sigset_t *);
+ #endif
+ 
+ #if __POSIX_VISIBLE >= 199506
+-int pthread_sigmask (int how, const sigset_t *set, sigset_t *oset);
++int pthread_sigmask (int, const sigset_t *, sigset_t *);
+ #endif
+ 
+ #ifdef _COMPILING_NEWLIB
+@@ -188,7 +188,7 @@ int sigfillset (sigset_t *);
+ int sigemptyset (sigset_t *);
+ int sigpending (sigset_t *);
+ int sigsuspend (const sigset_t *);
+-int sigwait (const sigset_t *set, int *sig);
++int sigwait (const sigset_t *, int *);
+ 
+ #if !defined(__CYGWIN__) && !defined(__rtems__)
+ /* These depend upon the type of sigset_t, which right now 
+@@ -223,7 +223,7 @@ int sigaltstack (const stack_t *__restrict, stack_t *__restrict);
+ #endif
+ 
+ #if __POSIX_VISIBLE >= 199506
+-int pthread_kill (pthread_t thread, int sig);
++int pthread_kill (pthread_t, int);
+ #endif
+ 
+ #if __POSIX_VISIBLE >= 199309
+@@ -231,11 +231,10 @@ int pthread_kill (pthread_t thread, int sig);
+ /*  3.3.8 Synchronously Accept a Signal, P1003.1b-1993, p. 76
+     NOTE: P1003.1c/D10, p. 39 adds sigwait().  */
+ 
+-int sigwaitinfo (const sigset_t *set, siginfo_t *info);
+-int sigtimedwait (const sigset_t *set, siginfo_t *info,
+-		  const struct timespec  *timeout);
++int sigwaitinfo (const sigset_t *, siginfo_t *);
++int sigtimedwait (const sigset_t *, siginfo_t *, const struct timespec *);
+ /*  3.3.9 Queue a Signal to a Process, P1003.1b-1993, p. 78 */
+-int sigqueue (pid_t pid, int signo, const union sigval value);
++int sigqueue (pid_t, int, const union sigval);
+ 
+ #endif /* __POSIX_VISIBLE >= 199309 */
+ 
+diff --git a/sys/socket.h b/sys/socket.h
+new file mode 100644
+index 0000000..33097a5
+--- /dev/null
++++ b/sys/socket.h
+@@ -0,0 +1,448 @@
++/*
++ * Copyright (c) 1982, 1985, 1986, 1988, 1993, 1994
++ *	The Regents of the University of California.  All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ * 1. Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ * 2. Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ * 3. All advertising materials mentioning features or use of this software
++ *    must display the following acknowledgement:
++ *	This product includes software developed by the University of
++ *	California, Berkeley and its contributors.
++ * 4. Neither the name of the University nor the names of its contributors
++ *    may be used to endorse or promote products derived from this software
++ *    without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
++ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
++ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
++ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
++ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
++ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
++ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
++ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
++ * SUCH DAMAGE.
++ *
++ *	@(#)socket.h	8.4 (Berkeley) 2/21/94
++ * $FreeBSD: src/sys/sys/socket.h,v 1.60 2002/04/20 02:24:35 mike Exp $
++ */
++
++#ifndef _SYS_SOCKET_H_
++#define	_SYS_SOCKET_H_
++
++#include <sys/types.h>
++#include <sys/_types.h>
++#include <netinet/in.h>
++#include <netdb.h>
++
++/* Needed by linuxthreads. */
++
++# define __SOCKADDR_ARG		struct sockaddr *__restrict
++# define __CONST_SOCKADDR_ARG	__const struct sockaddr *
++
++/*
++ * Definitions related to sockets: types, address families, options.
++ */
++
++/*
++ * Data types.
++ */
++#ifdef _BSD_SA_FAMILY_T_
++typedef	_BSD_SA_FAMILY_T_	sa_family_t;
++#undef _BSD_SA_FAMILY_T_
++#endif
++
++#ifdef	_BSD_SOCKLEN_T_
++typedef	_BSD_SOCKLEN_T_	socklen_t;
++#undef	_BSD_SOCKLEN_T_
++#endif
++ 
++/*
++ * Types
++ */
++#define	SOCK_STREAM	1		/* stream socket */
++#define	SOCK_DGRAM	2		/* datagram socket */
++#define	SOCK_RAW	3		/* raw-protocol interface */
++#define	SOCK_RDM	4		/* reliably-delivered message */
++#define	SOCK_SEQPACKET	5		/* sequenced packet stream */
++
++/*
++ * Option flags per-socket.
++ */
++#define	SO_DEBUG	0x0001		/* turn on debugging info recording */
++#define	SO_ACCEPTCONN	0x0002		/* socket has had listen() */
++#define	SO_REUSEADDR	0x0004		/* allow local address reuse */
++#define	SO_KEEPALIVE	0x0008		/* keep connections alive */
++#define	SO_DONTROUTE	0x0010		/* just use interface addresses */
++#define	SO_BROADCAST	0x0020		/* permit sending of broadcast msgs */
++#define	SO_USELOOPBACK	0x0040		/* bypass hardware when possible */
++#define	SO_LINGER	0x0080		/* linger on close if data present */
++#define	SO_OOBINLINE	0x0100		/* leave received OOB data in line */
++#define	SO_REUSEPORT	0x0200		/* allow local address & port reuse */
++#define	SO_TIMESTAMP	0x0400		/* timestamp received dgram traffic */
++#define	SO_ACCEPTFILTER	0x1000		/* there is an accept filter */
++
++/*
++ * Additional options, not kept in so_options.
++ */
++#define SO_SNDBUF	0x1001		/* send buffer size */
++#define SO_RCVBUF	0x1002		/* receive buffer size */
++#define SO_SNDLOWAT	0x1003		/* send low-water mark */
++#define SO_RCVLOWAT	0x1004		/* receive low-water mark */
++#define SO_SNDTIMEO	0x1005		/* send timeout */
++#define SO_RCVTIMEO	0x1006		/* receive timeout */
++#define	SO_ERROR	0x1007		/* get error status and clear */
++#define	SO_TYPE		0x1008		/* get socket type */
++/*efine	SO_PRIVSTATE	0x1009		   get/deny privileged state */
++
++/*
++ * Structure used for manipulating linger option.
++ */
++struct linger {
++	int	l_onoff;		/* option on/off */
++	int	l_linger;		/* linger time */
++};
++
++struct accept_filter_arg {
++	char	af_name[16];
++	char	af_arg[256-16];
++};
++
++/*
++ * Level number for (get/set)sockopt() to apply to socket itself.
++ */
++#define	SOL_SOCKET	0xffff		/* options for socket level */
++
++/* Protocol families.  */
++#define	PF_UNSPEC	0	/* Unspecified.  */
++#define	PF_LOCAL	1	/* Local to host (pipes and file-domain).  */
++#define	PF_UNIX		PF_LOCAL /* Old BSD name for PF_LOCAL.  */
++#define	PF_FILE		PF_LOCAL /* Another non-standard name for PF_LOCAL.  */
++#define	PF_INET		2	/* IP protocol family.  */
++#define	PF_AX25		3	/* Amateur Radio AX.25.  */
++#define	PF_IPX		4	/* Novell Internet Protocol.  */
++#define	PF_APPLETALK	5	/* Appletalk DDP.  */
++#define	PF_NETROM	6	/* Amateur radio NetROM.  */
++#define	PF_BRIDGE	7	/* Multiprotocol bridge.  */
++#define	PF_ATMPVC	8	/* ATM PVCs.  */
++#define	PF_X25		9	/* Reserved for X.25 project.  */
++#define	PF_INET6	10	/* IP version 6.  */
++#define	PF_ROSE		11	/* Amateur Radio X.25 PLP.  */
++#define	PF_DECnet	12	/* Reserved for DECnet project.  */
++#define	PF_NETBEUI	13	/* Reserved for 802.2LLC project.  */
++#define	PF_SECURITY	14	/* Security callback pseudo AF.  */
++#define	PF_KEY		15	/* PF_KEY key management API.  */
++#define	PF_NETLINK	16
++#define	PF_ROUTE	PF_NETLINK /* Alias to emulate 4.4BSD.  */
++#define	PF_PACKET	17	/* Packet family.  */
++#define	PF_ASH		18	/* Ash.  */
++#define	PF_ECONET	19	/* Acorn Econet.  */
++#define	PF_ATMSVC	20	/* ATM SVCs.  */
++#define	PF_SNA		22	/* Linux SNA Project */
++#define	PF_IRDA		23	/* IRDA sockets.  */
++#define	PF_PPPOX	24	/* PPPoX sockets.  */
++#define	PF_WANPIPE	25	/* Wanpipe API sockets.  */
++#define	PF_BLUETOOTH	31	/* Bluetooth sockets.  */
++#define	PF_MAX		32	/* For now..  */
++
++/* Address families.  */
++#define	AF_UNSPEC	PF_UNSPEC
++#define	AF_LOCAL	PF_LOCAL
++#define	AF_UNIX		PF_UNIX
++#define	AF_FILE		PF_FILE
++#define	AF_INET		PF_INET
++#define	AF_AX25		PF_AX25
++#define	AF_IPX		PF_IPX
++#define	AF_APPLETALK	PF_APPLETALK
++#define	AF_NETROM	PF_NETROM
++#define	AF_BRIDGE	PF_BRIDGE
++#define	AF_ATMPVC	PF_ATMPVC
++#define	AF_X25		PF_X25
++#define	AF_INET6	PF_INET6
++#define	AF_ROSE		PF_ROSE
++#define	AF_DECnet	PF_DECnet
++#define	AF_NETBEUI	PF_NETBEUI
++#define	AF_SECURITY	PF_SECURITY
++#define	AF_KEY		PF_KEY
++#define	AF_NETLINK	PF_NETLINK
++#define	AF_ROUTE	PF_ROUTE
++#define	AF_PACKET	PF_PACKET
++#define	AF_ASH		PF_ASH
++#define	AF_ECONET	PF_ECONET
++#define	AF_ATMSVC	PF_ATMSVC
++#define	AF_SNA		PF_SNA
++#define	AF_IRDA		PF_IRDA
++#define	AF_PPPOX	PF_PPPOX
++#define	AF_WANPIPE	PF_WANPIPE
++#define	AF_BLUETOOTH	PF_BLUETOOTH
++#define	AF_MAX		PF_MAX
++
++/*
++ * Structure used by kernel to store most
++ * addresses.
++ */
++struct sockaddr {
++	sa_family_t	sa_family;	/* address family */
++	char		sa_data[14];	/* actually longer; address value */
++};
++#define	SOCK_MAXADDRLEN	255		/* longest possible addresses */
++
++/*
++ * Structure used by kernel to pass protocol
++ * information in raw sockets.
++ */
++struct sockproto {
++	u_short	sp_family;		/* address family */
++	u_short	sp_protocol;		/* protocol */
++};
++
++/*
++ * RFC 2553: protocol-independent placeholder for socket addresses
++ */
++#define	_SS_MAXSIZE	128U
++#define	_SS_ALIGNSIZE	(sizeof(int64_t))
++#define	_SS_PAD1SIZE	(_SS_ALIGNSIZE - sizeof(unsigned char) - sizeof(sa_family_t))
++#define	_SS_PAD2SIZE	(_SS_MAXSIZE - sizeof(unsigned char) - sizeof(sa_family_t) - \
++				_SS_PAD1SIZE - _SS_ALIGNSIZE)
++
++struct sockaddr_storage {
++	unsigned char		ss_len;		/* address length */
++	sa_family_t	ss_family;	/* address family */
++	char		__ss_pad1[_SS_PAD1SIZE];
++	int64_t		__ss_align;	/* force desired structure storage alignment */
++	char		__ss_pad2[_SS_PAD2SIZE];
++};
++
++/*
++ * Definitions for network related sysctl, CTL_NET.
++ *
++ * Second level is protocol family.
++ * Third level is protocol number.
++ *
++ * Further levels are defined by the individual families below.
++ */
++#define NET_MAXID	AF_MAX
++
++#define CTL_NET_NAMES { \
++	{ 0, 0 }, \
++	{ "unix", CTLTYPE_NODE }, \
++	{ "inet", CTLTYPE_NODE }, \
++	{ "implink", CTLTYPE_NODE }, \
++	{ "pup", CTLTYPE_NODE }, \
++	{ "chaos", CTLTYPE_NODE }, \
++	{ "xerox_ns", CTLTYPE_NODE }, \
++	{ "iso", CTLTYPE_NODE }, \
++	{ "emca", CTLTYPE_NODE }, \
++	{ "datakit", CTLTYPE_NODE }, \
++	{ "ccitt", CTLTYPE_NODE }, \
++	{ "ibm_sna", CTLTYPE_NODE }, \
++	{ "decnet", CTLTYPE_NODE }, \
++	{ "dec_dli", CTLTYPE_NODE }, \
++	{ "lat", CTLTYPE_NODE }, \
++	{ "hylink", CTLTYPE_NODE }, \
++	{ "appletalk", CTLTYPE_NODE }, \
++	{ "route", CTLTYPE_NODE }, \
++	{ "link_layer", CTLTYPE_NODE }, \
++	{ "xtp", CTLTYPE_NODE }, \
++	{ "coip", CTLTYPE_NODE }, \
++	{ "cnt", CTLTYPE_NODE }, \
++	{ "rtip", CTLTYPE_NODE }, \
++	{ "ipx", CTLTYPE_NODE }, \
++	{ "sip", CTLTYPE_NODE }, \
++	{ "pip", CTLTYPE_NODE }, \
++	{ "isdn", CTLTYPE_NODE }, \
++	{ "key", CTLTYPE_NODE }, \
++	{ "inet6", CTLTYPE_NODE }, \
++	{ "natm", CTLTYPE_NODE }, \
++	{ "atm", CTLTYPE_NODE }, \
++	{ "hdrcomplete", CTLTYPE_NODE }, \
++	{ "netgraph", CTLTYPE_NODE }, \
++	{ "snp", CTLTYPE_NODE }, \
++	{ "scp", CTLTYPE_NODE }, \
++}
++
++/*
++ * PF_ROUTE - Routing table
++ *
++ * Three additional levels are defined:
++ *	Fourth: address family, 0 is wildcard
++ *	Fifth: type of info, defined below
++ *	Sixth: flag(s) to mask with for NET_RT_FLAGS
++ */
++#define NET_RT_DUMP	1		/* dump; may limit to a.f. */
++#define NET_RT_FLAGS	2		/* by flags, e.g. RESOLVING */
++#define NET_RT_IFLIST	3		/* survey interface list */
++#define	NET_RT_MAXID	4
++
++#define CTL_NET_RT_NAMES { \
++	{ 0, 0 }, \
++	{ "dump", CTLTYPE_STRUCT }, \
++	{ "flags", CTLTYPE_STRUCT }, \
++	{ "iflist", CTLTYPE_STRUCT }, \
++}
++
++/*
++ * Maximum queue length specifiable by listen.
++ */
++#ifndef	SOMAXCONN
++#define	SOMAXCONN	128
++#endif
++
++/*
++ * Message header for recvmsg and sendmsg calls.
++ * Used value-result for recvmsg, value only for sendmsg.
++ */
++struct msghdr {
++	void		*msg_name;		/* optional address */
++	socklen_t	 msg_namelen;		/* size of address */
++	struct iovec	*msg_iov;		/* scatter/gather array */
++	int		 msg_iovlen;		/* # elements in msg_iov */
++	void		*msg_control;		/* ancillary data, see below */
++	socklen_t	 msg_controllen;	/* ancillary data buffer len */
++	int		 msg_flags;		/* flags on received message */
++};
++
++#define	MSG_OOB		0x1		/* process out-of-band data */
++#define	MSG_PEEK	0x2		/* peek at incoming message */
++#define	MSG_DONTROUTE	0x4		/* send without using routing tables */
++#define	MSG_EOR		0x8		/* data completes record */
++#define	MSG_TRUNC	0x10		/* data discarded before delivery */
++#define	MSG_CTRUNC	0x20		/* control data lost before delivery */
++#define	MSG_WAITALL	0x40		/* wait for full request or error */
++#define	MSG_DONTWAIT	0x80		/* this message should be nonblocking */
++#define	MSG_EOF		0x100		/* data completes connection */
++#define MSG_COMPAT      0x8000		/* used in sendit() */
++
++/*
++ * Header for ancillary data objects in msg_control buffer.
++ * Used for additional information with/about a datagram
++ * not expressible by flags.  The format is a sequence
++ * of message elements headed by cmsghdr structures.
++ */
++struct cmsghdr {
++	socklen_t	cmsg_len;		/* data byte count, including hdr */
++	int		cmsg_level;		/* originating protocol */
++	int		cmsg_type;		/* protocol-specific type */
++/* followed by	unsigned char  cmsg_data[]; */
++};
++
++/*
++ * While we may have more groups than this, the cmsgcred struct must
++ * be able to fit in an mbuf, and NGROUPS_MAX is too large to allow
++ * this.
++*/
++#define CMGROUP_MAX 16
++
++/*
++ * Credentials structure, used to verify the identity of a peer
++ * process that has sent us a message. This is allocated by the
++ * peer process but filled in by the kernel. This prevents the
++ * peer from lying about its identity. (Note that cmcred_groups[0]
++ * is the effective GID.)
++ */
++struct cmsgcred {
++	pid_t	cmcred_pid;		/* PID of sending process */
++	uid_t	cmcred_uid;		/* real UID of sending process */
++	uid_t	cmcred_euid;		/* effective UID of sending process */
++	gid_t	cmcred_gid;		/* real GID of sending process */
++	short	cmcred_ngroups;		/* number or groups */
++	gid_t	cmcred_groups[CMGROUP_MAX];	/* groups */
++};
++
++/* given pointer to struct cmsghdr, return pointer to data */
++#define	CMSG_DATA(cmsg)		((unsigned char *)(cmsg) + \
++				 _ALIGN(sizeof(struct cmsghdr)))
++
++/* given pointer to struct cmsghdr, return pointer to next cmsghdr */
++#define	CMSG_NXTHDR(mhdr, cmsg)	\
++	(((caddr_t)(cmsg) + _ALIGN((cmsg)->cmsg_len) + \
++	  _ALIGN(sizeof(struct cmsghdr)) > \
++	    (caddr_t)(mhdr)->msg_control + (mhdr)->msg_controllen) ? \
++	    (struct cmsghdr *)NULL : \
++	    (struct cmsghdr *)((caddr_t)(cmsg) + _ALIGN((cmsg)->cmsg_len)))
++
++#define	CMSG_FIRSTHDR(mhdr)	((struct cmsghdr *)(mhdr)->msg_control)
++
++/* RFC 2292 additions */
++	
++#define	CMSG_SPACE(l)		(_ALIGN(sizeof(struct cmsghdr)) + _ALIGN(l))
++#define	CMSG_LEN(l)		(_ALIGN(sizeof(struct cmsghdr)) + (l))
++
++#ifdef _KERNEL
++#define	CMSG_ALIGN(n)	_ALIGN(n)
++#endif
++
++/* "Socket"-level control message types: */
++#define	SCM_RIGHTS	0x01		/* access rights (array of int) */
++#define	SCM_TIMESTAMP	0x02		/* timestamp (struct timeval) */
++#define	SCM_CREDS	0x03		/* process creds (struct cmsgcred) */
++
++/*
++ * 4.3 compat sockaddr, move to compat file later
++ */
++struct osockaddr {
++	u_short	sa_family;		/* address family */
++	char	sa_data[14];		/* up to 14 bytes of direct address */
++};
++
++/*
++ * 4.3-compat message header (move to compat file later).
++ */
++struct omsghdr {
++	caddr_t	msg_name;		/* optional address */
++	int	msg_namelen;		/* size of address */
++	struct	iovec *msg_iov;		/* scatter/gather array */
++	int	msg_iovlen;		/* # elements in msg_iov */
++	caddr_t	msg_accrights;		/* access rights sent/received */
++	int	msg_accrightslen;
++};
++
++/*
++ * howto arguments for shutdown(2), specified by Posix.1g.
++ */
++#define	SHUT_RD		0		/* shut down the reading side */
++#define	SHUT_WR		1		/* shut down the writing side */
++#define	SHUT_RDWR	2		/* shut down both sides */
++
++/*
++ * sendfile(2) header/trailer struct
++ */
++struct sf_hdtr {
++	struct iovec *headers;	/* pointer to an array of header struct iovec's */
++	int hdr_cnt;		/* number of header iovec's */
++	struct iovec *trailers;	/* pointer to an array of trailer struct iovec's */
++	int trl_cnt;		/* number of trailer iovec's */
++};
++
++#include <sys/cdefs.h>
++
++__BEGIN_DECLS
++int	accept(int, struct sockaddr *, socklen_t *);
++int	bind(int, const struct sockaddr *, socklen_t);
++int	connect(int, const struct sockaddr *, socklen_t);
++int	getpeername(int, struct sockaddr *, socklen_t *);
++int	getsockname(int, struct sockaddr *, socklen_t *);
++int	getsockopt(int, int, int, void *, socklen_t *);
++int	listen(int, int);
++ssize_t	recv(int, void *, size_t, int);
++ssize_t	recvfrom(int, void *, size_t, int, struct sockaddr *, socklen_t *);
++ssize_t	recvmsg(int, struct msghdr *, int);
++ssize_t	send(int, const void *, size_t, int);
++ssize_t	sendto(int, const void *,
++	    size_t, int, const struct sockaddr *, socklen_t);
++ssize_t	sendmsg(int, const struct msghdr *, int);
++int	sendfile(int, int, off_t, size_t, struct sf_hdtr *, off_t *, int);
++int	setsockopt(int, int, int, const void *, socklen_t);
++int	shutdown(int, int);
++int	socket(int, int, int);
++int	socketpair(int, int, int, int *);
++__END_DECLS
++
++#endif /* !_SYS_SOCKET_H_ */
+diff --git a/sys/stat.h b/sys/stat.h
+index eee98db..79a1f8a 100644
+--- a/sys/stat.h
++++ b/sys/stat.h
+@@ -55,7 +55,7 @@ struct	stat
+   long		st_spare3;
+   blksize_t	st_blksize;
+   blkcnt_t	st_blocks;
+-  long	st_spare4[2];
++  long	st_spare4[7];
+ #endif
+ #endif
+ };
+diff --git a/sys/time.h b/sys/time.h
+index ce2e667..c760adf 100644
+--- a/sys/time.h
++++ b/sys/time.h
+@@ -3,6 +3,8 @@
+    Public domain; no rights reserved. */
+ 
+ /*-
++ * SPDX-License-Identifier: BSD-3-Clause
++ *
+  * Copyright (c) 1982, 1986, 1993
+  *	The Regents of the University of California.  All rights reserved.
+  *
+@@ -14,7 +16,7 @@
+  * 2. Redistributions in binary form must reproduce the above copyright
+  *    notice, this list of conditions and the following disclaimer in the
+  *    documentation and/or other materials provided with the distribution.
+- * 4. Neither the name of the University nor the names of its contributors
++ * 3. Neither the name of the University nor the names of its contributors
+  *    may be used to endorse or promote products derived from this software
+  *    without specific prior written permission.
+  *
+@@ -31,7 +33,7 @@
+  * SUCH DAMAGE.
+  *
+  *	@(#)time.h	8.5 (Berkeley) 5/4/95
+- * $FreeBSD$
++ * $FreeBSD: head/sys/sys/time.h 340664 2018-11-20 07:11:23Z imp $
+  */
+ 
+ #ifndef _SYS_TIME_H_
+@@ -138,7 +140,7 @@ bintime_shift(struct bintime *_bt, int _exp)
+ #define	SBT_1M	(SBT_1S * 60)
+ #define	SBT_1MS	(SBT_1S / 1000)
+ #define	SBT_1US	(SBT_1S / 1000000)
+-#define	SBT_1NS	(SBT_1S / 1000000000)
++#define	SBT_1NS	(SBT_1S / 1000000000) /* beware rounding, see nstosbt() */
+ #define	SBT_MAX	0x7fffffffffffffffLL
+ 
+ static __inline int
+@@ -165,6 +167,90 @@ sbttobt(sbintime_t _sbt)
+ 	return (_bt);
+ }
+ 
++/*
++ * Decimal<->sbt conversions.  Multiplying or dividing by SBT_1NS results in
++ * large roundoff errors which sbttons() and nstosbt() avoid.  Millisecond and
++ * microsecond functions are also provided for completeness.
++ *
++ * These functions return the smallest sbt larger or equal to the
++ * number of seconds requested so that sbttoX(Xtosbt(y)) == y.  Unlike
++ * top of second computations below, which require that we tick at the
++ * top of second, these need to be rounded up so we do whatever for at
++ * least as long as requested.
++ *
++ * The naive computation we'd do is this
++ *	((unit * 2^64 / SIFACTOR) + 2^32-1) >> 32
++ * However, that overflows. Instead, we compute
++ *	((unit * 2^63 / SIFACTOR) + 2^31-1) >> 32
++ * and use pre-computed constants that are the ceil of the 2^63 / SIFACTOR
++ * term to ensure we are using exactly the right constant. We use the lesser
++ * evil of ull rather than a uint64_t cast to ensure we have well defined
++ * right shift semantics. With these changes, we get all the ns, us and ms
++ * conversions back and forth right.
++ */
++static __inline int64_t
++sbttons(sbintime_t _sbt)
++{
++
++	return ((1000000000 * _sbt) >> 32);
++}
++
++static __inline sbintime_t
++nstosbt(int64_t _ns)
++{
++	sbintime_t sb = 0;
++
++	if (_ns >= SBT_1S) {
++		sb = (_ns / 1000000000) * SBT_1S;
++		_ns = _ns % 1000000000;
++	}
++	/* 9223372037 = ceil(2^63 / 1000000000) */
++	sb += ((_ns * 9223372037ull) + 0x7fffffff) >> 31;
++	return (sb);
++}
++
++static __inline int64_t
++sbttous(sbintime_t _sbt)
++{
++
++	return ((1000000 * _sbt) >> 32);
++}
++
++static __inline sbintime_t
++ustosbt(int64_t _us)
++{
++	sbintime_t sb = 0;
++
++	if (_us >= SBT_1S) {
++		sb = (_us / 1000000) * SBT_1S;
++		_us = _us % 1000000;
++	}
++	/* 9223372036855 = ceil(2^63 / 1000000) */
++	sb += ((_us * 9223372036855ull) + 0x7fffffff) >> 31;
++	return (sb);
++}
++
++static __inline int64_t
++sbttoms(sbintime_t _sbt)
++{
++
++	return ((1000 * _sbt) >> 32);
++}
++
++static __inline sbintime_t
++mstosbt(int64_t _ms)
++{
++	sbintime_t sb = 0;
++
++	if (_ms >= SBT_1S) {
++		sb = (_ms / 1000) * SBT_1S;
++		_ms = _ms % 1000;
++	}
++	/* 9223372036854776 = ceil(2^63 / 1000) */
++	sb += ((_ms * 9223372036854776ull) + 0x7fffffff) >> 31;
++	return (sb);
++}
++
+ /*-
+  * Background information:
+  *
+@@ -220,7 +306,7 @@ sbttots(sbintime_t _sbt)
+ 	struct timespec _ts;
+ 
+ 	_ts.tv_sec = _sbt >> 32;
+-	_ts.tv_nsec = ((uint64_t)1000000000 * (uint32_t)_sbt) >> 32;
++	_ts.tv_nsec = sbttons((uint32_t)_sbt);
+ 	return (_ts);
+ }
+ 
+@@ -228,8 +314,7 @@ static __inline sbintime_t
+ tstosbt(struct timespec _ts)
+ {
+ 
+-	return (((sbintime_t)_ts.tv_sec << 32) +
+-	    (_ts.tv_nsec * (((uint64_t)1 << 63) / 500000000) >> 32));
++	return (((sbintime_t)_ts.tv_sec << 32) + nstosbt(_ts.tv_nsec));
+ }
+ 
+ static __inline struct timeval
+@@ -238,7 +323,7 @@ sbttotv(sbintime_t _sbt)
+ 	struct timeval _tv;
+ 
+ 	_tv.tv_sec = _sbt >> 32;
+-	_tv.tv_usec = ((uint64_t)1000000 * (uint32_t)_sbt) >> 32;
++	_tv.tv_usec = sbttous((uint32_t)_sbt);
+ 	return (_tv);
+ }
+ 
+@@ -246,8 +331,7 @@ static __inline sbintime_t
+ tvtosbt(struct timeval _tv)
+ {
+ 
+-	return (((sbintime_t)_tv.tv_sec << 32) +
+-	    (_tv.tv_usec * (((uint64_t)1 << 63) / 500000) >> 32));
++	return (((sbintime_t)_tv.tv_sec << 32) + ustosbt(_tv.tv_usec));
+ }
+ #endif /* __BSD_VISIBLE */
+ 
+diff --git a/sys/uio.h b/sys/uio.h
+new file mode 100644
+index 0000000..965c2ac
+--- /dev/null
++++ b/sys/uio.h
+@@ -0,0 +1,25 @@
++/*
++ * Just an empty dummy handler to be POSIX compliant.
++ */
++#ifndef __SYS_UIO_H__
++#define __SYS_UIO_H__
++
++#include <stdlib.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#if !defined(iovec)
++struct iovec {
++  void  *iov_base;
++  size_t iov_len;
++};
++#endif
++
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif
+diff --git a/time.h b/time.h
+index a2efcc1..bd35d0e 100644
+--- a/time.h
++++ b/time.h
+@@ -251,7 +251,11 @@ extern "C" {
+ 
+ /* Manifest Constants, P1003.1b-1993, p. 262 */
+ 
+-#define CLOCK_REALTIME (clockid_t)1
++#if __GNU_VISIBLE
++#define CLOCK_REALTIME_COARSE	((clockid_t) 0)
++#endif
++
++#define CLOCK_REALTIME		((clockid_t) 1)
+ 
+ /* Flag indicating time is "absolute" with respect to the clock
+    associated with a time.  */
+@@ -266,7 +270,7 @@ extern "C" {
+    the identifier of the CPU_time clock associated with the PROCESS
+    making the function call.  */
+ 
+-#define CLOCK_PROCESS_CPUTIME_ID (clockid_t)2
++#define CLOCK_PROCESS_CPUTIME_ID ((clockid_t) 2)
+ 
+ #endif
+ 
+@@ -276,7 +280,7 @@ extern "C" {
+     the identifier of the CPU_time clock associated with the THREAD
+     making the function call.  */
+ 
+-#define CLOCK_THREAD_CPUTIME_ID (clockid_t)3
++#define CLOCK_THREAD_CPUTIME_ID	((clockid_t) 3)
+ 
+ #endif
+ 
+@@ -286,7 +290,17 @@ extern "C" {
+  *      as a clock whose value cannot be set via clock_settime() and which 
+  *          cannot have backward clock jumps. */
+ 
+-#define CLOCK_MONOTONIC (clockid_t)4
++#define CLOCK_MONOTONIC		((clockid_t) 4)
++
++#if __GNU_VISIBLE
++
++#define CLOCK_MONOTONIC_RAW	((clockid_t) 5)
++
++#define CLOCK_MONOTONIC_COARSE	((clockid_t) 6)
++
++#define CLOCK_BOOTTIME		((clockid_t) 7)
++
++#endif
+ 
+ #endif
+ 
+diff --git a/wchar.h b/wchar.h
+index c848342..9f2441c 100644
+--- a/wchar.h
++++ b/wchar.h
+@@ -126,7 +126,7 @@ wchar_t	*wcscpy (wchar_t *__restrict, const wchar_t *__restrict);
+ #if __POSIX_VISIBLE >= 200809
+ wchar_t	*wcpcpy (wchar_t *__restrict,
+ 				 const wchar_t *__restrict);
+-wchar_t	*wcsdup (const wchar_t *);
++wchar_t	*wcsdup (const wchar_t *) __malloc_like __result_use_check;
+ #endif
+ wchar_t	*_wcsdup_r (struct _reent *, const wchar_t * );
+ size_t	wcscspn (const wchar_t *, const wchar_t *);
