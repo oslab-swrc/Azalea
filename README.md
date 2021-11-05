@@ -69,6 +69,16 @@ Clone the main repository of Azalea-unikernel
   $ git clone https://github.com/oslab-swrc/Azalea-unikernel.git
 </pre>
 
+To run the legacy application, the libc header files of newlib should be stored in the ```include/api``` directory
+
+<pre>
+  $ wget ftp://sourceware.org/pub/newlib/newlib-3.0.0.tar.gz
+  $ tar xvfz newlib-3.0.0.tar.gz
+  $ cp -R newlib-3.0.0/newlib/libc/include/* ./Azalea/include/api/
+  $ cd Azalea/include/api
+  $ patch -p1 < azalea-newlib.patch
+</pre>
+
 ### Building
 
 Now, that you have prepared your build environment, you can build Azalea-unikernel. Execute makefile in the root directory. 
